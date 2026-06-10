@@ -1,11 +1,17 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FilePlus, Search, BarChart3 } from "lucide-react";
+import { FilePlus, Search, BarChart3, ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  useEffect(() => {
+    document.documentElement.style.setProperty('--sidebar-width', isCollapsed ? '80px' : '260px');
+  }, [isCollapsed]);
 
   const navItems = [
     { name: "Nhập phiếu hủy", path: "/nhap-huy", icon: FilePlus },
@@ -15,20 +21,33 @@ export default function Sidebar() {
 
   return (
     <aside style={{ 
-      width: '260px', 
+      width: isCollapsed ? '80px' : '260px', 
       backgroundColor: 'var(--apple-white)', 
       borderRight: '1px solid var(--apple-gray-4)', 
-      padding: '24px 16px', 
+      padding: isCollapsed ? '24px 8px' : '24px 16px', 
       display: 'flex', 
       flexDirection: 'column',
       height: '100vh',
       position: 'fixed',
       top: 0,
-      left: 0
+      left: 0,
+      transition: 'all 0.3s ease',
+      zIndex: 100
     }}>
-      <div style={{ padding: '0 12px', marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--apple-black)', margin: 0 }}>Brandname</h1>
-        <p style={{ fontSize: '13px', color: 'var(--apple-gray-1)', margin: '4px 0 0 0' }}>Hệ thống quản lý Hủy</p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: isCollapsed ? 'center' : 'space-between', marginBottom: '32px', padding: isCollapsed ? '0' : '0 12px' }}>
+        {!isCollapsed && (
+          <div>
+            <h1 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--apple-black)', margin: 0 }}>Brandname</h1>
+            <p style={{ fontSize: '13px', color: 'var(--apple-gray-1)', margin: '4px 0 0 0' }}>Quản lý Hủy</p>
+          </div>
+        )}
+        <button 
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--apple-gray-1)', padding: '4px', borderRadius: '6px' }}
+          className="hover-bg-gray"
+        >
+          {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+        </button>
       </div>
       
       <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -40,9 +59,11 @@ export default function Sidebar() {
               key={item.path}
               href={item.path} 
               className={`sidebar-link ${isActive ? 'active' : ''}`}
+              title={isCollapsed ? item.name : undefined}
+              style={{ justifyContent: isCollapsed ? 'center' : 'flex-start' }}
             >
-              <Icon size={18} />
-              <span>{item.name}</span>
+              <Icon size={isCollapsed ? 22 : 18} />
+              {!isCollapsed && <span>{item.name}</span>}
             </Link>
           );
         })}
@@ -68,6 +89,9 @@ export default function Sidebar() {
         .sidebar-link.active {
           background-color: rgba(0, 122, 255, 0.1);
           color: var(--apple-blue);
+        }
+        .hover-bg-gray:hover {
+          background-color: var(--apple-gray-4);
         }
       `}} />
     </aside>

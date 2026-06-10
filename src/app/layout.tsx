@@ -19,12 +19,13 @@ export default function RootLayout({
         <Sidebar />
 
         {/* Main Content */}
-        <main style={{ 
+        <main className="main-content" style={{ 
           flex: 1, 
-          marginLeft: '260px', 
+          marginLeft: 'var(--sidebar-width, 260px)', 
           backgroundColor: 'var(--apple-bg)', 
           minHeight: '100vh',
-          padding: '32px 48px'
+          padding: '32px 48px',
+          transition: 'margin-left 0.3s ease'
         }}>
           {children}
         </main>

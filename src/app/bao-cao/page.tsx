@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { FileText, Download, Check, RefreshCw, Layers } from 'lucide-react';
+import { FileText, Download, Check, RefreshCw, Layers, ChevronUp, ChevronDown } from 'lucide-react';
 
 const formatMonth = (m: string) => {
   if (!m) return '';
@@ -23,6 +23,7 @@ export default function BaoCaoPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [activeMessage, setActiveMessage] = useState('');
+  const [showFilters, setShowFilters] = useState(true);
 
   // Fetch initial months & providers lookup
   useEffect(() => {
@@ -142,43 +143,64 @@ export default function BaoCaoPage() {
   const isIndeterminate = !allSelected && !noneSelected;
 
   return (
-    <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '24px' }}>
+  return (
+    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       
-      {/* Left Column: Filters */}
-      <div className="apple-card p-6" style={{ alignSelf: 'start', position: 'sticky', top: '24px' }}>
-        <h2 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Layers size={16} /> Lập báo cáo hủy
-        </h2>
-
-        {/* Month Filter */}
-        <div style={{ marginBottom: '20px' }}>
-          <label className="apple-label">Tháng báo cáo</label>
-          <select className="apple-input" value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)}>
-            <option value="">-- Chọn tháng --</option>
-            {months.map(m => (
-              <option key={m} value={m}>{formatMonth(m)}</option>
-            ))}
-          </select>
+      {/* Top Column: Filters (Collapsible) */}
+      <div className="apple-card p-0" style={{ alignSelf: 'start', overflow: 'hidden' }}>
+        <div 
+          style={{ padding: '16px 20px', background: 'var(--apple-white)', borderBottom: showFilters ? '1px solid var(--apple-gray-4)' : 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', transition: 'background 0.2s' }}
+          onClick={() => setShowFilters(!showFilters)}
+          className="hover-bg-gray"
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <h2 style={{ fontSize: '16px', fontWeight: 600, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Layers size={16} /> Lập báo cáo hủy
+            </h2>
+            {!showFilters && selectedMonth && (
+              <span style={{ fontSize: '13px', color: 'var(--apple-blue)', background: 'rgba(0,122,255,0.1)', padding: '2px 10px', borderRadius: '100px' }}>
+                Tháng {formatMonth(selectedMonth)} • Chọn {selectedProviders.length} NCC
+              </span>
+            )}
+          </div>
+          <button style={{ background: 'none', border: 'none', color: 'var(--apple-gray-1)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+            {showFilters ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          </button>
         </div>
 
-        {/* Message Alert */}
-        {activeMessage && (
-          <div style={{
-            fontSize: '12.5px',
-            padding: '10px 12px',
-            borderRadius: '8px',
-            background: activeMessage.startsWith('⚠️') ? 'rgba(255, 159, 10, 0.08)' : activeMessage.startsWith('✓') ? 'rgba(52, 199, 89, 0.08)' : 'rgba(0,122,255,0.06)',
-            border: `1px solid ${activeMessage.startsWith('⚠️') ? 'rgba(255, 159, 10, 0.25)' : activeMessage.startsWith('✓') ? 'rgba(52, 199, 89, 0.25)' : 'rgba(0,122,255,0.15)'}`,
-            color: activeMessage.startsWith('⚠️') ? '#905b00' : activeMessage.startsWith('✓') ? '#1d702d' : 'var(--apple-blue)',
-            marginBottom: '20px',
-            lineHeight: '1.4'
-          }}>
-            {activeMessage}
-          </div>
-        )}
+        {showFilters && (
+          <div style={{ padding: '20px', display: 'flex', flexWrap: 'wrap', gap: '24px', alignItems: 'flex-start' }}>
+            
+            {/* Left Block: Month & Alerts */}
+            <div style={{ flex: '0 0 240px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div>
+                <label className="apple-label">Tháng báo cáo</label>
+                <select className="apple-input" value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)}>
+                  <option value="">-- Chọn tháng --</option>
+                  {months.map(m => (
+                    <option key={m} value={m}>{formatMonth(m)}</option>
+                  ))}
+                </select>
+              </div>
 
-        {/* Provider List Filter */}
-        <div style={{ marginBottom: '24px' }}>
+              {/* Message Alert */}
+              {activeMessage && (
+                <div style={{
+                  fontSize: '12.5px',
+                  padding: '10px 12px',
+                  borderRadius: '8px',
+                  background: activeMessage.startsWith('⚠️') ? 'rgba(255, 159, 10, 0.08)' : activeMessage.startsWith('✓') ? 'rgba(52, 199, 89, 0.08)' : 'rgba(0,122,255,0.06)',
+                  border: `1px solid ${activeMessage.startsWith('⚠️') ? 'rgba(255, 159, 10, 0.25)' : activeMessage.startsWith('✓') ? 'rgba(52, 199, 89, 0.25)' : 'rgba(0,122,255,0.15)'}`,
+                  color: activeMessage.startsWith('⚠️') ? '#905b00' : activeMessage.startsWith('✓') ? '#1d702d' : 'var(--apple-blue)',
+                  lineHeight: '1.4'
+                }}>
+                  {activeMessage}
+                </div>
+              )}
+            </div>
+
+            {/* Middle Block: Provider List */}
+            <div style={{ flex: '1 1 300px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
             <label className="apple-label" style={{ margin: 0 }}>Nhà cung cấp ({selectedProviders.length})</label>
             <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', color: 'var(--apple-blue)', cursor: 'pointer', fontWeight: 500 }}>
@@ -231,25 +253,29 @@ export default function BaoCaoPage() {
                 </label>
               );
             })}
+              </div>
+            </div>
+
+            {/* Right Block: Actions */}
+            <div style={{ flex: '0 0 160px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <button className="apple-btn apple-btn-primary" style={{ width: '100%', height: '42px', justifyContent: 'center' }} onClick={() => { handleViewReport(); setShowFilters(false); }} disabled={isSearching || !selectedMonth || selectedProviders.length === 0}>
+                {isSearching ? 'Đang tải...' : 'Xem báo cáo'}
+              </button>
+
+              <button className="apple-btn" style={{ padding: '8px', fontSize: '12.5px', background: '#34c759', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }} onClick={() => handleExport('xlsx')} disabled={!selectedMonth || selectedProviders.length === 0}>
+                <Download size={14} /> Xuất Excel
+              </button>
+              
+              <button className="apple-btn" style={{ padding: '8px', fontSize: '12.5px', background: 'var(--apple-gray-4)', color: 'var(--apple-black)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }} onClick={() => handleExport('csv')} disabled={!selectedMonth || selectedProviders.length === 0}>
+                <FileText size={14} /> Xuất CSV
+              </button>
+            </div>
           </div>
-        </div>
-
-        <button className="apple-btn apple-btn-primary" style={{ width: '100%', marginBottom: '12px' }} onClick={handleViewReport} disabled={isSearching || !selectedMonth || selectedProviders.length === 0}>
-          {isSearching ? 'Đang tổng hợp...' : 'Xem báo cáo'}
-        </button>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-          <button className="apple-btn" style={{ padding: '8px', fontSize: '12.5px', background: '#34c759', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }} onClick={() => handleExport('xlsx')} disabled={!selectedMonth || selectedProviders.length === 0}>
-            <Download size={14} /> Excel
-          </button>
-          <button className="apple-btn" style={{ padding: '8px', fontSize: '12.5px', background: 'var(--apple-gray-4)', color: 'var(--apple-black)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }} onClick={() => handleExport('csv')} disabled={!selectedMonth || selectedProviders.length === 0}>
-            <FileText size={14} /> CSV
-          </button>
-        </div>
+        )}
       </div>
 
-      {/* Right Column: Report Viewer */}
-      <div className="apple-card p-0" style={{ overflow: 'hidden', minHeight: '400px' }}>
+      {/* Main Column: Report Viewer */}
+      <div className="apple-card p-0" style={{ overflow: 'hidden', flex: 1 }}>
         <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--apple-gray-4)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--apple-gray-4)' }}>
           <h2 style={{ fontSize: '16px', fontWeight: 600, margin: 0 }}>Kết quả Báo cáo</h2>
           {selectedMonth && (

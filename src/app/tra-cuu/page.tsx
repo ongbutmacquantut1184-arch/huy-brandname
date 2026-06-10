@@ -114,16 +114,14 @@ export default function TraCuuPage() {
     : [];
 
   return (
-    <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '24px' }}>
+    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       
-      {/* Left Sidebar: Filters */}
-      <div className="apple-card p-6" style={{ alignSelf: 'start', position: 'sticky', top: '24px' }}>
-        <h2 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Filter size={16} /> Bộ lọc tìm kiếm
-        </h2>
-        
-        <div className="mb-4">
-          <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, marginBottom: '8px', color: 'var(--apple-gray-1)' }}>Từ khóa</label>
+      {/* Top Bar: Filters */}
+      <div className="apple-card p-4" style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'flex-end' }}>
+        <div style={{ flex: '1 1 200px' }}>
+          <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, marginBottom: '8px', color: 'var(--apple-gray-1)' }}>
+            <Filter size={14} style={{ display: 'inline', marginBottom: '-2px', marginRight: '4px' }}/> Từ khóa
+          </label>
           <div style={{ position: 'relative' }} ref={keywordContainerRef}>
             <SearchIcon size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--apple-gray-1)', zIndex: 5 }} />
             <input 
@@ -161,12 +159,14 @@ export default function TraCuuPage() {
           </div>
         </div>
 
-        <div className="mb-4">
+        </div>
+
+        <div style={{ width: '150px' }}>
           <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, marginBottom: '8px', color: 'var(--apple-gray-1)' }}>Tháng</label>
           <input type="month" className="apple-input" value={month} onChange={e => setMonth(e.target.value)} />
         </div>
 
-        <div className="mb-4">
+        <div style={{ width: '180px' }}>
           <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, marginBottom: '8px', color: 'var(--apple-gray-1)' }}>Người nhập</label>
           <select className="apple-input" value={userId} onChange={e => setUserId(e.target.value)}>
             <option value="">-- Tất cả --</option>
@@ -176,19 +176,19 @@ export default function TraCuuPage() {
           </select>
         </div>
 
-        <div className="mb-6">
+        <div style={{ flex: '2 1 300px' }}>
           <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, marginBottom: '8px', color: 'var(--apple-gray-1)' }}>Nhà mạng</label>
-          <div className="grid gap-2">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             {lookups?.operators?.map((op: any) => (
-              <label key={op.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', padding: '6px 8px', borderRadius: '6px', background: selectedOperators.includes(op.id) ? 'rgba(0,122,255,0.05)' : 'transparent', transition: 'var(--apple-transition)' }}>
-                <input type="checkbox" checked={selectedOperators.includes(op.id)} onChange={() => handleOperatorToggle(op.id)} style={{ accentColor: 'var(--apple-blue)' }} />
-                <span style={{ fontSize: '14px', fontWeight: selectedOperators.includes(op.id) ? 500 : 400, color: selectedOperators.includes(op.id) ? 'var(--apple-blue)' : 'inherit' }}>{op.name}</span>
+              <label key={op.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', padding: '6px 12px', borderRadius: '100px', border: selectedOperators.includes(op.id) ? '1px solid var(--apple-blue)' : '1px solid var(--apple-gray-3)', background: selectedOperators.includes(op.id) ? 'rgba(0,122,255,0.08)' : 'var(--apple-white)', transition: 'var(--apple-transition)' }}>
+                <input type="checkbox" checked={selectedOperators.includes(op.id)} onChange={() => handleOperatorToggle(op.id)} style={{ display: 'none' }} />
+                <span style={{ fontSize: '13px', fontWeight: selectedOperators.includes(op.id) ? 500 : 400, color: selectedOperators.includes(op.id) ? 'var(--apple-blue)' : 'var(--apple-text-secondary)' }}>{op.name}</span>
               </label>
             ))}
           </div>
         </div>
 
-        <button className="apple-btn apple-btn-primary" style={{ width: '100%' }} onClick={() => handleSearch()} disabled={isSearching}>
+        <button className="apple-btn apple-btn-primary" style={{ padding: '0 24px', height: '42px', flexShrink: 0 }} onClick={() => handleSearch()} disabled={isSearching}>
           {isSearching ? 'Đang tìm...' : 'Tìm Kiếm'}
         </button>
       </div>
