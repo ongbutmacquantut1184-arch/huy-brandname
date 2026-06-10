@@ -143,7 +143,6 @@ export default function BaoCaoPage() {
   const isIndeterminate = !allSelected && !noneSelected;
 
   return (
-  return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       
       {/* Top Column: Filters (Collapsible) */}

@@ -159,8 +159,6 @@ export default function TraCuuPage() {
           </div>
         </div>
 
-        </div>
-
         <div style={{ width: '150px' }}>
           <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, marginBottom: '8px', color: 'var(--apple-gray-1)' }}>Tháng</label>
           <input type="month" className="apple-input" value={month} onChange={e => setMonth(e.target.value)} />
