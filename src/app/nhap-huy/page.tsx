@@ -615,8 +615,8 @@ function NhapHuyForm() {
                               cursor: 'pointer', fontSize: '13px', transition: 'all 0.2s',
                               whiteSpace: 'normal',
                               wordBreak: 'break-word',
-                              textAlign: 'center',
-                              justifyContent: 'center'
+                              textAlign: 'left',
+                              justifyContent: 'flex-start'
                             }}>
                               <input 
                                 type="checkbox" 
