@@ -12,7 +12,10 @@ export async function GET(request: Request) {
     const { data: cancellation, error } = await supabase
       .from('cancellations')
       .select(`
-        id, month, enter_date, note, user_id, brand_id, owner_id, cp_id,
+        id, month, enter_date, note, user_id,
+        brand:brands(id, name, cp_id, owner_id),
+        owner:owners(id, name),
+        cp:cps(id, name),
         details:cancellation_details(operator_id, provider_id)
       `)
       .eq('id', id)

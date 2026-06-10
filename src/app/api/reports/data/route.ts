@@ -102,8 +102,13 @@ export async function GET(request: Request) {
         };
       });
 
-      // Sắp xếp brandname theo bảng chữ cái A-Z
-      brandList.sort((a, b) => a.brandName.localeCompare(b.brandName));
+      // Sắp xếp theo số lượng nhà mạng bị hủy giảm dần, sau đó theo tên Alpha B
+      brandList.sort((a, b) => {
+        const aCount = Object.values(a.operatorStatus).filter(v => v === 'Yes').length;
+        const bCount = Object.values(b.operatorStatus).filter(v => v === 'Yes').length;
+        if (bCount !== aCount) return bCount - aCount;
+        return a.brandName.localeCompare(b.brandName);
+      });
       reportData[pid].brands = brandList;
     }
 

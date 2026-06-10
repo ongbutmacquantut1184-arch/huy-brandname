@@ -137,17 +137,17 @@ function NhapHuyForm() {
         setEnterDate(data.enter_date || '');
         setNote(data.note || '');
         
-        const brand = lookups.brands.find((b: any) => b.id === data.brand_id);
+        const brand = data.brand;
         if (brand) {
           setBrandSearch(brand.name);
           setSelectedBrand(brand);
         }
-        const cp = lookups.cps.find((c: any) => c.id === data.cp_id);
+        const cp = data.cp;
         if (cp) {
           setCpSearch(cp.name);
           setSelectedCp(cp);
         }
-        const owner = lookups.owners.find((o: any) => o.id === data.owner_id);
+        const owner = data.owner;
         if (owner) {
           setOwnerSearch(owner.name);
           setSelectedOwner(owner);

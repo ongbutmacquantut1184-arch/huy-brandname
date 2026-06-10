@@ -23,6 +23,7 @@ export async function GET(request: Request) {
           provider:providers(id, name)
         )
       `)
+      .order('enter_date', { ascending: false })
       .order('id', { ascending: false });
 
     // Áp dụng các bộ lọc cứng (Month, User) trực tiếp

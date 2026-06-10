@@ -276,9 +276,18 @@ export default function BaoCaoPage() {
           </div>
         ) : (
           <div style={{ padding: '20px', maxHeight: 'calc(100vh - 120px)', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '32px' }}>
-            {selectedProviders.map(pid => {
+            {selectedProviders
+              .filter(pid => reportData[pid] && reportData[pid].brands.length > 0)
+              .sort((a, b) => {
+                const aCount = reportData[a].brands.length;
+                const bCount = reportData[b].brands.length;
+                if (bCount !== aCount) return bCount - aCount;
+                const aName = providers.find(p => p.id === a)?.name || '';
+                const bName = providers.find(p => p.id === b)?.name || '';
+                return aName.localeCompare(bName);
+              })
+              .map(pid => {
               const data = reportData[pid];
-              if (!data || data.brands.length === 0) return null;
 
               const providerName = providers.find(p => p.id === pid)?.name || pid;
 
