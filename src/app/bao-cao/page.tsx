@@ -146,7 +146,7 @@ export default function BaoCaoPage() {
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       
       {/* Top Column: Filters (Collapsible) */}
-      <div className="apple-card p-0" style={{ alignSelf: 'start', overflow: 'hidden' }}>
+      <div className="apple-card p-0" style={{ overflow: 'hidden' }}>
         <div 
           style={{ padding: '16px 20px', background: 'var(--apple-white)', borderBottom: showFilters ? '1px solid var(--apple-gray-4)' : 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', transition: 'background 0.2s' }}
           onClick={() => setShowFilters(!showFilters)}

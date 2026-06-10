@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Save, AlertCircle, Info, CheckCircle, X } from 'lucide-react';
+import { Save, AlertCircle, Info, CheckCircle, X, RefreshCw } from 'lucide-react';
 
 function NhapHuyForm() {
   const [lookups, setLookups] = useState<any>(null);
@@ -89,10 +89,19 @@ function NhapHuyForm() {
       });
   }, []);
 
+  const handleRefreshLookups = () => {
+    fetch('/api/lookup')
+      .then(r => r.json())
+      .then(data => {
+        setLookups(data);
+        sessionStorage.setItem('lookups_cache', JSON.stringify(data));
+      });
+  };
+
   // Sync selected objects based on typed text
   useEffect(() => {
     if (!lookups) return;
-    const b = lookups.brands.find((x: any) => x.name.toLowerCase() === brandSearch.toLowerCase());
+    const b = lookups.brands.find((x: any) => x.name.trim().toLowerCase() === brandSearch.trim().toLowerCase());
     setSelectedBrand(b || null);
     if (b) {
       if (!cpSearch && b.cp_id) {
@@ -108,13 +117,13 @@ function NhapHuyForm() {
 
   useEffect(() => {
     if (!lookups) return;
-    const c = lookups.cps.find((x: any) => x.name.toLowerCase() === cpSearch.toLowerCase());
+    const c = lookups.cps.find((x: any) => x.name.trim().toLowerCase() === cpSearch.trim().toLowerCase());
     setSelectedCp(c || null);
   }, [cpSearch, lookups]);
 
   useEffect(() => {
     if (!lookups) return;
-    const o = lookups.owners.find((x: any) => x.name.toLowerCase() === ownerSearch.toLowerCase());
+    const o = lookups.owners.find((x: any) => x.name.trim().toLowerCase() === ownerSearch.trim().toLowerCase());
     setSelectedOwner(o || null);
   }, [ownerSearch, lookups]);
 
@@ -355,19 +364,19 @@ function NhapHuyForm() {
   // Filters for Custom Suggestions
   const filteredBrands = lookups?.brands
     ? lookups.brands
-        .filter((b: any) => b.name.toLowerCase().includes(brandSearch.toLowerCase()))
+        .filter((b: any) => b.name.toLowerCase().includes(brandSearch.trim().toLowerCase()))
         .slice(0, 15)
     : [];
 
   const filteredCps = lookups?.cps
     ? lookups.cps
-        .filter((c: any) => c.name.toLowerCase().includes(cpSearch.toLowerCase()))
+        .filter((c: any) => c.name.toLowerCase().includes(cpSearch.trim().toLowerCase()))
         .slice(0, 15)
     : [];
 
   const filteredOwners = lookups?.owners
     ? lookups.owners
-        .filter((o: any) => o.name.toLowerCase().includes(ownerSearch.toLowerCase()))
+        .filter((o: any) => o.name.toLowerCase().includes(ownerSearch.trim().toLowerCase()))
         .slice(0, 15)
     : [];
 
@@ -377,7 +386,12 @@ function NhapHuyForm() {
       {/* Left: Form Panel (58%) */}
       <div className="apple-card p-6" style={{ flex: '0 0 58%', position: 'relative' }}>
         <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--apple-gray-4)', paddingBottom: '12px' }}>
-          <span>{isEditMode ? `✏️ Chỉnh sửa phiếu hủy (${editId})` : 'Thông tin hủy Brandname'}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>{isEditMode ? `✏️ Chỉnh sửa phiếu hủy (${editId})` : 'Thông tin hủy Brandname'}</span>
+            <button onClick={handleRefreshLookups} title="Tải lại danh mục mới nhất" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--apple-gray-1)', display: 'flex', alignItems: 'center', padding: '4px', borderRadius: '4px' }} className="hover-bg-gray">
+              <RefreshCw size={16} />
+            </button>
+          </div>
           {isEditMode && (
             <span style={{ fontSize: '12px', background: 'rgba(0,122,255,0.1)', color: 'var(--apple-blue)', padding: '4px 10px', borderRadius: '100px', fontWeight: 500 }}>
               Edit Mode
