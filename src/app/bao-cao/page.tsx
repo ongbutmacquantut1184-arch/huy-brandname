@@ -26,6 +26,15 @@ export default function BaoCaoPage() {
 
   // Fetch initial months & providers lookup
   useEffect(() => {
+    const cached = sessionStorage.getItem('lookups_cache');
+    if (cached) {
+      try {
+        const lookupData = JSON.parse(cached);
+        setProviders(lookupData?.providers?.sort((a: any, b: any) => a.name.localeCompare(b.name)) || []);
+        setLoading(false);
+      } catch (e) {}
+    }
+
     Promise.all([
       fetch('/api/reports/months').then(r => r.json()),
       fetch('/api/lookup').then(r => r.json())
@@ -33,6 +42,7 @@ export default function BaoCaoPage() {
       .then(([monthsData, lookupData]) => {
         setMonths(monthsData || []);
         setProviders(lookupData?.providers?.sort((a: any, b: any) => a.name.localeCompare(b.name)) || []);
+        sessionStorage.setItem('lookups_cache', JSON.stringify(lookupData));
         
         // Mặc định chọn tháng gần nhất nếu có
         if (monthsData && monthsData.length > 0) {

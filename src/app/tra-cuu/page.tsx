@@ -57,11 +57,19 @@ export default function TraCuuPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
+    const cached = sessionStorage.getItem('lookups_cache');
+    if (cached) {
+      try {
+        setLookups(JSON.parse(cached));
+        setLoading(false);
+      } catch (e) {}
+    }
     fetch('/api/lookup')
       .then(r => r.json())
       .then(data => {
         setLookups(data);
         setLoading(false);
+        sessionStorage.setItem('lookups_cache', JSON.stringify(data));
       });
   }, []);
 
@@ -265,6 +273,12 @@ export default function TraCuuPage() {
                                   ✏️ Chỉnh sửa
                                 </button>
                               </div>
+                              {item.note && (
+                                <div style={{ marginBottom: '16px', padding: '12px', background: 'rgba(255,149,0,0.1)', borderLeft: '3px solid var(--apple-orange)', borderRadius: '0 8px 8px 0', fontSize: '13px' }}>
+                                  <strong style={{ color: 'var(--apple-orange)' }}>Ghi chú: </strong>
+                                  <span style={{ color: 'var(--apple-black)', whiteSpace: 'pre-wrap' }}>{item.note}</span>
+                                </div>
+                              )}
                               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
                                 {(() => {
                                   const grouped: Record<string, { name: string; providers: string[] }> = {};

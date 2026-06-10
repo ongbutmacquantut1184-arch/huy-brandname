@@ -73,11 +73,19 @@ function NhapHuyForm() {
 
   // Fetch Lookups
   useEffect(() => {
+    const cached = sessionStorage.getItem('lookups_cache');
+    if (cached) {
+      try {
+        setLookups(JSON.parse(cached));
+        setLoading(false);
+      } catch (e) {}
+    }
     fetch('/api/lookup')
       .then(r => r.json())
       .then(data => {
         setLookups(data);
         setLoading(false);
+        sessionStorage.setItem('lookups_cache', JSON.stringify(data));
       });
   }, []);
 
