@@ -86,8 +86,8 @@ export async function POST(request: Request) {
       }
     }
 
-    // Đồng bộ sang Google Sheets
-    await syncToGoogleSheets('create', cancellationId, body);
+    // Đồng bộ sang Google Sheets chạy ngầm (không await để tránh block 5 giây)
+    syncToGoogleSheets('create', cancellationId, body).catch(e => console.error(e));
 
     return NextResponse.json({ success: true, id: cancellationId });
   } catch (error: any) {
@@ -149,8 +149,8 @@ export async function PUT(request: Request) {
       if (detailError) throw detailError;
     }
 
-    // Đồng bộ sang Google Sheets
-    await syncToGoogleSheets('update', id, body);
+    // Đồng bộ sang Google Sheets chạy ngầm (không await để tránh block 5 giây)
+    syncToGoogleSheets('update', id, body).catch(e => console.error(e));
 
     return NextResponse.json({ success: true, id });
   } catch (error: any) {
