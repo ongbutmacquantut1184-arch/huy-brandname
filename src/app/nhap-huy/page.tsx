@@ -269,7 +269,8 @@ function NhapHuyForm() {
         setLookups(updatedLookups);
         setIsModalOpen(false);
       } else {
-        alert('Có lỗi xảy ra khi lưu.');
+        const errData = await res.json();
+        alert(errData.error || 'Có lỗi xảy ra khi lưu.');
       }
     } catch(e) {
       alert('Lỗi kết nối.');

@@ -48,6 +48,60 @@ export async function POST(request: Request) {
     const { data: user } = await supabase.from('users').select('name').eq('id', user_id).single();
     const user_name = user?.name || '';
 
+    // ==========================================
+    // KIỂM TRA TRÙNG LẶP CHÍNH XÁC
+    // ==========================================
+    let dupQuery = supabase.from('cancellations').select('id').eq('month', month).eq('brand_id', brand_id);
+    if (owner_id) dupQuery = dupQuery.eq('owner_id', owner_id); else dupQuery = dupQuery.is('owner_id', null);
+    if (cp_id) dupQuery = dupQuery.eq('cp_id', cp_id); else dupQuery = dupQuery.is('cp_id', null);
+
+    const { data: existingCancellations } = await dupQuery;
+
+    if (existingCancellations && existingCancellations.length > 0) {
+      const existingIds = existingCancellations.map(c => c.id);
+      const { data: existingDetails } = await supabase
+        .from('cancellation_details')
+        .select('cancellation_id, operator_id, provider_id')
+        .in('cancellation_id', existingIds);
+
+      if (existingDetails) {
+        const detailsMap: Record<string, { operator_id: string, provider_id: string }[]> = {};
+        existingDetails.forEach(d => {
+          if (!detailsMap[d.cancellation_id]) detailsMap[d.cancellation_id] = [];
+          detailsMap[d.cancellation_id].push({ operator_id: d.operator_id, provider_id: d.provider_id });
+        });
+
+        const currentFlatDetails: { operator_id: string, provider_id: string }[] = [];
+        details.forEach((op: any) => {
+          op.provider_ids.forEach((provId: string) => {
+            currentFlatDetails.push({ operator_id: op.operator_id, provider_id: provId });
+          });
+        });
+
+        const sortDetails = (arr: any[]) => arr.sort((a, b) => a.operator_id.localeCompare(b.operator_id) || a.provider_id.localeCompare(b.provider_id));
+        sortDetails(currentFlatDetails);
+
+        for (const cId in detailsMap) {
+          const exDetails = detailsMap[cId];
+          if (exDetails.length !== currentFlatDetails.length) continue;
+          sortDetails(exDetails);
+
+          let isExactMatch = true;
+          for (let i = 0; i < exDetails.length; i++) {
+            if (exDetails[i].operator_id !== currentFlatDetails[i].operator_id || exDetails[i].provider_id !== currentFlatDetails[i].provider_id) {
+              isExactMatch = false;
+              break;
+            }
+          }
+
+          if (isExactMatch) {
+            return NextResponse.json({ error: `Đã tồn tại phiếu hủy với nội dung y hệt trên hệ thống (Mã phiếu: ${cId}). Vui lòng kiểm tra và cập nhật phiếu cũ thay vì thêm mới.` }, { status: 409 });
+          }
+        }
+      }
+    }
+    // ==========================================
+
     // 1. Insert Cancellation record
     const { data: cancelData, error: cancelError } = await supabase
       .from('cancellations')
@@ -135,6 +189,60 @@ export async function PUT(request: Request) {
     // Fetch user name
     const { data: user } = await supabase.from('users').select('name').eq('id', user_id).single();
     const user_name = user?.name || '';
+
+    // ==========================================
+    // KIỂM TRA TRÙNG LẶP CHÍNH XÁC (Trừ bản ghi hiện tại)
+    // ==========================================
+    let dupQuery = supabase.from('cancellations').select('id').eq('month', month).eq('brand_id', brand_id).neq('id', id);
+    if (owner_id) dupQuery = dupQuery.eq('owner_id', owner_id); else dupQuery = dupQuery.is('owner_id', null);
+    if (cp_id) dupQuery = dupQuery.eq('cp_id', cp_id); else dupQuery = dupQuery.is('cp_id', null);
+
+    const { data: existingCancellations } = await dupQuery;
+
+    if (existingCancellations && existingCancellations.length > 0) {
+      const existingIds = existingCancellations.map(c => c.id);
+      const { data: existingDetails } = await supabase
+        .from('cancellation_details')
+        .select('cancellation_id, operator_id, provider_id')
+        .in('cancellation_id', existingIds);
+
+      if (existingDetails) {
+        const detailsMap: Record<string, { operator_id: string, provider_id: string }[]> = {};
+        existingDetails.forEach(d => {
+          if (!detailsMap[d.cancellation_id]) detailsMap[d.cancellation_id] = [];
+          detailsMap[d.cancellation_id].push({ operator_id: d.operator_id, provider_id: d.provider_id });
+        });
+
+        const currentFlatDetails: { operator_id: string, provider_id: string }[] = [];
+        details.forEach((op: any) => {
+          op.provider_ids.forEach((provId: string) => {
+            currentFlatDetails.push({ operator_id: op.operator_id, provider_id: provId });
+          });
+        });
+
+        const sortDetails = (arr: any[]) => arr.sort((a, b) => a.operator_id.localeCompare(b.operator_id) || a.provider_id.localeCompare(b.provider_id));
+        sortDetails(currentFlatDetails);
+
+        for (const cId in detailsMap) {
+          const exDetails = detailsMap[cId];
+          if (exDetails.length !== currentFlatDetails.length) continue;
+          sortDetails(exDetails);
+
+          let isExactMatch = true;
+          for (let i = 0; i < exDetails.length; i++) {
+            if (exDetails[i].operator_id !== currentFlatDetails[i].operator_id || exDetails[i].provider_id !== currentFlatDetails[i].provider_id) {
+              isExactMatch = false;
+              break;
+            }
+          }
+
+          if (isExactMatch) {
+            return NextResponse.json({ error: `Đã tồn tại phiếu hủy khác với nội dung y hệt trên hệ thống (Mã phiếu: ${cId}). Bạn không thể lưu phiếu trùng lặp.` }, { status: 409 });
+          }
+        }
+      }
+    }
+    // ==========================================
 
     // 1. Cập nhật bảng cancellations
     const { error: cancelError } = await supabase

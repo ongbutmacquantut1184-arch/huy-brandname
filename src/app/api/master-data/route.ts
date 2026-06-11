@@ -26,9 +26,10 @@ export async function POST(request: Request) {
       .single();
 
     if (error) {
-      // If it's a unique constraint error, it means it already exists
+      // Nếu là lỗi duplicate key value violates unique constraint (23505)
       if (error.code === '23505') {
-        return NextResponse.json({ id, name: id });
+        const typeName = type === 'brand' ? 'Brandname' : type === 'cp' ? 'CP' : 'Đơn vị sử dụng';
+        return NextResponse.json({ error: `${typeName} "${name}" đã tồn tại trên hệ thống. Vui lòng chọn từ danh sách thay vì thêm mới.` }, { status: 409 });
       }
       throw error;
     }
