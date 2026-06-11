@@ -44,9 +44,10 @@ function NhapHuyForm() {
 
   // Modal States for Add New Master Data
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<'brand' | 'cp' | 'owner' | null>(null);
+  const [modalType, setModalType] = useState<'brand' | 'cp' | 'owner'>('brand');
   const [modalValue, setModalValue] = useState('');
   const [isSavingMaster, setIsSavingMaster] = useState(false);
+  const [modalError, setModalError] = useState('');
 
   // Ref to handle click outside dropdowns
   const brandContainerRef = useRef<HTMLDivElement>(null);
@@ -238,20 +239,23 @@ function NhapHuyForm() {
   const openAddModal = (type: 'brand' | 'cp' | 'owner', initialName: string) => {
     setModalType(type);
     setModalValue(initialName);
+    setModalError('');
     setIsModalOpen(true);
   };
 
   const handleSaveMaster = async () => {
     if (!modalValue.trim()) return;
     setIsSavingMaster(true);
+    setModalError('');
     try {
       const res = await fetch('/api/master-data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: modalType, name: modalValue.trim() })
       });
+      const data = await res.json();
       if (res.ok) {
-        const newItem = await res.json();
+        const newItem = data;
         const updatedLookups = { ...lookups };
         if (modalType === 'brand') {
           updatedLookups.brands.push(newItem);
@@ -269,11 +273,10 @@ function NhapHuyForm() {
         setLookups(updatedLookups);
         setIsModalOpen(false);
       } else {
-        const errData = await res.json();
-        alert(errData.error || 'Có lỗi xảy ra khi lưu.');
+        setModalError(data.error || 'Có lỗi xảy ra khi lưu.');
       }
     } catch(e) {
-      alert('Lỗi kết nối.');
+      setModalError('Lỗi kết nối.');
     } finally {
       setIsSavingMaster(false);
     }
@@ -351,6 +354,7 @@ function NhapHuyForm() {
       setTimeout(() => setSuccessMsg(''), 5000);
     } catch (err: any) {
       setErrors([err.message || 'Đã có lỗi xảy ra khi lưu dữ liệu.']);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setIsSubmitting(false);
     }
@@ -743,6 +747,13 @@ function NhapHuyForm() {
               </button>
             </div>
             
+            {modalError && (
+              <div style={{ marginBottom: '16px', padding: '10px 14px', background: 'rgba(255, 59, 48, 0.1)', border: '1px solid rgba(255, 59, 48, 0.3)', borderRadius: '8px', color: 'var(--apple-red)', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <AlertCircle size={16} style={{ flexShrink: 0 }} />
+                <span>{modalError}</span>
+              </div>
+            )}
+
             <div style={{ marginBottom: '24px' }}>
               <label className="apple-label">Tên hiển thị <span className="text-apple-red">*</span></label>
               <input 
