@@ -38,7 +38,7 @@ export async function GET() {
       fetchAll('cps', 'id, name'),
       fetchAll('brands', 'id, name, owner_id, cp_id'),
       supabase.from('operators').select('id, name').order('order_index'),
-      supabase.from('providers').select('id, name'),
+      supabase.from('providers').select('id, name, emails'),
       supabase.from('operator_provider_map').select('operator_id, provider_id')
     ]);
 

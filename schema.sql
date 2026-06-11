@@ -29,7 +29,8 @@ CREATE TABLE operators (
 
 CREATE TABLE providers (
     id TEXT PRIMARY KEY,
-    name TEXT NOT NULL
+    name TEXT NOT NULL,
+    emails TEXT
 );
 
 CREATE TABLE operator_provider_map (

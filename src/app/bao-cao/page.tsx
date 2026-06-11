@@ -25,6 +25,12 @@ export default function BaoCaoPage() {
   const [activeMessage, setActiveMessage] = useState('');
   const [showFilters, setShowFilters] = useState(true);
 
+  // Email Modal States
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailModalProvider, setEmailModalProvider] = useState('');
+  const [emailModalValue, setEmailModalValue] = useState('');
+  const [isSavingEmail, setIsSavingEmail] = useState(false);
+
   // Fetch initial months & providers lookup
   useEffect(() => {
     Promise.all([
@@ -114,6 +120,31 @@ export default function BaoCaoPage() {
       alert('Lỗi tải dữ liệu báo cáo.');
     } finally {
       setIsSearching(false);
+    }
+  };
+
+  const handleSaveEmail = async () => {
+    if (!emailModalProvider) return;
+    setIsSavingEmail(true);
+    try {
+      const res = await fetch('/api/providers', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: emailModalProvider, emails: emailModalValue.trim() })
+      });
+      if (res.ok) {
+        // Cập nhật state providers cục bộ
+        setProviders(prev => prev.map(p => p.id === emailModalProvider ? { ...p, emails: emailModalValue.trim() } : p));
+        setShowEmailModal(false);
+        alert('Cập nhật email thành công!');
+      } else {
+        alert('Có lỗi xảy ra khi lưu email.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Lỗi kết nối.');
+    } finally {
+      setIsSavingEmail(false);
     }
   };
 
@@ -258,6 +289,10 @@ export default function BaoCaoPage() {
               <button className="apple-btn" style={{ padding: '8px', fontSize: '12.5px', background: 'var(--apple-gray-4)', color: 'var(--apple-black)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }} onClick={() => handleExport('csv')} disabled={!selectedMonth || selectedProviders.length === 0}>
                 <FileText size={14} /> Xuất CSV
               </button>
+
+              <button className="apple-btn" style={{ padding: '8px', fontSize: '12.5px', background: 'var(--apple-gray-6)', color: 'var(--apple-blue)', border: '1px solid var(--apple-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginTop: '4px' }} onClick={() => setShowEmailModal(true)}>
+                ✉️ Cập nhật Email NCC
+              </button>
             </div>
           </div>
         )}
@@ -351,6 +386,14 @@ export default function BaoCaoPage() {
                             <td style={{ padding: '10px 12px', color: 'var(--apple-text-secondary)' }}>{brand.owner}</td>
                           </tr>
                         ))}
+                        {providers.find(p => p.id === pid)?.emails && (
+                          <tr style={{ background: 'var(--apple-gray-6)' }}>
+                            <td colSpan={data.operators.length + 4} style={{ padding: '12px', color: 'var(--apple-gray-1)', fontSize: '13px', fontStyle: 'italic', borderTop: '1px solid var(--apple-gray-4)' }}>
+                              <Mail size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '6px' }} />
+                              <strong>Email người nhận ({providerName}):</strong> {providers.find(p => p.id === pid)?.emails}
+                            </td>
+                          </tr>
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -377,6 +420,51 @@ export default function BaoCaoPage() {
           animation: spin 1s linear infinite;
         }
       `}} />
+
+      {/* Modal Cập nhật Email NCC */}
+      {showEmailModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999 }}>
+          <div className="apple-card animate-fade-in" style={{ width: '400px', padding: '24px' }}>
+            <h3 style={{ margin: '0 0 16px 0', fontSize: '16px' }}>Cập nhật Email Nhà Cung Cấp</h3>
+            
+            <div style={{ marginBottom: '16px' }}>
+              <label className="apple-label">Nhà cung cấp</label>
+              <select 
+                className="apple-input" 
+                value={emailModalProvider} 
+                onChange={e => {
+                  setEmailModalProvider(e.target.value);
+                  const p = providers.find(x => x.id === e.target.value);
+                  setEmailModalValue(p?.emails || '');
+                }}
+              >
+                <option value="">-- Chọn Nhà Cung Cấp --</option>
+                {providers.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <label className="apple-label">Danh sách Email (ngăn cách bởi dấu chấm phẩy ;)</label>
+              <textarea 
+                className="apple-input" 
+                rows={4} 
+                value={emailModalValue}
+                onChange={e => setEmailModalValue(e.target.value)}
+                placeholder="vidu1@gmail.com; vidu2@gmail.com"
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button className="apple-btn" onClick={() => setShowEmailModal(false)} disabled={isSavingEmail}>Hủy</button>
+              <button className="apple-btn apple-btn-primary" onClick={handleSaveEmail} disabled={isSavingEmail || !emailModalProvider}>
+                {isSavingEmail ? 'Đang lưu...' : 'Lưu lại'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
