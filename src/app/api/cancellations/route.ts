@@ -38,10 +38,22 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { month, user_id, brand_id, owner_id, cp_id, note, details } = body;
 
-    // Generate a unique ID for cancellation if not provided
-    // Logic cũ sinh ID tăng dần dạng C00001, ở đây ta có thể dùng timestamp + random ngắn hoặc query count
-    const { count } = await supabase.from('cancellations').select('*', { count: 'exact', head: true });
-    const nextNum = (count || 0) + 1;
+    // Lấy ID lớn nhất hiện tại để sinh ID mới an toàn
+    const { data: maxRecord } = await supabase
+      .from('cancellations')
+      .select('id')
+      .order('id', { ascending: false })
+      .limit(1)
+      .single();
+
+    let nextNum = 1;
+    if (maxRecord && maxRecord.id && maxRecord.id.startsWith('C')) {
+      const numPart = maxRecord.id.replace('C', '');
+      const parsedNum = parseInt(numPart, 10);
+      if (!isNaN(parsedNum)) {
+        nextNum = parsedNum + 1;
+      }
+    }
     const generatedId = `C${String(nextNum).padStart(5, '0')}`;
 
     // Fetch user name
