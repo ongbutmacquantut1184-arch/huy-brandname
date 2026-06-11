@@ -10,7 +10,7 @@ export default function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {
-    document.documentElement.style.setProperty('--sidebar-width', isCollapsed ? '64px' : '180px');
+    document.documentElement.style.setProperty('--sidebar-width', isCollapsed ? '64px' : '200px');
   }, [isCollapsed]);
 
   const navItems = [
@@ -21,7 +21,7 @@ export default function Sidebar() {
 
   return (
     <aside style={{ 
-      width: isCollapsed ? '64px' : '180px', 
+      width: isCollapsed ? '64px' : '200px', 
       backgroundColor: 'var(--apple-white)', 
       borderRight: '1px solid var(--apple-gray-4)', 
       padding: isCollapsed ? '24px 8px' : '24px 16px', 

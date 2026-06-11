@@ -277,7 +277,7 @@ export default function BaoCaoPage() {
         {!hasSearched ? (
           <div style={{ padding: '80px 40px', textAlign: 'center', color: 'var(--apple-gray-1)' }}>
             <Layers size={48} style={{ margin: '0 auto 16px auto', opacity: 0.25 }} />
-            <p style={{ fontSize: '15px', margin: 0 }}>Vui lòng chọn bộ lọc ở cột bên trái và bấm <strong>Xem báo cáo</strong>.</p>
+            <p style={{ fontSize: '15px', margin: 0 }}>Vui lòng chọn bộ lọc và bấm <strong>Xem báo cáo</strong>.</p>
           </div>
         ) : isSearching ? (
           <div style={{ padding: '80px 40px', textAlign: 'center', color: 'var(--apple-gray-1)' }}>
