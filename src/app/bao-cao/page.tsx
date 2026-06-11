@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { FileText, Download, Check, RefreshCw, Layers, ChevronUp, ChevronDown } from 'lucide-react';
+import { FileText, Download, Check, RefreshCw, Layers, ChevronUp, ChevronDown, Mail } from 'lucide-react';
 
 const formatMonth = (m: string) => {
   if (!m) return '';
