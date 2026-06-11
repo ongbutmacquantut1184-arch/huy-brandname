@@ -44,6 +44,10 @@ export async function POST(request: Request) {
     const nextNum = (count || 0) + 1;
     const generatedId = `C${String(nextNum).padStart(5, '0')}`;
 
+    // Fetch user name
+    const { data: user } = await supabase.from('users').select('name').eq('id', user_id).single();
+    const user_name = user?.name || '';
+
     // 1. Insert Cancellation record
     const { data: cancelData, error: cancelError } = await supabase
       .from('cancellations')
@@ -51,6 +55,7 @@ export async function POST(request: Request) {
         id: generatedId,
         month,
         user_id,
+        user_name,
         brand_id,
         owner_id,
         cp_id,
@@ -127,12 +132,17 @@ export async function PUT(request: Request) {
       }, { status: 409 });
     }
 
+    // Fetch user name
+    const { data: user } = await supabase.from('users').select('name').eq('id', user_id).single();
+    const user_name = user?.name || '';
+
     // 1. Cập nhật bảng cancellations
     const { error: cancelError } = await supabase
       .from('cancellations')
       .update({
         month,
         user_id,
+        user_name,
         brand_id,
         owner_id,
         cp_id,
@@ -172,8 +182,9 @@ export async function PUT(request: Request) {
       if (detailError) throw detailError;
     }
 
-    // Đồng bộ sang Google Sheets chạy ngầm (không await để tránh block 5 giây)
-    syncToGoogleSheets('update', id, body).catch(e => console.error(e));
+    // Gắn thêm user_name vào body để đồng bộ Sheets
+    const payloadForSheets = { ...body, user_name };
+    syncToGoogleSheets('update', id, payloadForSheets).catch(e => console.error(e));
 
     return NextResponse.json({ success: true, id });
   } catch (error: any) {
@@ -196,7 +207,7 @@ async function syncToGoogleSheets(action: 'create' | 'update', recordId: string,
   // Chuyển đổi dữ liệu sang định dạng Apps Script mong đợi
   const payload = {
     recordId: recordId,
-    user: body.user_id,
+    user: body.user_name || body.user_id, // Lấy tên người dùng thay vì ID
     enterDate: enterDate,
     owner: body.owner_id || '',
     brandId: body.brand_id,

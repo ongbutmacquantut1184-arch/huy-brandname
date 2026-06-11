@@ -42,6 +42,7 @@ CREATE TABLE operator_provider_map (
 CREATE TABLE cancellations (
     id TEXT PRIMARY KEY,
     user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+    user_name TEXT,
     enter_date DATE NOT NULL,
     brand_id TEXT REFERENCES brands(id) ON DELETE CASCADE,
     owner_id TEXT REFERENCES owners(id) ON DELETE SET NULL,
