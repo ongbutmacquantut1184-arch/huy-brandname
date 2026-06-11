@@ -110,7 +110,7 @@ export async function GET(request: Request) {
         });
 
         if (providerInfo.emails) {
-          csvContent += `"Email người nhận (${providerInfo.name}): ${providerInfo.emails}"\n`;
+          csvContent += `"${providerInfo.emails}"\n`;
         }
 
         // Add blank line between providers
@@ -173,7 +173,7 @@ export async function GET(request: Request) {
 
       // Thêm dòng hiển thị Email nếu có
       if (providerInfo.emails) {
-        const emailText = `Email người nhận (${providerInfo.name}): ${providerInfo.emails}`;
+        const emailText = providerInfo.emails;
         const emailRow = worksheet.addRow([emailText]);
         worksheet.mergeCells(emailRow.number, 1, emailRow.number, headers.length);
         emailRow.getCell(1).font = { italic: true };

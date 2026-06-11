@@ -390,7 +390,7 @@ export default function BaoCaoPage() {
                           <tr style={{ background: 'var(--apple-gray-6)' }}>
                             <td colSpan={data.operators.length + 4} style={{ padding: '12px', color: 'var(--apple-gray-1)', fontSize: '13px', fontStyle: 'italic', borderTop: '1px solid var(--apple-gray-4)' }}>
                               <Mail size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '6px' }} />
-                              <strong>Email người nhận ({providerName}):</strong> {providers.find(p => p.id === pid)?.emails}
+                              {providers.find(p => p.id === pid)?.emails}
                             </td>
                           </tr>
                         )}
