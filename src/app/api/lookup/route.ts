@@ -26,7 +26,6 @@ export async function GET() {
 
     const [
       { data: users },
-      owners,
       cps,
       brands,
       { data: operators },
@@ -34,9 +33,8 @@ export async function GET() {
       { data: mappings }
     ] = await Promise.all([
       supabase.from('users').select('id, name'),
-      fetchAll('owners', 'id, name'),
       fetchAll('cps', 'id, name'),
-      fetchAll('brands', 'id, name, owner_id, cp_id'),
+      fetchAll('brands', 'id, name, cp_id'),
       supabase.from('operators').select('id, name').order('order_index'),
       supabase.from('providers').select('id, name, emails'),
       supabase.from('operator_provider_map').select('operator_id, provider_id')
@@ -45,14 +43,11 @@ export async function GET() {
     const userMap: Record<string, string> = {};
     users?.forEach(u => userMap[u.id] = u.name);
 
-    const ownerMap: Record<string, string> = {};
-    owners?.forEach(o => ownerMap[o.id] = o.name);
-
     const cpMap: Record<string, string> = {};
     cps?.forEach(c => cpMap[c.id] = c.name);
 
     const brandMap: Record<string, any> = {};
-    brands?.forEach(b => brandMap[b.id] = { name: b.name, owner: b.owner_id, cp: b.cp_id });
+    brands?.forEach(b => brandMap[b.id] = { name: b.name, cp: b.cp_id });
 
     const opMap: Record<string, string> = {};
     operators?.forEach(op => opMap[op.id] = op.name);
@@ -78,7 +73,6 @@ export async function GET() {
     return new NextResponse(
       JSON.stringify({
         users, userMap,
-        owners, ownerMap,
         cps, cpMap,
         brands, brandMap,
         operators, opMap,

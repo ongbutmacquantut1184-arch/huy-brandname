@@ -13,8 +13,7 @@ export async function GET(request: Request) {
       .from('cancellations')
       .select(`
         id, month, enter_date, note, user_id, updated_at,
-        brand:brands(id, name, cp_id, owner_id),
-        owner:owners(id, name),
+        brand:brands(id, name, cp_id),
         cp:cps(id, name),
         details:cancellation_details(operator_id, provider_id)
       `)
@@ -36,7 +35,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { month, user_id, brand_id, owner_id, cp_id, note, details } = body;
+    const { month, user_id, brand_id, cp_id, note, details } = body;
 
     // Lấy ID lớn nhất hiện tại để sinh ID mới an toàn
     const { data: maxRecord } = await supabase
@@ -64,7 +63,6 @@ export async function POST(request: Request) {
     // KIỂM TRA TRÙNG LẶP CHÍNH XÁC
     // ==========================================
     let dupQuery = supabase.from('cancellations').select('id').eq('month', month).eq('brand_id', brand_id);
-    if (owner_id) dupQuery = dupQuery.eq('owner_id', owner_id); else dupQuery = dupQuery.is('owner_id', null);
     if (cp_id) dupQuery = dupQuery.eq('cp_id', cp_id); else dupQuery = dupQuery.is('cp_id', null);
 
     const { data: existingCancellations } = await dupQuery;
@@ -123,7 +121,6 @@ export async function POST(request: Request) {
         user_id,
         user_name,
         brand_id,
-        owner_id,
         cp_id,
         note,
         enter_date: new Date().toISOString().split('T')[0],
@@ -174,7 +171,7 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
-    const { id, month, user_id, brand_id, owner_id, cp_id, note, details } = body;
+    const { id, month, user_id, brand_id, cp_id, note, details } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'Thiếu ID bản ghi cần cập nhật' }, { status: 400 });
@@ -206,7 +203,6 @@ export async function PUT(request: Request) {
     // KIỂM TRA TRÙNG LẶP CHÍNH XÁC (Trừ bản ghi hiện tại)
     // ==========================================
     let dupQuery = supabase.from('cancellations').select('id').eq('month', month).eq('brand_id', brand_id).neq('id', id);
-    if (owner_id) dupQuery = dupQuery.eq('owner_id', owner_id); else dupQuery = dupQuery.is('owner_id', null);
     if (cp_id) dupQuery = dupQuery.eq('cp_id', cp_id); else dupQuery = dupQuery.is('cp_id', null);
 
     const { data: existingCancellations } = await dupQuery;
@@ -264,7 +260,6 @@ export async function PUT(request: Request) {
         user_id,
         user_name,
         brand_id,
-        owner_id,
         cp_id,
         note,
         updated_at: new Date().toISOString()
@@ -329,7 +324,6 @@ async function syncToGoogleSheets(action: 'create' | 'update', recordId: string,
     recordId: recordId,
     user: body.user_name || body.user_id, // Lấy tên người dùng thay vì ID
     enterDate: enterDate,
-    owner: body.owner_id || '',
     brandId: body.brand_id,
     cp: body.cp_id || '',
     month: body.month,

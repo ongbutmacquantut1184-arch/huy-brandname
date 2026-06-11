@@ -21,10 +21,6 @@ export async function POST(request: Request) {
       tableName = 'cps';
       prefix = 'CP';
       padLength = 5;
-    } else if (type === 'owner') {
-      tableName = 'owners';
-      prefix = 'OW';
-      padLength = 5;
     } else {
       return NextResponse.json({ error: 'Invalid type' }, { status: 400 });
     }
@@ -39,8 +35,7 @@ export async function POST(request: Request) {
       .single();
 
     if (existing) {
-      const typeName = type === 'brand' ? 'Brandname' : type === 'cp' ? 'CP' : 'Đơn vị sử dụng';
-      return NextResponse.json({ error: `${typeName} "${trimmedName}" đã tồn tại trên hệ thống. Vui lòng chọn từ danh sách thay vì thêm mới.` }, { status: 409 });
+      return NextResponse.json(existing, { status: 200 });
     }
 
     // 2. Tự động sinh ID theo rule

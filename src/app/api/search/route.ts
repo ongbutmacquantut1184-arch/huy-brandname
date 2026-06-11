@@ -16,7 +16,6 @@ export async function GET(request: Request) {
         id, month, enter_date, note,
         user:users(name),
         brand:brands(name),
-        owner:owners(name),
         cp:cps(name),
         details:cancellation_details(
           operator:operators(id, name),
@@ -37,7 +36,7 @@ export async function GET(request: Request) {
 
     let results = data || [];
 
-    // Nếu có lọc bằng Từ khóa (Brandname, Owner, CP, Record ID) => Lọc in-memory
+    // Nếu có lọc bằng Từ khóa (Brandname, CP, Record ID) => Lọc in-memory
     if (keyword) {
       const kw = keyword.toLowerCase();
       results = results.filter((item: any) => {
@@ -45,7 +44,6 @@ export async function GET(request: Request) {
           item.id,
           item.note,
           item.brand?.name,
-          item.owner?.name,
           item.cp?.name
         ].join(' ').toLowerCase();
         return str.includes(kw);

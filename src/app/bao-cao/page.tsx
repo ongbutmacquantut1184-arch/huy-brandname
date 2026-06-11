@@ -360,7 +360,6 @@ export default function BaoCaoPage() {
                             <th key={op.id} style={{ textAlign: 'center', padding: '10px 12px', background: 'var(--apple-gray-5)', color: 'var(--apple-gray-1)', fontWeight: 600, borderBottom: '1px solid var(--apple-gray-4)' }}>Hủy {op.name}</th>
                           ))}
                           <th style={{ textAlign: 'left', padding: '10px 12px', background: 'var(--apple-gray-5)', color: 'var(--apple-gray-1)', fontWeight: 600, borderBottom: '1px solid var(--apple-gray-4)' }}>Lĩnh vực (CP)</th>
-                          <th style={{ textAlign: 'left', padding: '10px 12px', background: 'var(--apple-gray-5)', color: 'var(--apple-gray-1)', fontWeight: 600, borderBottom: '1px solid var(--apple-gray-4)' }}>Đơn vị sử dụng</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -382,13 +381,12 @@ export default function BaoCaoPage() {
                                 </td>
                               );
                             })}
-                            <td style={{ padding: '10px 12px', color: 'var(--apple-text-secondary)' }}></td>
-                            <td style={{ padding: '10px 12px', color: 'var(--apple-text-secondary)' }}>{brand.owner}</td>
+                            <td style={{ padding: '10px 12px', color: 'var(--apple-text-secondary)' }}>{brand.cp}</td>
                           </tr>
                         ))}
                         {providers.find(p => p.id === pid)?.emails && (
                           <tr style={{ background: 'var(--apple-gray-6)' }}>
-                            <td colSpan={data.operators.length + 4} style={{ padding: '12px', color: 'var(--apple-gray-1)', fontSize: '13px', fontStyle: 'italic', borderTop: '1px solid var(--apple-gray-4)' }}>
+                            <td colSpan={data.operators.length + 3} style={{ padding: '12px', color: 'var(--apple-gray-1)', fontSize: '13px', fontStyle: 'italic', borderTop: '1px solid var(--apple-gray-4)' }}>
                               <Mail size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '6px' }} />
                               {providers.find(p => p.id === pid)?.emails}
                             </td>

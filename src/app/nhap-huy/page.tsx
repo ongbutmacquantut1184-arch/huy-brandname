@@ -16,15 +16,13 @@ function NhapHuyForm() {
   const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
   const [enterDate, setEnterDate] = useState(new Date().toISOString().slice(0, 10));
   
-  // Brand, CP, Owner Strings (can be free text)
+  // Brand, CP Strings (can be free text)
   const [brandSearch, setBrandSearch] = useState('');
   const [cpSearch, setCpSearch] = useState('');
-  const [ownerSearch, setOwnerSearch] = useState('');
 
   // Selected object tracking (if matches exact lookup)
   const [selectedBrand, setSelectedBrand] = useState<any>(null);
   const [selectedCp, setSelectedCp] = useState<any>(null);
-  const [selectedOwner, setSelectedOwner] = useState<any>(null);
   
   // Operator & Provider States
   const [selectedOperators, setSelectedOperators] = useState<string[]>([]);
@@ -40,19 +38,13 @@ function NhapHuyForm() {
   const [updatedAt, setUpdatedAt] = useState('');
 
   // Dropdown States
-  const [activeDropdown, setActiveDropdown] = useState<'brand' | 'cp' | 'owner' | null>(null);
+  const [activeDropdown, setActiveDropdown] = useState<'brand' | 'cp' | null>(null);
 
-  // Modal States for Add New Master Data
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<'brand' | 'cp' | 'owner'>('brand');
-  const [modalValue, setModalValue] = useState('');
-  const [isSavingMaster, setIsSavingMaster] = useState(false);
-  const [modalError, setModalError] = useState('');
+
 
   // Ref to handle click outside dropdowns
   const brandContainerRef = useRef<HTMLDivElement>(null);
   const cpContainerRef = useRef<HTMLDivElement>(null);
-  const ownerContainerRef = useRef<HTMLDivElement>(null);
 
   // Click outside detection for dropdowns
   useEffect(() => {
@@ -61,9 +53,6 @@ function NhapHuyForm() {
         setActiveDropdown(null);
       }
       if (activeDropdown === 'cp' && cpContainerRef.current && !cpContainerRef.current.contains(event.target as Node)) {
-        setActiveDropdown(null);
-      }
-      if (activeDropdown === 'owner' && ownerContainerRef.current && !ownerContainerRef.current.contains(event.target as Node)) {
         setActiveDropdown(null);
       }
     }
@@ -96,31 +85,21 @@ function NhapHuyForm() {
   // Sync selected objects based on typed text
   useEffect(() => {
     if (!lookups) return;
-    const b = lookups.brands.find((x: any) => x.name.trim().toLowerCase() === brandSearch.trim().toLowerCase());
+    const b = lookups.brands.find((x: any) => x.name.trim() === brandSearch.trim());
     setSelectedBrand(b || null);
     if (b) {
       if (!cpSearch && b.cp_id) {
         const cp = lookups.cps.find((c: any) => c.id === b.cp_id);
         if (cp) { setCpSearch(cp.name); setSelectedCp(cp); }
       }
-      if (!ownerSearch && b.owner_id) {
-        const own = lookups.owners.find((o: any) => o.id === b.owner_id);
-        if (own) { setOwnerSearch(own.name); setSelectedOwner(own); }
-      }
     }
   }, [brandSearch, lookups]);
 
   useEffect(() => {
     if (!lookups) return;
-    const c = lookups.cps.find((x: any) => x.name.trim().toLowerCase() === cpSearch.trim().toLowerCase());
+    const c = lookups.cps.find((x: any) => x.name.trim() === cpSearch.trim());
     setSelectedCp(c || null);
   }, [cpSearch, lookups]);
-
-  useEffect(() => {
-    if (!lookups) return;
-    const o = lookups.owners.find((x: any) => x.name.trim().toLowerCase() === ownerSearch.trim().toLowerCase());
-    setSelectedOwner(o || null);
-  }, [ownerSearch, lookups]);
 
   // Load record detail if in Edit Mode
   useEffect(() => {
@@ -151,11 +130,6 @@ function NhapHuyForm() {
         if (cp) {
           setCpSearch(cp.name);
           setSelectedCp(cp);
-        }
-        const owner = data.owner;
-        if (owner) {
-          setOwnerSearch(owner.name);
-          setSelectedOwner(owner);
         }
 
         const opIds: string[] = [];
@@ -216,13 +190,8 @@ function NhapHuyForm() {
     if (!month) errs.push('Vui lòng chọn Tháng Hủy.');
     if (!enterDate) errs.push('Vui lòng chọn Ngày nhập thông tin hủy.');
     
-    if (!brandSearch) errs.push('Vui lòng nhập Brandname.');
-    else if (!selectedBrand) errs.push(`Brandname "${brandSearch}" chưa có trong hệ thống, vui lòng thêm mới.`);
-
-    if (!cpSearch) errs.push('Vui lòng nhập CP_Name.');
-    else if (!selectedCp) errs.push(`CP_Name "${cpSearch}" chưa có trong hệ thống, vui lòng thêm mới.`);
-
-    if (ownerSearch && !selectedOwner) errs.push(`Company Owner "${ownerSearch}" chưa có trong hệ thống, vui lòng thêm mới.`);
+    if (!brandSearch.trim()) errs.push('Vui lòng nhập Brandname.');
+    if (!cpSearch.trim()) errs.push('Vui lòng nhập CP_Name.');
 
     if (selectedOperators.length === 0) errs.push('Vui lòng chọn ít nhất 1 Nhà mạng & Nhà cung cấp.');
     for (const opId of selectedOperators) {
@@ -236,59 +205,13 @@ function NhapHuyForm() {
     return errs.length === 0;
   };
 
-  const openAddModal = (type: 'brand' | 'cp' | 'owner', initialName: string) => {
-    setModalType(type);
-    setModalValue(initialName);
-    setModalError('');
-    setIsModalOpen(true);
-  };
 
-  const handleSaveMaster = async () => {
-    if (!modalValue.trim()) return;
-    setIsSavingMaster(true);
-    setModalError('');
-    try {
-      const res = await fetch('/api/master-data', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: modalType, name: modalValue.trim() })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        const newItem = data;
-        const updatedLookups = { ...lookups };
-        if (modalType === 'brand') {
-          updatedLookups.brands.push(newItem);
-          setBrandSearch(newItem.name);
-          setSelectedBrand(newItem);
-        } else if (modalType === 'cp') {
-          updatedLookups.cps.push(newItem);
-          setCpSearch(newItem.name);
-          setSelectedCp(newItem);
-        } else if (modalType === 'owner') {
-          updatedLookups.owners.push(newItem);
-          setOwnerSearch(newItem.name);
-          setSelectedOwner(newItem);
-        }
-        setLookups(updatedLookups);
-        setIsModalOpen(false);
-      } else {
-        setModalError(data.error || 'Có lỗi xảy ra khi lưu.');
-      }
-    } catch(e) {
-      setModalError('Lỗi kết nối.');
-    } finally {
-      setIsSavingMaster(false);
-    }
-  };
 
   const handleCancelEdit = () => {
     setBrandSearch('');
     setCpSearch('');
-    setOwnerSearch('');
     setSelectedBrand(null);
     setSelectedCp(null);
-    setSelectedOwner(null);
     setSelectedOperators([]);
     setSelectedProviders({});
     setNote('');
@@ -307,14 +230,57 @@ function NhapHuyForm() {
     setErrors([]);
     setSuccessMsg('');
 
+    let finalBrandId = selectedBrand?.id;
+    if (!finalBrandId && brandSearch.trim()) {
+      try {
+        const res = await fetch('/api/master-data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'brand', name: brandSearch.trim() })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Lỗi tự động thêm mới Brandname');
+        finalBrandId = data.id;
+        
+        // Auto update local lookup state
+        setLookups((prev: any) => ({ ...prev, brands: [...prev.brands, data] }));
+      } catch (err: any) {
+        setErrors([err.message]);
+        setIsSubmitting(false);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+    }
+
+    let finalCpId = selectedCp?.id;
+    if (!finalCpId && cpSearch.trim()) {
+      try {
+        const res = await fetch('/api/master-data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'cp', name: cpSearch.trim() })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Lỗi tự động thêm mới CP');
+        finalCpId = data.id;
+        
+        // Auto update local lookup state
+        setLookups((prev: any) => ({ ...prev, cps: [...prev.cps, data] }));
+      } catch (err: any) {
+        setErrors([err.message]);
+        setIsSubmitting(false);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+    }
+
     const payload = {
       id: editId,
       month,
       user_id: userId,
-      brand_id: selectedBrand.id,
-      owner_id: selectedOwner?.id || null,
-      cp_id: selectedCp?.id || null,
-      note,
+      brand_id: finalBrandId,
+      cp_id: finalCpId || null,
+      note: note.trim(),
       updated_at: updatedAt,
       details: selectedOperators.map(opId => ({
         operator_id: opId,
@@ -338,10 +304,8 @@ function NhapHuyForm() {
       // Reset form
       setBrandSearch('');
       setCpSearch('');
-      setOwnerSearch('');
       setSelectedBrand(null);
       setSelectedCp(null);
-      setSelectedOwner(null);
       setSelectedOperators([]);
       setSelectedProviders({});
       setNote('');
@@ -471,20 +435,8 @@ function NhapHuyForm() {
                 </div>
               )}
             </div>
-            <button className="apple-btn add-btn-small" onClick={() => openAddModal('brand', brandSearch)}>
-              + Thêm mới
-            </button>
-          </div>
-          {brandSearch && !selectedBrand && (
-            <div className="alert-inside-form">
-              <span>
-                ⚠️ Brandname "<strong>{brandSearch}</strong>" chưa có trong hệ thống.
-                <button onClick={() => openAddModal('brand', brandSearch)} className="btn-link-inline">
-                  Thêm mới ngay
-                </button>
-              </span>
             </div>
-          )}
+          </div>
         </div>
 
         {/* CP Name Input */}
@@ -522,71 +474,8 @@ function NhapHuyForm() {
                 </div>
               )}
             </div>
-            <button className="apple-btn add-btn-small" onClick={() => openAddModal('cp', cpSearch)}>
-              + Thêm mới
-            </button>
+            </div>
           </div>
-          {cpSearch && !selectedCp && (
-            <div className="alert-inside-form">
-              <span>
-                ⚠️ CP_Name "<strong>{cpSearch}</strong>" chưa có trong hệ thống.
-                <button onClick={() => openAddModal('cp', cpSearch)} className="btn-link-inline">
-                  Thêm mới ngay
-                </button>
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Company Owner Input */}
-        <div style={{ marginBottom: '20px', position: 'relative' }} ref={ownerContainerRef}>
-          <label className="apple-label">Company Owner</label>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <div style={{ flex: 1, position: 'relative' }}>
-              <input 
-                type="text" 
-                className="apple-input" 
-                placeholder="Nhập tên Chủ sở hữu..." 
-                value={ownerSearch}
-                onChange={e => {
-                  setOwnerSearch(e.target.value);
-                  setActiveDropdown('owner');
-                }}
-                onFocus={() => setActiveDropdown('owner')}
-              />
-              {/* Custom suggestions list */}
-              {activeDropdown === 'owner' && ownerSearch && filteredOwners.length > 0 && (
-                <div className="custom-dropdown">
-                  {filteredOwners.map((o: any) => (
-                    <div 
-                      key={o.id} 
-                      className="dropdown-item"
-                      onClick={() => {
-                        setOwnerSearch(o.name);
-                        setSelectedOwner(o);
-                        setActiveDropdown(null);
-                      }}
-                    >
-                      {o.name}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            <button className="apple-btn add-btn-small" onClick={() => openAddModal('owner', ownerSearch)}>
-              + Thêm mới
-            </button>
-          </div>
-          {ownerSearch && !selectedOwner && (
-            <div className="alert-inside-form">
-              <span>
-                ⚠️ Owner "<strong>{ownerSearch}</strong>" chưa có trong hệ thống.
-                <button onClick={() => openAddModal('owner', ownerSearch)} className="btn-link-inline">
-                  Thêm mới ngay
-                </button>
-              </span>
-            </div>
-          )}
         </div>
 
         {/* Operators & Providers Checkboxes */}
@@ -734,50 +623,7 @@ function NhapHuyForm() {
         </div>
       </div>
 
-      {/* Center Modal for adding new items */}
-      {isModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.45)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div className="animate-scale-up" style={{ background: 'var(--apple-white)', width: '420px', borderRadius: '14px', padding: '24px', boxShadow: '0 20px 40px rgba(0,0,0,0.18)', border: '1px solid var(--apple-gray-4)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--apple-black)' }}>
-                {modalType === 'brand' ? 'Thêm mới Brandname' : modalType === 'cp' ? 'Thêm mới CP_Name' : 'Thêm mới Company Owner'}
-              </h3>
-              <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--apple-gray-1)' }}>
-                <X size={18} />
-              </button>
-            </div>
-            
-            {modalError && (
-              <div style={{ marginBottom: '16px', padding: '10px 14px', background: 'rgba(255, 59, 48, 0.1)', border: '1px solid rgba(255, 59, 48, 0.3)', borderRadius: '8px', color: 'var(--apple-red)', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <AlertCircle size={16} style={{ flexShrink: 0 }} />
-                <span>{modalError}</span>
-              </div>
-            )}
 
-            <div style={{ marginBottom: '24px' }}>
-              <label className="apple-label">Tên hiển thị <span className="text-apple-red">*</span></label>
-              <input 
-                type="text" 
-                className="apple-input" 
-                value={modalValue} 
-                onChange={e => setModalValue(e.target.value)} 
-                placeholder="Nhập tên muốn thêm..."
-                autoFocus
-                onKeyDown={e => e.key === 'Enter' && handleSaveMaster()}
-              />
-            </div>
-
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-              <button className="apple-btn" style={{ background: 'var(--apple-gray-4)', color: 'var(--apple-black)', padding: '8px 16px' }} onClick={() => setIsModalOpen(false)}>
-                Hủy bỏ
-              </button>
-              <button className="apple-btn apple-btn-primary" style={{ padding: '8px 16px' }} onClick={handleSaveMaster} disabled={isSavingMaster}>
-                {isSavingMaster ? 'Đang lưu...' : 'Thêm mới'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
       
       <style dangerouslySetInnerHTML={{__html: `
         .border-red { border-color: var(--apple-red) !important; background-color: rgba(255, 59, 48, 0.05) !important; }

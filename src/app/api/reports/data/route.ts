@@ -35,8 +35,7 @@ export async function GET(request: Request) {
         cancellation:cancellations!inner(
           id,
           brand:brands(name),
-          cp:cps(name),
-          owner:owners(name)
+          cp:cps(name)
         )
       `)
       .eq('cancellation.month', month)
@@ -56,7 +55,7 @@ export async function GET(request: Request) {
     });
 
     // Gom dữ liệu theo provider -> brand
-    const aggMap: Record<string, Record<string, { brandName: string; cp: string; owner: string; operators: Set<string> }>> = {};
+    const aggMap: Record<string, Record<string, { brandName: string; cp: string; operators: Set<string> }>> = {};
 
     details?.forEach((item: any) => {
       const pid = item.provider_id;
@@ -65,7 +64,6 @@ export async function GET(request: Request) {
 
       const brandName = cancel.brand.name;
       const cpName = cancel.cp?.name || '';
-      const ownerName = cancel.owner?.name || '';
       const opId = item.operator_id;
 
       if (!aggMap[pid]) aggMap[pid] = {};
@@ -77,7 +75,6 @@ export async function GET(request: Request) {
         aggMap[pid][brandKey] = {
           brandName,
           cp: cpName,
-          owner: ownerName,
           operators: new Set<string>()
         };
       }
@@ -97,7 +94,6 @@ export async function GET(request: Request) {
         return {
           brandName: b.brandName,
           cp: b.cp,
-          owner: b.owner,
           operatorStatus
         };
       });

@@ -38,8 +38,7 @@ export async function GET(request: Request) {
         provider_id,
         cancellation:cancellations!inner(
           brand:brands(name),
-          cp:cps(name),
-          owner:owners(name)
+          cp:cps(name)
         )
       `)
       .eq('cancellation.month', month)
@@ -48,7 +47,7 @@ export async function GET(request: Request) {
     if (detailsError) throw detailsError;
 
     // 3. Gom nhóm dữ liệu theo provider -> brand
-    const aggMap: Record<string, Record<string, { brandName: string; cp: string; owner: string; operators: Set<string> }>> = {};
+    const aggMap: Record<string, Record<string, { brandName: string; cp: string; operators: Set<string> }>> = {};
     selectedProviderIds.forEach(pid => {
       aggMap[pid] = {};
     });
@@ -60,7 +59,6 @@ export async function GET(request: Request) {
 
       const brandName = cancel.brand.name;
       const cpName = cancel.cp?.name || '';
-      const ownerName = cancel.owner?.name || '';
       const opId = item.operator_id;
 
       if (!aggMap[pid]) aggMap[pid] = {};
@@ -70,7 +68,6 @@ export async function GET(request: Request) {
         aggMap[pid][brandKey] = {
           brandName,
           cp: cpName,
-          owner: ownerName,
           operators: new Set<string>()
         };
       }
@@ -94,7 +91,7 @@ export async function GET(request: Request) {
         // Headers
         const headers = ['STT', 'Brandname'];
         operators?.forEach(op => headers.push(`Hủy ${op.name}`));
-        headers.push('Lĩnh vực', 'Đơn vị sử dụng Brandname');
+        headers.push('Lĩnh vực');
         csvContent += headers.map(h => `"${h}"`).join(',') + '\n';
 
         // Data Rows
@@ -103,8 +100,7 @@ export async function GET(request: Request) {
           operators?.forEach(op => {
             row.push(brand.operators.has(op.id) ? 'Yes' : '-');
           });
-          row.push('');
-          row.push(brand.owner || '');
+          row.push(''); // Lĩnh vực CP
           
           csvContent += row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',') + '\n';
         });
@@ -142,10 +138,9 @@ export async function GET(request: Request) {
 
       const worksheet = workbook.addWorksheet(sheetName);
 
-      // Header row
       const headers = ['STT', 'Brandname'];
       operators?.forEach(op => headers.push(`Hủy ${op.name}`));
-      headers.push('Lĩnh vực', 'Đơn vị sử dụng Brandname');
+      headers.push('Lĩnh vực');
       
       const headerRow = worksheet.addRow(headers);
       
@@ -166,8 +161,7 @@ export async function GET(request: Request) {
         operators?.forEach(op => {
           row.push(brand.operators.has(op.id) ? 'Yes' : '-');
         });
-        row.push('');
-        row.push(brand.owner || '');
+        row.push(brand.cp || '');
         worksheet.addRow(row);
       });
 
