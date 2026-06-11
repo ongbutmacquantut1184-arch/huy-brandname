@@ -48,7 +48,8 @@ CREATE TABLE cancellations (
     cp_id TEXT REFERENCES cps(id) ON DELETE SET NULL,
     month TEXT NOT NULL,
     note TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
 CREATE TABLE cancellation_details (

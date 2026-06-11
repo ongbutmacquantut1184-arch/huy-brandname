@@ -37,6 +37,7 @@ function NhapHuyForm() {
   const [successMsg, setSuccessMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [updatedAt, setUpdatedAt] = useState('');
 
   // Dropdown States
   const [activeDropdown, setActiveDropdown] = useState<'brand' | 'cp' | 'owner' | null>(null);
@@ -73,28 +74,21 @@ function NhapHuyForm() {
 
   // Fetch Lookups
   useEffect(() => {
-    const cached = sessionStorage.getItem('lookups_cache');
-    if (cached) {
-      try {
-        setLookups(JSON.parse(cached));
-        setLoading(false);
-      } catch (e) {}
-    }
     fetch('/api/lookup')
       .then(r => r.json())
       .then(data => {
         setLookups(data);
         setLoading(false);
-        sessionStorage.setItem('lookups_cache', JSON.stringify(data));
       });
   }, []);
 
   const handleRefreshLookups = () => {
+    setLoading(true);
     fetch('/api/lookup')
       .then(r => r.json())
       .then(data => {
         setLookups(data);
-        sessionStorage.setItem('lookups_cache', JSON.stringify(data));
+        setLoading(false);
       });
   };
 
@@ -145,6 +139,7 @@ function NhapHuyForm() {
         setMonth(data.month || '');
         setEnterDate(data.enter_date || '');
         setNote(data.note || '');
+        setUpdatedAt(data.updated_at || '');
         
         const brand = data.brand;
         if (brand) {
@@ -316,6 +311,7 @@ function NhapHuyForm() {
       owner_id: selectedOwner?.id || null,
       cp_id: selectedCp?.id || null,
       note,
+      updated_at: updatedAt,
       details: selectedOperators.map(opId => ({
         operator_id: opId,
         provider_ids: selectedProviders[opId]

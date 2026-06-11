@@ -12,7 +12,7 @@ export async function GET(request: Request) {
     const { data: cancellation, error } = await supabase
       .from('cancellations')
       .select(`
-        id, month, enter_date, note, user_id,
+        id, month, enter_date, note, user_id, updated_at,
         brand:brands(id, name, cp_id, owner_id),
         owner:owners(id, name),
         cp:cps(id, name),
@@ -55,7 +55,8 @@ export async function POST(request: Request) {
         owner_id,
         cp_id,
         note,
-        enter_date: new Date().toISOString().split('T')[0]
+        enter_date: new Date().toISOString().split('T')[0],
+        updated_at: new Date().toISOString()
       })
       .select('id')
       .single();
@@ -108,6 +109,24 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Thiếu ID bản ghi cần cập nhật' }, { status: 400 });
     }
 
+    // 0. Lấy bản ghi hiện tại để kiểm tra updated_at
+    const { data: currentData, error: fetchError } = await supabase
+      .from('cancellations')
+      .select('updated_at')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !currentData) {
+      return NextResponse.json({ error: 'Không tìm thấy bản ghi hoặc lỗi kết nối' }, { status: 404 });
+    }
+
+    // Nếu client gửi lên updated_at, và nó khác với trong DB -> có người khác đã sửa
+    if (body.updated_at && currentData.updated_at && body.updated_at !== currentData.updated_at) {
+      return NextResponse.json({ 
+        error: 'Bản ghi này vừa được cập nhật bởi một người khác. Vui lòng làm mới trang (F5) để lấy dữ liệu mới nhất trước khi lưu!' 
+      }, { status: 409 });
+    }
+
     // 1. Cập nhật bảng cancellations
     const { error: cancelError } = await supabase
       .from('cancellations')
@@ -117,7 +136,8 @@ export async function PUT(request: Request) {
         brand_id,
         owner_id,
         cp_id,
-        note
+        note,
+        updated_at: new Date().toISOString()
       })
       .eq('id', id);
 
