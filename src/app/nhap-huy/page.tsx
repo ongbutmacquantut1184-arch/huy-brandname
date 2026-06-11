@@ -435,7 +435,6 @@ function NhapHuyForm() {
                 </div>
               )}
             </div>
-            </div>
           </div>
         </div>
 
@@ -473,7 +472,6 @@ function NhapHuyForm() {
                   ))}
                 </div>
               )}
-            </div>
             </div>
           </div>
         </div>
