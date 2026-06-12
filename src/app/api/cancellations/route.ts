@@ -60,7 +60,7 @@ export async function POST(request: Request) {
     const user_name = user?.name || '';
 
     // ==========================================
-    // KIỂM TRA TRÙNG LẶP CHÍNH XÁC
+    // KIỂM TRA TRÙNG LẶP (Intersection)
     // ==========================================
     let dupQuery = supabase.from('cancellations').select('id').eq('month', month).eq('brand_id', brand_id);
     if (cp_id) dupQuery = dupQuery.eq('cp_id', cp_id); else dupQuery = dupQuery.is('cp_id', null);
@@ -75,10 +75,9 @@ export async function POST(request: Request) {
         .in('cancellation_id', existingIds);
 
       if (existingDetails) {
-        const detailsMap: Record<string, { operator_id: string, provider_id: string }[]> = {};
+        const existingSet = new Map<string, string>();
         existingDetails.forEach(d => {
-          if (!detailsMap[d.cancellation_id]) detailsMap[d.cancellation_id] = [];
-          detailsMap[d.cancellation_id].push({ operator_id: d.operator_id, provider_id: d.provider_id });
+          existingSet.set(`${d.operator_id}_${d.provider_id}`, d.cancellation_id);
         });
 
         const currentFlatDetails: { operator_id: string, provider_id: string }[] = [];
@@ -88,24 +87,26 @@ export async function POST(request: Request) {
           });
         });
 
-        const sortDetails = (arr: any[]) => arr.sort((a, b) => a.operator_id.localeCompare(b.operator_id) || a.provider_id.localeCompare(b.provider_id));
-        sortDetails(currentFlatDetails);
-
-        for (const cId in detailsMap) {
-          const exDetails = detailsMap[cId];
-          if (exDetails.length !== currentFlatDetails.length) continue;
-          sortDetails(exDetails);
-
-          let isExactMatch = true;
-          for (let i = 0; i < exDetails.length; i++) {
-            if (exDetails[i].operator_id !== currentFlatDetails[i].operator_id || exDetails[i].provider_id !== currentFlatDetails[i].provider_id) {
-              isExactMatch = false;
-              break;
-            }
+        const overlapDetails: any[] = [];
+        currentFlatDetails.forEach(curr => {
+          const key = `${curr.operator_id}_${curr.provider_id}`;
+          if (existingSet.has(key)) {
+            overlapDetails.push({ provider_id: curr.provider_id, cancellation_id: existingSet.get(key) });
           }
+        });
 
-          if (isExactMatch) {
-            return NextResponse.json({ error: `Đã tồn tại phiếu hủy với nội dung y hệt trên hệ thống (Mã phiếu: ${cId}). Vui lòng kiểm tra và cập nhật phiếu cũ thay vì thêm mới.` }, { status: 409 });
+        if (overlapDetails.length > 0) {
+          const { data: provs } = await supabase.from('providers').select('id, name');
+          const provMap: Record<string, string> = {};
+          provs?.forEach(p => provMap[p.id] = p.name);
+
+          const cIds = Array.from(new Set(overlapDetails.map(o => o.cancellation_id))).join(', ');
+          
+          if (overlapDetails.length === currentFlatDetails.length) {
+            return NextResponse.json({ error: `Tất cả các nhà cung cấp bạn chọn đều đã được hủy trong các phiếu trước (${cIds}). Không có dữ liệu mới nào để lưu.` }, { status: 409 });
+          } else {
+            const overlapNames = Array.from(new Set(overlapDetails.map(o => provMap[o.provider_id] || o.provider_id))).join(', ');
+            return NextResponse.json({ error: `Các nhà cung cấp [${overlapNames}] đã được hủy ở các phiếu trước (${cIds}). Vui lòng bỏ tick các mục này để tiếp tục lưu.` }, { status: 409 });
           }
         }
       }
@@ -200,7 +201,7 @@ export async function PUT(request: Request) {
     const user_name = user?.name || '';
 
     // ==========================================
-    // KIỂM TRA TRÙNG LẶP CHÍNH XÁC (Trừ bản ghi hiện tại)
+    // KIỂM TRA TRÙNG LẶP (Intersection - Trừ bản ghi hiện tại)
     // ==========================================
     let dupQuery = supabase.from('cancellations').select('id').eq('month', month).eq('brand_id', brand_id).neq('id', id);
     if (cp_id) dupQuery = dupQuery.eq('cp_id', cp_id); else dupQuery = dupQuery.is('cp_id', null);
@@ -215,10 +216,9 @@ export async function PUT(request: Request) {
         .in('cancellation_id', existingIds);
 
       if (existingDetails) {
-        const detailsMap: Record<string, { operator_id: string, provider_id: string }[]> = {};
+        const existingSet = new Map<string, string>();
         existingDetails.forEach(d => {
-          if (!detailsMap[d.cancellation_id]) detailsMap[d.cancellation_id] = [];
-          detailsMap[d.cancellation_id].push({ operator_id: d.operator_id, provider_id: d.provider_id });
+          existingSet.set(`${d.operator_id}_${d.provider_id}`, d.cancellation_id);
         });
 
         const currentFlatDetails: { operator_id: string, provider_id: string }[] = [];
@@ -228,24 +228,26 @@ export async function PUT(request: Request) {
           });
         });
 
-        const sortDetails = (arr: any[]) => arr.sort((a, b) => a.operator_id.localeCompare(b.operator_id) || a.provider_id.localeCompare(b.provider_id));
-        sortDetails(currentFlatDetails);
-
-        for (const cId in detailsMap) {
-          const exDetails = detailsMap[cId];
-          if (exDetails.length !== currentFlatDetails.length) continue;
-          sortDetails(exDetails);
-
-          let isExactMatch = true;
-          for (let i = 0; i < exDetails.length; i++) {
-            if (exDetails[i].operator_id !== currentFlatDetails[i].operator_id || exDetails[i].provider_id !== currentFlatDetails[i].provider_id) {
-              isExactMatch = false;
-              break;
-            }
+        const overlapDetails: any[] = [];
+        currentFlatDetails.forEach(curr => {
+          const key = `${curr.operator_id}_${curr.provider_id}`;
+          if (existingSet.has(key)) {
+            overlapDetails.push({ provider_id: curr.provider_id, cancellation_id: existingSet.get(key) });
           }
+        });
 
-          if (isExactMatch) {
-            return NextResponse.json({ error: `Đã tồn tại phiếu hủy khác với nội dung y hệt trên hệ thống (Mã phiếu: ${cId}). Bạn không thể lưu phiếu trùng lặp.` }, { status: 409 });
+        if (overlapDetails.length > 0) {
+          const { data: provs } = await supabase.from('providers').select('id, name');
+          const provMap: Record<string, string> = {};
+          provs?.forEach(p => provMap[p.id] = p.name);
+
+          const cIds = Array.from(new Set(overlapDetails.map(o => o.cancellation_id))).join(', ');
+          
+          if (overlapDetails.length === currentFlatDetails.length) {
+            return NextResponse.json({ error: `Tất cả các nhà cung cấp bạn chọn đều đã được hủy trong các phiếu khác (${cIds}). Bạn không thể lưu dữ liệu bị trùng lặp hoàn toàn.` }, { status: 409 });
+          } else {
+            const overlapNames = Array.from(new Set(overlapDetails.map(o => provMap[o.provider_id] || o.provider_id))).join(', ');
+            return NextResponse.json({ error: `Các nhà cung cấp [${overlapNames}] đã được hủy ở các phiếu khác (${cIds}). Vui lòng bỏ tick các mục này để tiếp tục lưu.` }, { status: 409 });
           }
         }
       }

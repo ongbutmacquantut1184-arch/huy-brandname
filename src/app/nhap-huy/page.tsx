@@ -40,6 +40,9 @@ function NhapHuyForm() {
   // Dropdown States
   const [activeDropdown, setActiveDropdown] = useState<'brand' | 'cp' | null>(null);
 
+  // Overlap State
+  const [overlapProviders, setOverlapProviders] = useState<Record<string, string>>({});
+
 
 
   // Ref to handle click outside dropdowns
@@ -100,6 +103,32 @@ function NhapHuyForm() {
     const c = lookups.cps.find((x: any) => x.name.trim() === cpSearch.trim());
     setSelectedCp(c || null);
   }, [cpSearch, lookups]);
+
+  // Fetch Overlap Providers
+  useEffect(() => {
+    if (!month || !selectedBrand) {
+      setOverlapProviders({});
+      return;
+    }
+    
+    // Only fetch if Brand is known (has ID). If new brand, it won't have overlaps.
+    if (!selectedBrand.id) return;
+    
+    const cpIdStr = selectedCp ? selectedCp.id : '';
+    const excludeIdStr = isEditMode && editId ? editId : '';
+    
+    fetch(`/api/cancellations/overlap?month=${month}&brand_id=${selectedBrand.id}&cp_id=${cpIdStr}&exclude_id=${excludeIdStr}`)
+      .then(r => r.json())
+      .then(data => {
+        if (!Array.isArray(data)) return;
+        const map: Record<string, string> = {};
+        data.forEach((item: any) => {
+          map[item.provider_id] = item.cancellation_id;
+        });
+        setOverlapProviders(map);
+      })
+      .catch(err => console.error("Error fetching overlaps:", err));
+  }, [month, selectedBrand, selectedCp, isEditMode, editId]);
 
   // Load record detail if in Edit Mode
   useEffect(() => {
@@ -174,6 +203,7 @@ function NhapHuyForm() {
   };
 
   const handleProviderToggle = (opId: string, provId: string) => {
+    if (overlapProviders[provId]) return; // Cannot toggle if already cancelled
     setSelectedProviders(prev => {
       const current = prev[opId] || [];
       if (current.includes(provId)) {
@@ -507,27 +537,39 @@ function NhapHuyForm() {
                       ) : (
                         providers.map((p: any) => {
                           const isProvChecked = selectedProvs.includes(p.id);
+                          const overlapId = overlapProviders[p.id];
+                          const isDisabled = !!overlapId;
+
                           return (
                             <label key={p.id} style={{
                               display: 'inline-flex', alignItems: 'center', gap: '6px',
                               padding: '6px 12px', borderRadius: '100px',
-                              border: `1px solid ${isProvChecked ? 'var(--apple-blue)' : 'var(--apple-gray-3)'}`,
-                              background: isProvChecked ? 'rgba(0,122,255,0.08)' : 'var(--apple-white)',
-                              color: isProvChecked ? 'var(--apple-blue)' : 'var(--apple-text-secondary)',
-                              cursor: 'pointer', fontSize: '13px', transition: 'all 0.2s',
+                              border: `1px solid ${isDisabled ? 'var(--apple-gray-3)' : isProvChecked ? 'var(--apple-blue)' : 'var(--apple-gray-3)'}`,
+                              background: isDisabled ? 'var(--apple-gray-5)' : isProvChecked ? 'rgba(0,122,255,0.08)' : 'var(--apple-white)',
+                              color: isDisabled ? 'var(--apple-gray-2)' : isProvChecked ? 'var(--apple-blue)' : 'var(--apple-text-secondary)',
+                              cursor: isDisabled ? 'not-allowed' : 'pointer', fontSize: '13px', transition: 'all 0.2s',
                               whiteSpace: 'normal',
                               wordBreak: 'break-word',
                               textAlign: 'left',
-                              justifyContent: 'flex-start'
+                              justifyContent: 'flex-start',
+                              opacity: isDisabled ? 0.7 : 1
                             }}>
                               <input 
                                 type="checkbox" 
                                 checked={isProvChecked}
+                                disabled={isDisabled}
                                 onChange={(e) => { e.stopPropagation(); handleProviderToggle(opId, p.id); }}
                                 style={{ display: 'none' }}
                               />
-                              {isProvChecked && <CheckCircle size={14} style={{ flexShrink: 0 }} />}
-                              <span style={{ fontWeight: isProvChecked ? 500 : 400 }}>{p.name}</span>
+                              {isProvChecked && !isDisabled && <CheckCircle size={14} style={{ flexShrink: 0 }} />}
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                <span style={{ fontWeight: isProvChecked && !isDisabled ? 500 : 400 }}>{p.name}</span>
+                                {overlapId && (
+                                  <span style={{ fontSize: '11px', color: 'var(--apple-red)', fontStyle: 'italic' }}>
+                                    (Trùng phiếu {overlapId})
+                                  </span>
+                                )}
+                              </div>
                             </label>
                           );
                         })
