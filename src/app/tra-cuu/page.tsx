@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useEffect, useState, useRef, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Search as SearchIcon, Filter, Clock, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 
 const formatMonth = (m: string) => {
@@ -20,8 +20,11 @@ const formatDate = (dateStr: string) => {
   return `${dd}/${mm}/${yyyy}`;
 };
 
-export default function TraCuuPage() {
+function TraCuuContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const idParam = searchParams.get('id');
+  
   const [lookups, setLookups] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -95,6 +98,35 @@ export default function TraCuuPage() {
       setIsSearching(false);
     }
   };
+
+  useEffect(() => {
+    if (lookups && idParam && !hasSearched && !isSearching) {
+      setKeyword(idParam);
+      
+      const params = new URLSearchParams();
+      params.append('keyword', idParam);
+      
+      setIsSearching(true);
+      setHasSearched(true);
+      setExpandedId(null);
+      
+      fetch('/api/search?' + params.toString())
+        .then(res => res.json())
+        .then(data => {
+          setResults(data);
+          if (data && data.length > 0) {
+            setExpandedId(data[0].id);
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          setResults([]);
+        })
+        .finally(() => {
+          setIsSearching(false);
+        });
+    }
+  }, [lookups, idParam, hasSearched, isSearching]);
 
   if (loading) return <div className="p-8 text-center text-gray">Đang tải dữ liệu danh mục...</div>;
 
@@ -356,5 +388,13 @@ export default function TraCuuPage() {
         }
       `}} />
     </div>
+  );
+}
+
+export default function TraCuuPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-gray">Đang tải dữ liệu...</div>}>
+      <TraCuuContent />
+    </Suspense>
   );
 }

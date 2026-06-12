@@ -565,9 +565,15 @@ function NhapHuyForm() {
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                                 <span style={{ fontWeight: isProvChecked && !isDisabled ? 500 : 400 }}>{p.name}</span>
                                 {overlapId && (
-                                  <span style={{ fontSize: '11px', color: 'var(--apple-red)', fontStyle: 'italic' }}>
-                                    (Trùng phiếu {overlapId})
-                                  </span>
+                                  <a 
+                                    href={`/tra-cuu?id=${overlapId}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    style={{ fontSize: '11px', color: 'var(--apple-blue)', fontStyle: 'italic', textDecoration: 'underline', cursor: 'pointer', pointerEvents: 'auto' }}
+                                  >
+                                    (Đã nhập trong tháng này)
+                                  </a>
                                 )}
                               </div>
                             </label>
