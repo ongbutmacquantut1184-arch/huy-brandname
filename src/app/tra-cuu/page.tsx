@@ -141,12 +141,12 @@ function TraCuuContent() {
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       
       {/* Top Bar: Filters */}
-      <div className="apple-card p-4" style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'flex-end' }}>
-        <div style={{ flex: '1 1 200px' }}>
+      <div className="apple-card p-4" style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'flex-end', zIndex: 10, overflow: 'visible' }}>
+        <div style={{ flex: '1 1 200px', zIndex: 50 }}>
           <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, marginBottom: '8px', color: 'var(--apple-gray-1)' }}>
             <Filter size={14} style={{ display: 'inline', marginBottom: '-2px', marginRight: '4px' }}/> Từ khóa
           </label>
-          <div style={{ position: 'relative' }} ref={keywordContainerRef}>
+          <div style={{ position: 'relative', zIndex: 50 }} ref={keywordContainerRef}>
             <SearchIcon size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--apple-gray-1)', zIndex: 5 }} />
             <input 
               type="text" 
