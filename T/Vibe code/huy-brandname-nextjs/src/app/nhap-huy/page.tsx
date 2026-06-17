@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Save, AlertCircle, Info, CheckCircle, X } from 'lucide-react';
+import { Save, AlertCircle, Info, CheckCircle, X, RefreshCw } from 'lucide-react';
 
 function NhapHuyForm() {
   const [lookups, setLookups] = useState<any>(null);
@@ -16,15 +16,13 @@ function NhapHuyForm() {
   const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
   const [enterDate, setEnterDate] = useState(new Date().toISOString().slice(0, 10));
   
-  // Brand, CP, Owner Strings (can be free text)
+  // Brand, CP Strings (can be free text)
   const [brandSearch, setBrandSearch] = useState('');
   const [cpSearch, setCpSearch] = useState('');
-  const [ownerSearch, setOwnerSearch] = useState('');
 
   // Selected object tracking (if matches exact lookup)
   const [selectedBrand, setSelectedBrand] = useState<any>(null);
   const [selectedCp, setSelectedCp] = useState<any>(null);
-  const [selectedOwner, setSelectedOwner] = useState<any>(null);
   
   // Operator & Provider States
   const [selectedOperators, setSelectedOperators] = useState<string[]>([]);
@@ -37,20 +35,19 @@ function NhapHuyForm() {
   const [successMsg, setSuccessMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [updatedAt, setUpdatedAt] = useState('');
 
   // Dropdown States
-  const [activeDropdown, setActiveDropdown] = useState<'brand' | 'cp' | 'owner' | null>(null);
+  const [activeDropdown, setActiveDropdown] = useState<'brand' | 'cp' | null>(null);
 
-  // Modal States for Add New Master Data
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<'brand' | 'cp' | 'owner' | null>(null);
-  const [modalValue, setModalValue] = useState('');
-  const [isSavingMaster, setIsSavingMaster] = useState(false);
+  // Overlap State
+  const [overlapProviders, setOverlapProviders] = useState<Record<string, string>>({});
+
+
 
   // Ref to handle click outside dropdowns
   const brandContainerRef = useRef<HTMLDivElement>(null);
   const cpContainerRef = useRef<HTMLDivElement>(null);
-  const ownerContainerRef = useRef<HTMLDivElement>(null);
 
   // Click outside detection for dropdowns
   useEffect(() => {
@@ -59,9 +56,6 @@ function NhapHuyForm() {
         setActiveDropdown(null);
       }
       if (activeDropdown === 'cp' && cpContainerRef.current && !cpContainerRef.current.contains(event.target as Node)) {
-        setActiveDropdown(null);
-      }
-      if (activeDropdown === 'owner' && ownerContainerRef.current && !ownerContainerRef.current.contains(event.target as Node)) {
         setActiveDropdown(null);
       }
     }
@@ -81,34 +75,60 @@ function NhapHuyForm() {
       });
   }, []);
 
+  const handleRefreshLookups = () => {
+    setLoading(true);
+    fetch('/api/lookup')
+      .then(r => r.json())
+      .then(data => {
+        setLookups(data);
+        setLoading(false);
+      });
+  };
+
   // Sync selected objects based on typed text
   useEffect(() => {
     if (!lookups) return;
-    const b = lookups.brands.find((x: any) => x.name.toLowerCase() === brandSearch.toLowerCase());
+    const b = lookups.brands.find((x: any) => x.name.trim() === brandSearch.trim());
     setSelectedBrand(b || null);
     if (b) {
       if (!cpSearch && b.cp_id) {
         const cp = lookups.cps.find((c: any) => c.id === b.cp_id);
         if (cp) { setCpSearch(cp.name); setSelectedCp(cp); }
       }
-      if (!ownerSearch && b.owner_id) {
-        const own = lookups.owners.find((o: any) => o.id === b.owner_id);
-        if (own) { setOwnerSearch(own.name); setSelectedOwner(own); }
-      }
     }
   }, [brandSearch, lookups]);
 
   useEffect(() => {
     if (!lookups) return;
-    const c = lookups.cps.find((x: any) => x.name.toLowerCase() === cpSearch.toLowerCase());
+    const c = lookups.cps.find((x: any) => x.name.trim() === cpSearch.trim());
     setSelectedCp(c || null);
   }, [cpSearch, lookups]);
 
+  // Fetch Overlap Providers
   useEffect(() => {
-    if (!lookups) return;
-    const o = lookups.owners.find((x: any) => x.name.toLowerCase() === ownerSearch.toLowerCase());
-    setSelectedOwner(o || null);
-  }, [ownerSearch, lookups]);
+    if (!month || !selectedBrand) {
+      setOverlapProviders({});
+      return;
+    }
+    
+    // Only fetch if Brand is known (has ID). If new brand, it won't have overlaps.
+    if (!selectedBrand.id) return;
+    
+    const cpIdStr = selectedCp ? selectedCp.id : '';
+    const excludeIdStr = isEditMode && editId ? editId : '';
+    
+    fetch(`/api/cancellations/overlap?month=${month}&brand_id=${selectedBrand.id}&cp_id=${cpIdStr}&exclude_id=${excludeIdStr}`)
+      .then(r => r.json())
+      .then(data => {
+        if (!Array.isArray(data)) return;
+        const map: Record<string, string> = {};
+        data.forEach((item: any) => {
+          map[item.provider_id] = item.cancellation_id;
+        });
+        setOverlapProviders(map);
+      })
+      .catch(err => console.error("Error fetching overlaps:", err));
+  }, [month, selectedBrand, selectedCp, isEditMode, editId]);
 
   // Load record detail if in Edit Mode
   useEffect(() => {
@@ -128,21 +148,17 @@ function NhapHuyForm() {
         setMonth(data.month || '');
         setEnterDate(data.enter_date || '');
         setNote(data.note || '');
+        setUpdatedAt(data.updated_at || '');
         
-        const brand = lookups.brands.find((b: any) => b.id === data.brand_id);
+        const brand = data.brand;
         if (brand) {
           setBrandSearch(brand.name);
           setSelectedBrand(brand);
         }
-        const cp = lookups.cps.find((c: any) => c.id === data.cp_id);
+        const cp = data.cp;
         if (cp) {
           setCpSearch(cp.name);
           setSelectedCp(cp);
-        }
-        const owner = lookups.owners.find((o: any) => o.id === data.owner_id);
-        if (owner) {
-          setOwnerSearch(owner.name);
-          setSelectedOwner(owner);
         }
 
         const opIds: string[] = [];
@@ -187,6 +203,7 @@ function NhapHuyForm() {
   };
 
   const handleProviderToggle = (opId: string, provId: string) => {
+    if (overlapProviders[provId]) return; // Cannot toggle if already cancelled
     setSelectedProviders(prev => {
       const current = prev[opId] || [];
       if (current.includes(provId)) {
@@ -203,13 +220,8 @@ function NhapHuyForm() {
     if (!month) errs.push('Vui lòng chọn Tháng Hủy.');
     if (!enterDate) errs.push('Vui lòng chọn Ngày nhập thông tin hủy.');
     
-    if (!brandSearch) errs.push('Vui lòng nhập Brandname.');
-    else if (!selectedBrand) errs.push(`Brandname "${brandSearch}" chưa có trong hệ thống, vui lòng thêm mới.`);
-
-    if (!cpSearch) errs.push('Vui lòng nhập CP_Name.');
-    else if (!selectedCp) errs.push(`CP_Name "${cpSearch}" chưa có trong hệ thống, vui lòng thêm mới.`);
-
-    if (ownerSearch && !selectedOwner) errs.push(`Company Owner "${ownerSearch}" chưa có trong hệ thống, vui lòng thêm mới.`);
+    if (!brandSearch.trim()) errs.push('Vui lòng nhập Brandname.');
+    if (!cpSearch.trim()) errs.push('Vui lòng nhập CP_Name.');
 
     if (selectedOperators.length === 0) errs.push('Vui lòng chọn ít nhất 1 Nhà mạng & Nhà cung cấp.');
     for (const opId of selectedOperators) {
@@ -223,56 +235,13 @@ function NhapHuyForm() {
     return errs.length === 0;
   };
 
-  const openAddModal = (type: 'brand' | 'cp' | 'owner', initialName: string) => {
-    setModalType(type);
-    setModalValue(initialName);
-    setIsModalOpen(true);
-  };
 
-  const handleSaveMaster = async () => {
-    if (!modalValue.trim()) return;
-    setIsSavingMaster(true);
-    try {
-      const res = await fetch('/api/master-data', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: modalType, name: modalValue.trim() })
-      });
-      if (res.ok) {
-        const newItem = await res.json();
-        const updatedLookups = { ...lookups };
-        if (modalType === 'brand') {
-          updatedLookups.brands.push(newItem);
-          setBrandSearch(newItem.name);
-          setSelectedBrand(newItem);
-        } else if (modalType === 'cp') {
-          updatedLookups.cps.push(newItem);
-          setCpSearch(newItem.name);
-          setSelectedCp(newItem);
-        } else if (modalType === 'owner') {
-          updatedLookups.owners.push(newItem);
-          setOwnerSearch(newItem.name);
-          setSelectedOwner(newItem);
-        }
-        setLookups(updatedLookups);
-        setIsModalOpen(false);
-      } else {
-        alert('Có lỗi xảy ra khi lưu.');
-      }
-    } catch(e) {
-      alert('Lỗi kết nối.');
-    } finally {
-      setIsSavingMaster(false);
-    }
-  };
 
   const handleCancelEdit = () => {
     setBrandSearch('');
     setCpSearch('');
-    setOwnerSearch('');
     setSelectedBrand(null);
     setSelectedCp(null);
-    setSelectedOwner(null);
     setSelectedOperators([]);
     setSelectedProviders({});
     setNote('');
@@ -291,14 +260,58 @@ function NhapHuyForm() {
     setErrors([]);
     setSuccessMsg('');
 
+    let finalBrandId = selectedBrand?.id;
+    if (!finalBrandId && brandSearch.trim()) {
+      try {
+        const res = await fetch('/api/master-data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'brand', name: brandSearch.trim() })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Lỗi tự động thêm mới Brandname');
+        finalBrandId = data.id;
+        
+        // Auto update local lookup state
+        setLookups((prev: any) => ({ ...prev, brands: [...prev.brands, data] }));
+      } catch (err: any) {
+        setErrors([err.message]);
+        setIsSubmitting(false);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+    }
+
+    let finalCpId = selectedCp?.id;
+    if (!finalCpId && cpSearch.trim()) {
+      try {
+        const res = await fetch('/api/master-data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'cp', name: cpSearch.trim() })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Lỗi tự động thêm mới CP');
+        finalCpId = data.id;
+        
+        // Auto update local lookup state
+        setLookups((prev: any) => ({ ...prev, cps: [...prev.cps, data] }));
+      } catch (err: any) {
+        setErrors([err.message]);
+        setIsSubmitting(false);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+    }
+
     const payload = {
       id: editId,
       month,
       user_id: userId,
-      brand_id: selectedBrand.id,
-      owner_id: selectedOwner?.id || null,
-      cp_id: selectedCp?.id || null,
-      note,
+      brand_id: finalBrandId,
+      cp_id: finalCpId || null,
+      note: note.trim(),
+      updated_at: updatedAt,
       details: selectedOperators.map(opId => ({
         operator_id: opId,
         provider_ids: selectedProviders[opId]
@@ -321,10 +334,8 @@ function NhapHuyForm() {
       // Reset form
       setBrandSearch('');
       setCpSearch('');
-      setOwnerSearch('');
       setSelectedBrand(null);
       setSelectedCp(null);
-      setSelectedOwner(null);
       setSelectedOperators([]);
       setSelectedProviders({});
       setNote('');
@@ -337,6 +348,7 @@ function NhapHuyForm() {
       setTimeout(() => setSuccessMsg(''), 5000);
     } catch (err: any) {
       setErrors([err.message || 'Đã có lỗi xảy ra khi lưu dữ liệu.']);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setIsSubmitting(false);
     }
@@ -347,19 +359,19 @@ function NhapHuyForm() {
   // Filters for Custom Suggestions
   const filteredBrands = lookups?.brands
     ? lookups.brands
-        .filter((b: any) => b.name.toLowerCase().includes(brandSearch.toLowerCase()))
+        .filter((b: any) => b.name.toLowerCase().includes(brandSearch.trim().toLowerCase()))
         .slice(0, 15)
     : [];
 
   const filteredCps = lookups?.cps
     ? lookups.cps
-        .filter((c: any) => c.name.toLowerCase().includes(cpSearch.toLowerCase()))
+        .filter((c: any) => c.name.toLowerCase().includes(cpSearch.trim().toLowerCase()))
         .slice(0, 15)
     : [];
 
   const filteredOwners = lookups?.owners
     ? lookups.owners
-        .filter((o: any) => o.name.toLowerCase().includes(ownerSearch.toLowerCase()))
+        .filter((o: any) => o.name.toLowerCase().includes(ownerSearch.trim().toLowerCase()))
         .slice(0, 15)
     : [];
 
@@ -367,34 +379,41 @@ function NhapHuyForm() {
     <div className="animate-fade-in" style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
       
       {/* Left: Form Panel (58%) */}
-      <div className="apple-card p-6" style={{ flex: '0 0 58%', position: 'relative' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--apple-gray-4)', paddingBottom: '12px' }}>
-          <span>{isEditMode ? `✏️ Chỉnh sửa phiếu hủy (${editId})` : 'Thông tin hủy Brandname'}</span>
+      <div className="card-container p-6" style={{ flex: '0 0 58%', position: 'relative', boxShadow: 'var(--shadow-md)' }}>
+        <h2 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--neutral-900)', marginBottom: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1.5px solid var(--neutral-200)', paddingBottom: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>{isEditMode ? `✏️ Chỉnh sửa phiếu hủy (${editId})` : 'Thông tin hủy Brandname'}</span>
+            <button onClick={handleRefreshLookups} title="Tải lại danh mục mới nhất" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--neutral-500)', display: 'flex', alignItems: 'center', padding: '4px', borderRadius: '4px' }} className="hover-bg-gray">
+              <RefreshCw size={16} />
+            </button>
+          </div>
           {isEditMode && (
-            <span style={{ fontSize: '12px', background: 'rgba(0,122,255,0.1)', color: 'var(--apple-blue)', padding: '4px 10px', borderRadius: '100px', fontWeight: 500 }}>
-              Edit Mode
+            <span className="badge-custom badge-primary">
+              Chế độ chỉnh sửa
             </span>
           )}
         </h2>
         
         {errors.length > 0 && (
-          <div style={{ background: 'rgba(255, 59, 48, 0.1)', border: '1px solid rgba(255, 59, 48, 0.3)', borderRadius: '12px', padding: '16px', marginBottom: '24px' }}>
-            <h4 style={{ color: 'var(--apple-red)', margin: '0 0 8px 0', fontSize: '14px', fontWeight: 600 }}>Vui lòng kiểm tra lại:</h4>
-            <ul style={{ margin: 0, paddingLeft: '20px', color: 'var(--apple-red)', fontSize: '13px' }}>
+          <div style={{ background: 'var(--error-50)', border: '1px solid var(--error-100)', borderRadius: 'var(--radius-md)', padding: '16px', marginBottom: '24px' }}>
+            <h4 style={{ color: 'var(--error-700)', margin: '0 0 8px 0', fontSize: '14px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <AlertCircle size={16} /> Vui lòng kiểm tra lại:
+            </h4>
+            <ul style={{ margin: 0, paddingLeft: '20px', color: 'var(--error-700)', fontSize: '13px' }}>
               {errors.map((e, i) => <li key={i}>{e}</li>)}
             </ul>
           </div>
         )}
 
         {successMsg && (
-          <div className="animate-fade-in" style={{ background: 'rgba(52, 199, 89, 0.1)', border: '1px solid rgba(52, 199, 89, 0.3)', borderRadius: '12px', padding: '16px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--apple-green)', fontSize: '14px', fontWeight: 500 }}>
+          <div className="animate-fade-in badge-custom badge-success" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '16px', marginBottom: '24px', width: '100%', borderRadius: 'var(--radius-md)', fontSize: '14px' }}>
             <CheckCircle size={18} /> {successMsg}
           </div>
         )}
 
         <div style={{ marginBottom: '20px' }}>
-          <label className="apple-label">Người nhập hủy <span className="text-apple-red">*</span></label>
-          <select className="apple-input" value={userId} onChange={e => setUserId(e.target.value)}>
+          <label className="label-custom">Người nhập hủy <span className="text-error-600">*</span></label>
+          <select className="input-field" value={userId} onChange={e => setUserId(e.target.value)}>
             <option value="">-- Chọn người nhập --</option>
             {lookups?.users?.map((u: any) => (
               <option key={u.id} value={u.id}>{u.name}</option>
@@ -404,23 +423,23 @@ function NhapHuyForm() {
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
           <div>
-            <label className="apple-label">Tháng hủy <span className="text-apple-red">*</span></label>
-            <input type="month" className="apple-input" value={month} onChange={e => setMonth(e.target.value)} />
+            <label className="label-custom">Tháng hủy <span className="text-error-600">*</span></label>
+            <input type="month" className="input-field" value={month} onChange={e => setMonth(e.target.value)} />
           </div>
           <div>
-            <label className="apple-label">Ngày nhập thông tin hủy <span className="text-apple-red">*</span></label>
-            <input type="date" className="apple-input" value={enterDate} onChange={e => setEnterDate(e.target.value)} />
+            <label className="label-custom">Ngày nhập thông tin hủy <span className="text-error-600">*</span></label>
+            <input type="date" className="input-field" value={enterDate} onChange={e => setEnterDate(e.target.value)} />
           </div>
         </div>
 
         {/* Brandname Input */}
         <div style={{ marginBottom: '20px', position: 'relative' }} ref={brandContainerRef}>
-          <label className="apple-label">Brandname <span className="text-apple-red">*</span></label>
+          <label className="label-custom">Brandname <span className="text-error-600">*</span></label>
           <div style={{ display: 'flex', gap: '10px' }}>
             <div style={{ flex: 1, position: 'relative' }}>
               <input 
                 type="text" 
-                className="apple-input" 
+                className="input-field" 
                 placeholder="Nhập tên thương hiệu..." 
                 value={brandSearch}
                 onChange={e => {
@@ -448,30 +467,17 @@ function NhapHuyForm() {
                 </div>
               )}
             </div>
-            <button className="apple-btn add-btn-small" onClick={() => openAddModal('brand', brandSearch)}>
-              + Thêm mới
-            </button>
           </div>
-          {brandSearch && !selectedBrand && (
-            <div className="alert-inside-form">
-              <span>
-                ⚠️ Brandname "<strong>{brandSearch}</strong>" chưa có trong hệ thống.
-                <button onClick={() => openAddModal('brand', brandSearch)} className="btn-link-inline">
-                  Thêm mới ngay
-                </button>
-              </span>
-            </div>
-          )}
         </div>
 
         {/* CP Name Input */}
         <div style={{ marginBottom: '20px', position: 'relative' }} ref={cpContainerRef}>
-          <label className="apple-label">CP_Name <span className="text-apple-red">*</span></label>
+          <label className="label-custom">CP_Name <span className="text-error-600">*</span></label>
           <div style={{ display: 'flex', gap: '10px' }}>
             <div style={{ flex: 1, position: 'relative' }}>
               <input 
                 type="text" 
-                className="apple-input" 
+                className="input-field" 
                 placeholder="Nhập tên CP..." 
                 value={cpSearch}
                 onChange={e => {
@@ -499,77 +505,13 @@ function NhapHuyForm() {
                 </div>
               )}
             </div>
-            <button className="apple-btn add-btn-small" onClick={() => openAddModal('cp', cpSearch)}>
-              + Thêm mới
-            </button>
           </div>
-          {cpSearch && !selectedCp && (
-            <div className="alert-inside-form">
-              <span>
-                ⚠️ CP_Name "<strong>{cpSearch}</strong>" chưa có trong hệ thống.
-                <button onClick={() => openAddModal('cp', cpSearch)} className="btn-link-inline">
-                  Thêm mới ngay
-                </button>
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Company Owner Input */}
-        <div style={{ marginBottom: '20px', position: 'relative' }} ref={ownerContainerRef}>
-          <label className="apple-label">Company Owner</label>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <div style={{ flex: 1, position: 'relative' }}>
-              <input 
-                type="text" 
-                className="apple-input" 
-                placeholder="Nhập tên Chủ sở hữu..." 
-                value={ownerSearch}
-                onChange={e => {
-                  setOwnerSearch(e.target.value);
-                  setActiveDropdown('owner');
-                }}
-                onFocus={() => setActiveDropdown('owner')}
-              />
-              {/* Custom suggestions list */}
-              {activeDropdown === 'owner' && ownerSearch && filteredOwners.length > 0 && (
-                <div className="custom-dropdown">
-                  {filteredOwners.map((o: any) => (
-                    <div 
-                      key={o.id} 
-                      className="dropdown-item"
-                      onClick={() => {
-                        setOwnerSearch(o.name);
-                        setSelectedOwner(o);
-                        setActiveDropdown(null);
-                      }}
-                    >
-                      {o.name}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            <button className="apple-btn add-btn-small" onClick={() => openAddModal('owner', ownerSearch)}>
-              + Thêm mới
-            </button>
-          </div>
-          {ownerSearch && !selectedOwner && (
-            <div className="alert-inside-form">
-              <span>
-                ⚠️ Owner "<strong>{ownerSearch}</strong>" chưa có trong hệ thống.
-                <button onClick={() => openAddModal('owner', ownerSearch)} className="btn-link-inline">
-                  Thêm mới ngay
-                </button>
-              </span>
-            </div>
-          )}
         </div>
 
         {/* Operators & Providers Checkboxes */}
         <div style={{ marginBottom: '20px' }}>
-          <label className="apple-label">Nhà mạng & Nhà cung cấp <span className="text-apple-red">*</span></label>
-          <div style={{ border: '1px solid var(--apple-gray-4)', borderRadius: '8px', overflow: 'hidden' }}>
+          <label className="label-custom">Nhà mạng & Nhà cung cấp <span className="text-error-600">*</span></label>
+          <div style={{ border: '1px solid var(--neutral-200)', borderRadius: 'var(--radius-md)', overflow: 'hidden', boxShadow: 'var(--shadow-xs)' }}>
             {lookups?.operatorProviderMapping?.map((mapping: any) => {
               const opId = mapping.id;
               const isOpChecked = selectedOperators.includes(opId);
@@ -577,15 +519,16 @@ function NhapHuyForm() {
               const selectedProvs = selectedProviders[opId] || [];
 
               return (
-                <div key={opId} style={{ borderBottom: '1px solid var(--apple-gray-4)', background: isOpChecked ? 'rgba(0,122,255,0.03)' : 'transparent', transition: 'background 0.2s' }}>
+                <div key={opId} style={{ borderBottom: '1px solid var(--neutral-200)', background: isOpChecked ? 'var(--primary-50)' : 'transparent', transition: 'var(--transition-fast)' }}>
                   <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', cursor: 'pointer' }} onClick={() => handleOperatorToggle(opId)}>
                     <input 
                       type="checkbox" 
                       checked={isOpChecked} 
                       readOnly 
-                      style={{ accentColor: 'var(--apple-blue)', transform: 'scale(1.2)', marginRight: '12px', cursor: 'pointer' }} 
+                      className="custom-checkbox"
+                      style={{ marginRight: '12px' }} 
                     />
-                    <span style={{ fontSize: '14px', fontWeight: isOpChecked ? 600 : 500, color: isOpChecked ? 'var(--apple-blue)' : 'var(--apple-black)' }}>
+                    <span style={{ fontSize: '14px', fontWeight: isOpChecked ? 600 : 500, color: isOpChecked ? 'var(--primary-700)' : 'var(--neutral-900)' }}>
                       {mapping.name}
                     </span>
                   </div>
@@ -593,31 +536,51 @@ function NhapHuyForm() {
                   {isOpChecked && (
                     <div style={{ padding: '0 16px 16px 44px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '8px' }}>
                       {providers.length === 0 ? (
-                        <span style={{ fontSize: '13px', color: 'var(--apple-gray-1)', fontStyle: 'italic', gridColumn: '1/-1' }}>Không có cấu hình nhà cung cấp.</span>
+                        <span style={{ fontSize: '13px', color: 'var(--neutral-500)', fontStyle: 'italic', gridColumn: '1/-1' }}>Không có cấu hình nhà cung cấp.</span>
                       ) : (
                         providers.map((p: any) => {
                           const isProvChecked = selectedProvs.includes(p.id);
+                          const overlapId = overlapProviders[p.id];
+                          const isDisabled = !!overlapId;
+
                           return (
                             <label key={p.id} style={{
                               display: 'inline-flex', alignItems: 'center', gap: '6px',
-                              padding: '6px 12px', borderRadius: '100px',
-                              border: `1px solid ${isProvChecked ? 'var(--apple-blue)' : 'var(--apple-gray-3)'}`,
-                              background: isProvChecked ? 'rgba(0,122,255,0.08)' : 'var(--apple-white)',
-                              color: isProvChecked ? 'var(--apple-blue)' : 'var(--apple-text-secondary)',
-                              cursor: 'pointer', fontSize: '13px', transition: 'all 0.2s',
+                              padding: '8px 14px', borderRadius: 'var(--radius-full)',
+                              border: `1px solid ${isDisabled ? 'var(--neutral-200)' : isProvChecked ? 'var(--primary-500)' : 'var(--neutral-300)'}`,
+                              background: isDisabled ? 'var(--neutral-100)' : isProvChecked ? 'var(--primary-50)' : '#FFFFFF',
+                              color: isDisabled ? 'var(--neutral-400)' : isProvChecked ? 'var(--primary-700)' : 'var(--neutral-700)',
+                              cursor: isDisabled ? 'not-allowed' : 'pointer', fontSize: '13px', transition: 'var(--transition-fast)',
                               whiteSpace: 'normal',
                               wordBreak: 'break-word',
-                              textAlign: 'center',
-                              justifyContent: 'center'
+                              textAlign: 'left',
+                              justifyContent: 'flex-start',
+                              opacity: isDisabled ? 0.7 : 1,
+                              fontWeight: isProvChecked && !isDisabled ? 600 : 500,
+                              boxShadow: isProvChecked && !isDisabled ? '0 1px 2px rgba(0, 122, 255, 0.05)' : 'none'
                             }}>
                               <input 
                                 type="checkbox" 
                                 checked={isProvChecked}
+                                disabled={isDisabled}
                                 onChange={(e) => { e.stopPropagation(); handleProviderToggle(opId, p.id); }}
                                 style={{ display: 'none' }}
                               />
-                              {isProvChecked && <CheckCircle size={14} style={{ flexShrink: 0 }} />}
-                              <span style={{ fontWeight: isProvChecked ? 500 : 400 }}>{p.name}</span>
+                              {isProvChecked && !isDisabled && <CheckCircle size={14} style={{ flexShrink: 0, color: 'var(--primary-600)' }} />}
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                <span>{p.name}</span>
+                                {overlapId && (
+                                  <a 
+                                    href={`/tra-cuu?id=${overlapId}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    style={{ fontSize: '11px', color: 'var(--primary-600)', fontStyle: 'italic', textDecoration: 'underline', cursor: 'pointer', pointerEvents: 'auto' }}
+                                  >
+                                    (Đã nhập trong tháng này)
+                                  </a>
+                                )}
+                              </div>
                             </label>
                           );
                         })
@@ -631,17 +594,17 @@ function NhapHuyForm() {
         </div>
 
         <div style={{ marginBottom: '24px' }}>
-          <label className="apple-label">Ghi chú</label>
-          <textarea className="apple-input" rows={2} placeholder="Thông tin bổ sung..." value={note} onChange={e => setNote(e.target.value)}></textarea>
+          <label className="label-custom">Ghi chú</label>
+          <textarea className="input-field" rows={2} placeholder="Thông tin bổ sung..." value={note} onChange={e => setNote(e.target.value)}></textarea>
         </div>
 
         <div style={{ display: 'flex', gap: '12px' }}>
-          <button className="apple-btn apple-btn-primary" onClick={handleSubmit} disabled={isSubmitting}>
+          <button className="btn btn-primary" onClick={handleSubmit} disabled={isSubmitting}>
             <Save size={16} /> {isSubmitting ? 'Đang xử lý...' : isEditMode ? 'Cập Nhật Thông Tin Hủy' : 'Lưu Thông Tin Hủy'}
           </button>
           
           {isEditMode && (
-            <button className="apple-btn" style={{ background: 'var(--apple-gray-4)', color: 'var(--apple-black)' }} onClick={handleCancelEdit}>
+            <button className="btn btn-secondary" onClick={handleCancelEdit}>
               Hủy chỉnh sửa
             </button>
           )}
@@ -650,24 +613,24 @@ function NhapHuyForm() {
 
       {/* Right: Preview Panel (42%) */}
       <div style={{ flex: '0 0 42%', position: 'sticky', top: '24px' }}>
-        <div className="apple-card" style={{ padding: 0, overflow: 'hidden' }}>
-          <div style={{ padding: '16px 20px', background: 'var(--apple-gray-4)', borderBottom: '1px solid var(--apple-gray-3)' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: 600, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="card-container" style={{ padding: 0, overflow: 'hidden', boxShadow: 'var(--shadow-md)' }}>
+          <div style={{ padding: '18px 20px', background: 'var(--neutral-100)', borderBottom: '1.5px solid var(--neutral-200)' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--neutral-900)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
               Bản xem trước dữ liệu
             </h3>
           </div>
           
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+          <table className="custom-table" style={{ fontSize: '13.5px' }}>
             <thead>
               <tr>
-                <th style={{ textAlign: 'left', padding: '10px 16px', background: 'var(--apple-gray-5)', color: 'var(--apple-gray-1)', fontWeight: 600, borderBottom: '1px solid var(--apple-gray-4)', width: '35%' }}>Nhà mạng</th>
-                <th style={{ textAlign: 'left', padding: '10px 16px', background: 'var(--apple-gray-5)', color: 'var(--apple-gray-1)', fontWeight: 600, borderBottom: '1px solid var(--apple-gray-4)' }}>Nhà cung cấp đã chọn</th>
+                <th style={{ width: '35%' }}>Nhà mạng</th>
+                <th>Nhà cung cấp đã chọn</th>
               </tr>
             </thead>
             <tbody>
               {selectedOperators.length === 0 ? (
                 <tr>
-                  <td colSpan={2} style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--apple-gray-1)' }}>
+                  <td colSpan={2} style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--neutral-500)' }}>
                     Chưa có nhà mạng nào được chọn
                   </td>
                 </tr>
@@ -675,27 +638,18 @@ function NhapHuyForm() {
                 selectedOperators.map(opId => {
                   const opName = lookups.opMap[opId] || opId;
                   const selectedForOp = selectedProviders[opId] || [];
-                  const providerNames = selectedForOp.map(pid => lookups.provMap[pid] || pid);
 
                   return (
-                    <tr key={opId} style={{ borderBottom: '1px solid var(--apple-gray-4)' }}>
-                      <td style={{ padding: '12px 16px', verticalAlign: 'top', fontWeight: 600, color: 'var(--apple-black)' }}>{opName}</td>
-                      <td style={{ padding: '12px 16px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    <tr key={opId}>
+                      <td style={{ verticalAlign: 'top', fontWeight: 600, color: 'var(--neutral-900)' }}>{opName}</td>
+                      <td style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                         {selectedForOp.length === 0 ? (
-                          <span style={{ color: 'var(--apple-gray-1)' }}>--</span>
+                          <span style={{ color: 'var(--neutral-400)' }}>--</span>
                         ) : (
                           selectedForOp.map(pid => {
                             const pname = lookups.provMap[pid] || pid;
                             return (
-                              <span key={pid} style={{
-                                fontSize: '12px',
-                                background: '#f2f2f7',
-                                color: 'var(--apple-blue)',
-                                padding: '4px 10px',
-                                borderRadius: '100px',
-                                fontWeight: 500,
-                                display: 'inline-block'
-                              }}>
+                              <span key={pid} className="badge-custom badge-primary" style={{ display: 'inline-block' }}>
                                 {pname}
                               </span>
                             );
@@ -711,48 +665,10 @@ function NhapHuyForm() {
         </div>
       </div>
 
-      {/* Center Modal for adding new items */}
-      {isModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.45)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div className="animate-scale-up" style={{ background: 'var(--apple-white)', width: '420px', borderRadius: '14px', padding: '24px', boxShadow: '0 20px 40px rgba(0,0,0,0.18)', border: '1px solid var(--apple-gray-4)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--apple-black)' }}>
-                {modalType === 'brand' ? 'Thêm mới Brandname' : modalType === 'cp' ? 'Thêm mới CP_Name' : 'Thêm mới Company Owner'}
-              </h3>
-              <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--apple-gray-1)' }}>
-                <X size={18} />
-              </button>
-            </div>
-            
-            <div style={{ marginBottom: '24px' }}>
-              <label className="apple-label">Tên hiển thị <span className="text-apple-red">*</span></label>
-              <input 
-                type="text" 
-                className="apple-input" 
-                value={modalValue} 
-                onChange={e => setModalValue(e.target.value)} 
-                placeholder="Nhập tên muốn thêm..."
-                autoFocus
-                onKeyDown={e => e.key === 'Enter' && handleSaveMaster()}
-              />
-            </div>
-
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-              <button className="apple-btn" style={{ background: 'var(--apple-gray-4)', color: 'var(--apple-black)', padding: '8px 16px' }} onClick={() => setIsModalOpen(false)}>
-                Hủy bỏ
-              </button>
-              <button className="apple-btn apple-btn-primary" style={{ padding: '8px 16px' }} onClick={handleSaveMaster} disabled={isSavingMaster}>
-                {isSavingMaster ? 'Đang lưu...' : 'Thêm mới'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      
       <style dangerouslySetInnerHTML={{__html: `
-        .border-red { border-color: var(--apple-red) !important; background-color: rgba(255, 59, 48, 0.05) !important; }
-        .text-apple-red { color: var(--apple-red); }
-        .apple-label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 8px; color: var(--apple-gray-1); }
+        .border-red { border-color: var(--error-600) !important; background-color: var(--error-50) !important; }
+        .text-error-600 { color: var(--error-600); }
+        .label-custom { display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--neutral-700); }
         
         /* Custom dropdown style */
         .custom-dropdown {
@@ -761,10 +677,10 @@ function NhapHuyForm() {
           left: 0;
           right: 0;
           z-index: 50;
-          background: rgba(255, 255, 255, 0.95);
-          border: 1px solid var(--apple-gray-4);
-          border-radius: 10px;
-          box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+          background: rgba(255, 255, 255, 0.98);
+          border: 1px solid var(--neutral-300);
+          border-radius: var(--radius-md);
+          box-shadow: var(--shadow-lg);
           max-height: 200px;
           overflow-y: auto;
           backdrop-filter: blur(8px);
@@ -772,18 +688,18 @@ function NhapHuyForm() {
         .dropdown-item {
           padding: 10px 14px;
           cursor: pointer;
-          font-size: 13px;
-          color: var(--apple-black);
-          border-bottom: 1px solid var(--apple-gray-5);
-          transition: background 0.15s, color 0.15s;
+          font-size: 13.5px;
+          color: var(--neutral-700);
+          border-bottom: 1px solid var(--neutral-200);
+          transition: var(--transition-fast);
         }
         .dropdown-item:last-child {
           border-bottom: none;
         }
         .dropdown-item:hover {
-          background-color: rgba(0, 122, 255, 0.06);
-          color: var(--apple-blue);
-          font-weight: 500;
+          background-color: var(--primary-50);
+          color: var(--primary-700);
+          font-weight: 600;
         }
 
         /* Tiny add button next to input */
@@ -791,33 +707,33 @@ function NhapHuyForm() {
           padding: 0 12px;
           font-size: 12px;
           white-space: nowrap;
-          border: 1px solid var(--apple-blue);
-          color: var(--apple-blue);
+          border: 1px solid var(--primary-600);
+          color: var(--primary-600);
           background: transparent;
-          font-weight: 500;
-          border-radius: 8px;
-          transition: all 0.2s;
+          font-weight: 600;
+          border-radius: var(--radius-sm);
+          transition: var(--transition-fast);
         }
         .add-btn-small:hover {
-          background: rgba(0, 122, 255, 0.05);
+          background: var(--primary-50);
         }
 
         /* Warning styles inside form */
         .alert-inside-form {
           margin-top: 8px;
           padding: 8px 12px;
-          background: rgba(255, 159, 10, 0.06);
-          border: 1px solid rgba(255, 159, 10, 0.25);
-          border-radius: 8px;
+          background: var(--warning-50);
+          border: 1px solid var(--warning-100);
+          border-radius: var(--radius-sm);
           font-size: 12.5px;
-          color: #8f5800;
+          color: var(--warning-700);
           display: flex;
           align-items: center;
         }
         .btn-link-inline {
           background: none;
           border: none;
-          color: var(--apple-blue);
+          color: var(--primary-600);
           text-decoration: underline;
           cursor: pointer;
           padding: 0 4px;
@@ -825,7 +741,7 @@ function NhapHuyForm() {
           font-size: 12.5px;
         }
         .btn-link-inline:hover {
-          color: #0056b3;
+          color: var(--primary-700);
         }
 
         /* Scale Up animations */

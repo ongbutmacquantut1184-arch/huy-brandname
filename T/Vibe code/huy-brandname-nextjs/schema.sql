@@ -29,7 +29,8 @@ CREATE TABLE operators (
 
 CREATE TABLE providers (
     id TEXT PRIMARY KEY,
-    name TEXT NOT NULL
+    name TEXT NOT NULL,
+    emails TEXT
 );
 
 CREATE TABLE operator_provider_map (
@@ -42,13 +43,15 @@ CREATE TABLE operator_provider_map (
 CREATE TABLE cancellations (
     id TEXT PRIMARY KEY,
     user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+    user_name TEXT,
     enter_date DATE NOT NULL,
     brand_id TEXT REFERENCES brands(id) ON DELETE CASCADE,
     owner_id TEXT REFERENCES owners(id) ON DELETE SET NULL,
     cp_id TEXT REFERENCES cps(id) ON DELETE SET NULL,
     month TEXT NOT NULL,
     note TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
 CREATE TABLE cancellation_details (

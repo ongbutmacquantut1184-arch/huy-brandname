@@ -1,8 +1,6 @@
-export const dynamic = 'force-dynamic';
-
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import * as xlsx from 'xlsx';
+import ExcelJS from 'exceljs';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -26,11 +24,11 @@ export async function GET(request: Request) {
       { data: providers }
     ] = await Promise.all([
       supabase.from('operators').select('id, name').order('order_index'),
-      supabase.from('providers').select('id, name')
+      supabase.from('providers').select('id, name, emails')
     ]);
 
-    const provMap: Record<string, string> = {};
-    providers?.forEach(p => provMap[p.id] = p.name);
+    const provMap: Record<string, { name: string; emails: string }> = {};
+    providers?.forEach(p => provMap[p.id] = { name: p.name, emails: p.emails || '' });
 
     // 2. Query cancellation details
     const { data: details, error: detailsError } = await supabase
@@ -40,8 +38,7 @@ export async function GET(request: Request) {
         provider_id,
         cancellation:cancellations!inner(
           brand:brands(name),
-          cp:cps(name),
-          owner:owners(name)
+          cp:cps(name)
         )
       `)
       .eq('cancellation.month', month)
@@ -50,7 +47,7 @@ export async function GET(request: Request) {
     if (detailsError) throw detailsError;
 
     // 3. Gom nhóm dữ liệu theo provider -> brand
-    const aggMap: Record<string, Record<string, { brandName: string; cp: string; owner: string; operators: Set<string> }>> = {};
+    const aggMap: Record<string, Record<string, { brandName: string; cp: string; operators: Set<string> }>> = {};
     selectedProviderIds.forEach(pid => {
       aggMap[pid] = {};
     });
@@ -62,7 +59,6 @@ export async function GET(request: Request) {
 
       const brandName = cancel.brand.name;
       const cpName = cancel.cp?.name || '';
-      const ownerName = cancel.owner?.name || '';
       const opId = item.operator_id;
 
       if (!aggMap[pid]) aggMap[pid] = {};
@@ -72,7 +68,6 @@ export async function GET(request: Request) {
         aggMap[pid][brandKey] = {
           brandName,
           cp: cpName,
-          owner: ownerName,
           operators: new Set<string>()
         };
       }
@@ -90,13 +85,13 @@ export async function GET(request: Request) {
         // Sắp xếp brandname A-Z
         brandsObj.sort((a, b) => a.brandName.localeCompare(b.brandName));
 
-        const providerName = provMap[pid] || pid;
-        csvContent += `"${providerName}"\n`;
+        const providerInfo = provMap[pid] || { name: pid, emails: '' };
+        csvContent += `"${providerInfo.name}"\n`;
 
         // Headers
         const headers = ['STT', 'Brandname'];
         operators?.forEach(op => headers.push(`Hủy ${op.name}`));
-        headers.push('Lĩnh vực', 'Đơn vị sử dụng Brandname');
+        headers.push('CP_Name');
         csvContent += headers.map(h => `"${h}"`).join(',') + '\n';
 
         // Data Rows
@@ -105,11 +100,14 @@ export async function GET(request: Request) {
           operators?.forEach(op => {
             row.push(brand.operators.has(op.id) ? 'Yes' : '-');
           });
-          row.push('');
-          row.push(brand.owner || '');
+          row.push(''); // Lĩnh vực CP
           
           csvContent += row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',') + '\n';
         });
+
+        if (providerInfo.emails) {
+          csvContent += `"${providerInfo.emails}"\n`;
+        }
 
         // Add blank line between providers
         if (idx < selectedProviderIds.length - 1) {
@@ -125,29 +123,37 @@ export async function GET(request: Request) {
       });
     }
 
-    // 5. Xử lý xuất Excel (.xlsx) đa tab
-    const wb = xlsx.utils.book_new();
+    // 5. Xử lý xuất Excel (.xlsx) bằng exceljs
+    const workbook = new ExcelJS.Workbook();
     let hasSheets = false;
 
     selectedProviderIds.forEach(pid => {
       const brandsObj = aggMap[pid] ? Object.values(aggMap[pid]) : [];
       if (brandsObj.length === 0) return;
 
-      // Sắp xếp brandname A-Z
       brandsObj.sort((a, b) => a.brandName.localeCompare(b.brandName));
 
-      const providerName = provMap[pid] || pid;
-      // Sheet name tối đa 31 ký tự, thay thế các ký tự đặc biệt
-      const sheetName = providerName.substring(0, 31).replace(/[\\\?\*\/\[\]]/g, '');
+      const providerInfo = provMap[pid] || { name: pid, emails: '' };
+      const sheetName = providerInfo.name.substring(0, 31).replace(/[\\\?\*\/\[\]]/g, '');
 
-      // Build rows
-      const rows: any[][] = [];
-      
-      // Header row
+      const worksheet = workbook.addWorksheet(sheetName);
+
       const headers = ['STT', 'Brandname'];
       operators?.forEach(op => headers.push(`Hủy ${op.name}`));
-      headers.push('Lĩnh vực', 'Đơn vị sử dụng Brandname');
-      rows.push(headers);
+      headers.push('CP_Name');
+      
+      const headerRow = worksheet.addRow(headers);
+      
+      // Styling header
+      headerRow.eachCell((cell) => {
+        cell.font = { bold: true };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFEFEFEF' }
+        };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      });
 
       // Data rows
       brandsObj.forEach((brand: any, bIdx) => {
@@ -155,25 +161,47 @@ export async function GET(request: Request) {
         operators?.forEach(op => {
           row.push(brand.operators.has(op.id) ? 'Yes' : '-');
         });
-        row.push('');
-        row.push(brand.owner || '');
-        rows.push(row);
+        row.push(brand.cp || '');
+        worksheet.addRow(row);
       });
 
-      const ws = xlsx.utils.aoa_to_sheet(rows);
-      xlsx.utils.book_append_sheet(wb, ws, sheetName);
+      // Thêm dòng hiển thị Email nếu có
+      if (providerInfo.emails) {
+        const emailText = providerInfo.emails;
+        const emailRow = worksheet.addRow([emailText]);
+        worksheet.mergeCells(emailRow.number, 1, emailRow.number, headers.length);
+        emailRow.getCell(1).font = { italic: true };
+      }
+
+      // Format tất cả các ô có border
+      worksheet.eachRow((row, rowNumber) => {
+        row.eachCell((cell) => {
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+          };
+        });
+      });
+
+      // Tự động căn chỉnh độ rộng cột
+      worksheet.getColumn(1).width = 5; // STT
+      worksheet.getColumn(2).width = 25; // Brandname
+      for (let i = 3; i <= headers.length; i++) {
+        worksheet.getColumn(i).width = 15;
+      }
+      
       hasSheets = true;
     });
 
     if (!hasSheets) {
-      // Nếu không có dữ liệu cho bất cứ provider nào, tạo sheet trống để tránh lỗi Excel
-      const ws = xlsx.utils.aoa_to_sheet([['Không có dữ liệu phát sinh hủy']]);
-      xlsx.utils.book_append_sheet(wb, ws, 'NoData');
+      workbook.addWorksheet('NoData').addRow(['Không có dữ liệu phát sinh hủy']);
     }
 
-    const excelBuffer = xlsx.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    const buffer = await workbook.xlsx.writeBuffer();
 
-    return new NextResponse(excelBuffer, {
+    return new NextResponse(buffer, {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'Content-Disposition': `attachment; filename="Bao_cao_huy_brandname_${month}.xlsx"`

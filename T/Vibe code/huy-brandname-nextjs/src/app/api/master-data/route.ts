@@ -10,26 +10,62 @@ export async function POST(request: Request) {
     }
 
     let tableName = '';
-    if (type === 'brand') tableName = 'brands';
-    else if (type === 'cp') tableName = 'cps';
-    else if (type === 'owner') tableName = 'owners';
-    else return NextResponse.json({ error: 'Invalid type' }, { status: 400 });
+    let prefix = '';
+    let padLength = 5;
 
-    // Generate a simple ID (e.g., lowercased, spaces replaced, or just use name as ID for CPs and Owners if needed)
-    // The old system used string IDs. Let's use name.trim() as ID for simplicity, or let Supabase handle if it's text.
-    const id = name.trim();
+    if (type === 'brand') {
+      tableName = 'brands';
+      prefix = 'BR';
+      padLength = 7;
+    } else if (type === 'cp') {
+      tableName = 'cps';
+      prefix = 'CP';
+      padLength = 5;
+    } else {
+      return NextResponse.json({ error: 'Invalid type' }, { status: 400 });
+    }
 
+    const trimmedName = name.trim();
+
+    // 1. Kiểm tra trùng lặp tên danh mục (chính xác phân biệt hoa thường)
+    const { data: existing } = await supabase
+      .from(tableName)
+      .select('id')
+      .eq('name', trimmedName)
+      .single();
+
+    if (existing) {
+      return NextResponse.json(existing, { status: 200 });
+    }
+
+    // 2. Tự động sinh ID theo rule
+    // Lấy ID lớn nhất hiện tại
+    const { data: maxRecord } = await supabase
+      .from(tableName)
+      .select('id')
+      .order('id', { ascending: false })
+      .limit(1)
+      .single();
+
+    let nextNum = 1;
+    if (maxRecord && maxRecord.id && maxRecord.id.startsWith(prefix)) {
+      const numPart = maxRecord.id.replace(prefix, '');
+      const parsedNum = parseInt(numPart, 10);
+      if (!isNaN(parsedNum)) {
+        nextNum = parsedNum + 1;
+      }
+    }
+
+    const newId = `${prefix}${String(nextNum).padStart(padLength, '0')}`;
+
+    // 3. Chèn bản ghi mới
     const { data, error } = await supabase
       .from(tableName)
-      .insert([{ id, name: id }]) // For brands/cps/owners, id and name are often the same in the old system, or id is generated
+      .insert([{ id: newId, name: trimmedName }])
       .select()
       .single();
 
     if (error) {
-      // If it's a unique constraint error, it means it already exists
-      if (error.code === '23505') {
-        return NextResponse.json({ id, name: id });
-      }
       throw error;
     }
 
