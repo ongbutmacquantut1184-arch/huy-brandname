@@ -1232,7 +1232,7 @@ function exportReportToCSV(month, providerIds) {
     csvContent += (providerNames[pid] || pid) + '\n';
     var headers = ['STT', 'Brandname'];
     data.operators.forEach(function(op) { headers.push('Hủy ' + op.name); });
-    headers.push('Lĩnh vực', 'Đơn vị sử dụng Brandname');
+    headers.push('CP_Name', 'Đơn vị sử dụng Brandname');
     csvContent += headers.join(',') + '\n';
 
     data.brands.forEach(function(brand, idx) {
@@ -1269,7 +1269,7 @@ function exportReportToSheets(month, providerIds) {
     }
     var headers = ['STT', 'Brandname'];
     data.operators.forEach(function(op) { headers.push('Hủy ' + op.name); });
-    headers.push('Lĩnh vực', 'Đơn vị sử dụng Brandname');
+    headers.push('CP_Name', 'Đơn vị sử dụng Brandname');
     sheet.appendRow(headers);
     data.brands.forEach(function(brand, idx) {
       var row = [idx + 1, brand.brandName];

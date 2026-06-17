@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: 'Inter', sans-serif; background: #f0f2f5; color: #1e293b; padding:0; }
+    .container { max-width:1200px; margin:0 auto; padding:0; }
+    .loading-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); backdrop-filter:blur(4px); z-index:2000; align-items:center; justify-content:center; flex-direction:column; }
+    .spinner { border:4px solid #e2e8f0; border-top:4px solid #2563eb; border-radius:50%; width:40px; height:40px; animation:spin 0.8s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    h2 { font-weight:600; font-size:22px; margin-bottom:20px; color:#0f172a; border-bottom:2px solid #e2e8f0; padding-bottom:12px; }
+    .search-box { background:#fff; border-radius:12px; padding:20px; margin-bottom:24px; box-shadow:0 2px 10px rgba(0,0,0,0.05); }
+    .filter-row { display:flex; gap:16px; flex-wrap:wrap; align-items:flex-end; }
+    .form-group { margin-bottom:12px; }
+    label { font-weight:500; font-size:14px; color:#475569; margin-bottom:6px; display:block; }
+    select, input[type="month"], input[type="text"] { width:100%; padding:10px 12px; font-size:14px; border:1px solid #cbd5e1; border-radius:8px; background:#fff; color:#1e293b; font-family:inherit; }
+    select:focus, input:focus { outline:none; border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,0.1); }
+    .btn { padding:10px 20px; font-size:14px; font-weight:500; border:none; border-radius:8px; cursor:pointer; font-family:inherit; }
+    .btn-primary { background:#2563eb; color:#fff; }
+    .btn-primary:hover { background:#1d4ed8; }
+    .btn-reset { background:#f1f5f9; color:#334155; }
+    .result-count { font-size:14px; color:#64748b; margin-bottom:12px; }
+    table { width:100%; border-collapse:collapse; font-size:14px; background:#fff; border-radius:8px; overflow:hidden; box-shadow:0 2px 10px rgba(0,0,0,0.05); }
+    th { text-align:left; padding:10px 12px; background:#f1f5f9; color:#475569; font-weight:600; white-space:nowrap; }
+    td { padding:10px 12px; border-bottom:1px solid #e2e8f0; vertical-align:top; }
+    .detail-tag { display:inline-block; background:#eff6ff; color:#2563eb; padding:2px 8px; border-radius:4px; margin:2px; font-size:12px; }
+    .highlight { background:#fef3c7; }
+  </style>
+</head>
+<body>
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <p style="margin-top:12px; color:#475569;">Đang tìm kiếm...</p>
+  </div>
+
+  <div class="container">
+    <h2>🔍 Tra cứu thông tin hủy Brandname</h2>
+    
+    <div class="search-box">
+      <div class="filter-row">
+        <div class="form-group" style="flex:2;">
+          <label>Từ khóa (Brandname, Owner, CP)</label>
+          <input type="text" id="keywordInput" placeholder="Nhập tên cần tìm...">
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label>Tháng hủy</label>
+          <input type="month" id="searchMonthInput">
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label>Người nhập hủy</label>
+          <select id="searchUserSelect"><option value="">-- Tất cả --</option></select>
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label>Nhà mạng</label>
+          <select id="searchOperatorSelect"><option value="">-- Tất cả --</option></select>
+        </div>
+      </div>
+      <div style="display:flex; gap:10px; margin-top:8px;">
+        <button class="btn btn-primary" onclick="doSearch()">🔍 Tìm kiếm</button>
+        <button class="btn btn-reset" onclick="resetFilters()">🔄 Đặt lại</button>
+      </div>
+    </div>
+
+    <div id="resultArea">
+      <p style="color:#94a3b8; text-align:center; padding:40px;">Nhập từ khóa hoặc bộ lọc và nhấn Tìm kiếm</p>
+    </div>
+  </div>
+
+  <script>
+    function showLoading() { document.getElementById('loadingOverlay').style.display = 'flex'; }
+    function hideLoading() { document.getElementById('loadingOverlay').style.display = 'none'; }
+
+    window.onload = function() {
+      google.script.run.withSuccessHandler(function(users) {
+        var sel = document.getElementById('searchUserSelect');
+        users.forEach(function(u) {
+          var opt = document.createElement('option');
+          opt.value = u.id; opt.text = u.name; sel.appendChild(opt);
+        });
+      }).getUsers();
+      
+      google.script.run.withSuccessHandler(function(operators) {
+        var sel = document.getElementById('searchOperatorSelect');
+        operators.forEach(function(op) {
+          var opt = document.createElement('option');
+          opt.value = op.id; opt.text = op.name; sel.appendChild(opt);
+        });
+      }).getOperators();
+    };
+
+    function doSearch() {
+      var filters = {
+        keyword: document.getElementById('keywordInput').value,
+        month: document.getElementById('searchMonthInput').value,
+        userId: document.getElementById('searchUserSelect').value,
+        operatorId: document.getElementById('searchOperatorSelect').value
+      };
+
+      if (!filters.keyword && !filters.month && !filters.userId && !filters.operatorId) {
+        alert('Vui lòng nhập ít nhất một điều kiện tìm kiếm.');
+        return;
+      }
+
+      showLoading();
+      google.script.run.withSuccessHandler(function(results) {
+        hideLoading();
+        renderResults(results);
+      }).withFailureHandler(function(err) {
+        hideLoading();
+        document.getElementById('resultArea').innerHTML = '<p style="color:red; padding:20px;">Lỗi: ' + err.message + '</p>';
+      }).searchCancellations(filters);
+    }
+
+    function resetFilters() {
+      document.getElementById('keywordInput').value = '';
+      document.getElementById('searchMonthInput').value = '';
+      document.getElementById('searchUserSelect').value = '';
+      document.getElementById('searchOperatorSelect').value = '';
+      document.getElementById('resultArea').innerHTML = '<p style="color:#94a3b8; text-align:center; padding:40px;">Nhập từ khóa hoặc bộ lọc và nhấn Tìm kiếm</p>';
+    }
+
+    function renderResults(results) {
+      if (!results || results.length === 0) {
+        document.getElementById('resultArea').innerHTML = '<p style="text-align:center; padding:40px; color:#64748b;">Không tìm thấy kết quả nào.</p>';
+        return;
+      }
+
+      var html = '<p class="result-count">Tìm thấy <strong>' + results.length + '</strong> kết quả</p>';
+      html += '<table><thead><tr><th>Record ID</th><th>Người nhập</th><th>Brandname</th><th>Owner</th><th>CP</th><th>Tháng hủy</th><th>Nhà mạng - Nhà cung cấp</th><th>Ngày nhập</th><th>Note</th></tr></thead><tbody>';
+
+      results.forEach(function(r) {
+        var detailsHtml = r.details.map(function(d) {
+          return '<span class="detail-tag">' + d.operatorName + ' → ' + d.providerName + '</span>';
+        }).join(' ');
+
+        html += '<tr>';
+        html += '<td>' + (r.recordId || '') + '</td>';
+        html += '<td>' + (r.userName || '') + '</td>';
+        html += '<td><strong>' + (r.brandName || '') + '</strong></td>';
+        html += '<td>' + (r.ownerName || '') + '</td>';
+        html += '<td>' + (r.cpName || '') + '</td>';
+        html += '<td>' + (r.cancelMonth || '') + '</td>';
+        html += '<td>' + (detailsHtml || '') + '</td>';
+        html += '<td>' + (r.enterDate || '') + '</td>';
+        html += '<td>' + (r.note || '') + '</td>';
+        html += '</tr>';
+      });
+
+      html += '</tbody></table>';
+      document.getElementById('resultArea').innerHTML = html;
+    }
+  </script>
+</body>
+</html>
