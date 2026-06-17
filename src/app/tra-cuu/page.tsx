@@ -141,7 +141,7 @@ function TraCuuContent() {
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       
       {/* Top Bar: Filters */}
-      <div className="card-container p-5" style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'flex-end', zIndex: 10, overflow: 'visible', boxShadow: 'var(--shadow-md)' }}>
+      <div className="card-container p-6" style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'flex-end', zIndex: 10, overflow: 'visible', boxShadow: 'var(--shadow-md)' }}>
         <div style={{ flex: '1 1 200px', zIndex: 50 }}>
           <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: 'var(--neutral-700)' }}>
             <Filter size={14} style={{ display: 'inline', marginBottom: '-2px', marginRight: '4px', color: 'var(--primary-600)' }}/> Từ khóa
