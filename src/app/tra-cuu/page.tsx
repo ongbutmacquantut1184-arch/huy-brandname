@@ -141,16 +141,16 @@ function TraCuuContent() {
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       
       {/* Top Bar: Filters */}
-      <div className="apple-card p-4" style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'flex-end', zIndex: 10, overflow: 'visible' }}>
+      <div className="card-container p-5" style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'flex-end', zIndex: 10, overflow: 'visible', boxShadow: 'var(--shadow-md)' }}>
         <div style={{ flex: '1 1 200px', zIndex: 50 }}>
-          <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, marginBottom: '8px', color: 'var(--apple-gray-1)' }}>
-            <Filter size={14} style={{ display: 'inline', marginBottom: '-2px', marginRight: '4px' }}/> Từ khóa
+          <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: 'var(--neutral-700)' }}>
+            <Filter size={14} style={{ display: 'inline', marginBottom: '-2px', marginRight: '4px', color: 'var(--primary-600)' }}/> Từ khóa
           </label>
           <div style={{ position: 'relative', zIndex: 50 }} ref={keywordContainerRef}>
-            <SearchIcon size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--apple-gray-1)', zIndex: 5 }} />
+            <SearchIcon size={16} style={{ position: 'absolute', left: '12px', top: '13px', color: 'var(--neutral-400)', zIndex: 5 }} />
             <input 
               type="text" 
-              className="apple-input" 
+              className="input-field" 
               placeholder="Brandname, Ghi chú..." 
               style={{ paddingLeft: '36px' }} 
               value={keyword}
@@ -184,13 +184,13 @@ function TraCuuContent() {
         </div>
 
         <div style={{ width: '150px' }}>
-          <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, marginBottom: '8px', color: 'var(--apple-gray-1)' }}>Tháng</label>
-          <input type="month" className="apple-input" value={month} onChange={e => setMonth(e.target.value)} />
+          <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: 'var(--neutral-700)' }}>Tháng</label>
+          <input type="month" className="input-field" value={month} onChange={e => setMonth(e.target.value)} />
         </div>
 
         <div style={{ width: '180px' }}>
-          <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, marginBottom: '8px', color: 'var(--apple-gray-1)' }}>Người nhập</label>
-          <select className="apple-input" value={userId} onChange={e => setUserId(e.target.value)}>
+          <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: 'var(--neutral-700)' }}>Người nhập</label>
+          <select className="input-field" value={userId} onChange={e => setUserId(e.target.value)}>
             <option value="">-- Tất cả --</option>
             {lookups?.users?.map((u: any) => (
               <option key={u.id} value={u.id}>{u.name}</option>
@@ -199,56 +199,72 @@ function TraCuuContent() {
         </div>
 
         <div style={{ flex: '2 1 300px' }}>
-          <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, marginBottom: '8px', color: 'var(--apple-gray-1)' }}>Nhà mạng</label>
+          <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: 'var(--neutral-700)' }}>Nhà mạng</label>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-            {lookups?.operators?.map((op: any) => (
-              <label key={op.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', padding: '6px 12px', borderRadius: '100px', border: selectedOperators.includes(op.id) ? '1px solid var(--apple-blue)' : '1px solid var(--apple-gray-3)', background: selectedOperators.includes(op.id) ? 'rgba(0,122,255,0.08)' : 'var(--apple-white)', transition: 'var(--apple-transition)' }}>
-                <input type="checkbox" checked={selectedOperators.includes(op.id)} onChange={() => handleOperatorToggle(op.id)} style={{ display: 'none' }} />
-                <span style={{ fontSize: '13px', fontWeight: selectedOperators.includes(op.id) ? 500 : 400, color: selectedOperators.includes(op.id) ? 'var(--apple-blue)' : 'var(--apple-text-secondary)' }}>{op.name}</span>
-              </label>
-            ))}
+            {lookups?.operators?.map((op: any) => {
+              const isChecked = selectedOperators.includes(op.id);
+              return (
+                <label key={op.id} style={{ 
+                  display: 'inline-flex', 
+                  alignItems: 'center', 
+                  gap: '6px', 
+                  cursor: 'pointer', 
+                  padding: '8px 16px', 
+                  borderRadius: 'var(--radius-full)', 
+                  border: isChecked ? '1px solid var(--primary-500)' : '1px solid var(--neutral-300)', 
+                  background: isChecked ? 'var(--primary-50)' : '#FFFFFF', 
+                  transition: 'var(--transition-fast)',
+                  fontWeight: isChecked ? 600 : 500,
+                  boxShadow: isChecked ? '0 1px 2px rgba(0, 122, 255, 0.05)' : 'none'
+                }}>
+                  <input type="checkbox" checked={isChecked} onChange={() => handleOperatorToggle(op.id)} style={{ display: 'none' }} />
+                  {isChecked && <CheckCircle size={14} style={{ color: 'var(--primary-600)' }} />}
+                  <span style={{ fontSize: '13px', color: isChecked ? 'var(--primary-700)' : 'var(--neutral-700)' }}>{op.name}</span>
+                </label>
+              );
+            })}
           </div>
         </div>
 
-        <button className="apple-btn apple-btn-primary" style={{ padding: '0 24px', height: '42px', flexShrink: 0 }} onClick={() => handleSearch()} disabled={isSearching}>
+        <button className="btn btn-primary" style={{ padding: '0 24px', height: '42px', flexShrink: 0 }} onClick={() => handleSearch()} disabled={isSearching}>
           {isSearching ? 'Đang tìm...' : 'Tìm Kiếm'}
         </button>
       </div>
 
       {/* Right Content: Results */}
-      <div className="apple-card p-0" style={{ overflow: 'hidden' }}>
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--apple-border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--apple-gray-4)' }}>
-          <h2 style={{ fontSize: '16px', fontWeight: 600, margin: 0 }}>Kết quả Tra Cứu</h2>
+      <div className="card-container" style={{ overflow: 'hidden', boxShadow: 'var(--shadow-md)' }}>
+        <div style={{ padding: '18px 24px', borderBottom: '1.5px solid var(--neutral-200)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--neutral-100)' }}>
+          <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--neutral-900)', margin: 0 }}>Kết quả Tra Cứu</h2>
           {hasSearched && (
-            <span style={{ fontSize: '12px', fontWeight: 600, padding: '4px 10px', borderRadius: '100px', background: 'rgba(0,122,255,0.1)', color: 'var(--apple-blue)' }}>
+            <span className="badge-custom badge-primary" style={{ padding: '6px 12px', fontSize: '12px' }}>
               {results.length} bản ghi
             </span>
           )}
         </div>
         
         {!hasSearched ? (
-          <div style={{ padding: '60px 40px', textAlign: 'center', color: 'var(--apple-gray-1)' }}>
-            <SearchIcon size={40} style={{ margin: '0 auto 16px auto', opacity: 0.3 }} />
-            <p style={{ fontSize: '15px', margin: 0 }}>Hãy chọn bộ lọc và bấm <strong>Tìm kiếm</strong> để xem kết quả.</p>
+          <div style={{ padding: '80px 40px', textAlign: 'center', color: 'var(--neutral-500)' }}>
+            <SearchIcon size={48} style={{ margin: '0 auto 16px auto', opacity: 0.4, color: 'var(--primary-400)' }} />
+            <p style={{ fontSize: '15px', margin: 0, fontWeight: 500 }}>Hãy chọn bộ lọc và bấm <strong>Tìm kiếm</strong> để xem kết quả.</p>
           </div>
         ) : results.length === 0 ? (
-          <div style={{ padding: '60px 40px', textAlign: 'center', color: 'var(--apple-gray-1)' }}>
-            <FileText size={40} style={{ margin: '0 auto 16px auto', opacity: 0.3 }} />
-            <p style={{ fontSize: '15px', margin: 0 }}>Không tìm thấy bản ghi nào khớp với điều kiện lọc.</p>
+          <div style={{ padding: '80px 40px', textAlign: 'center', color: 'var(--neutral-500)' }}>
+            <FileText size={48} style={{ margin: '0 auto 16px auto', opacity: 0.4, color: 'var(--neutral-400)' }} />
+            <p style={{ fontSize: '15px', margin: 0, fontWeight: 500 }}>Không tìm thấy bản ghi nào khớp với điều kiện lọc.</p>
           </div>
         ) : (
-          <div style={{ maxHeight: 'calc(100vh - 150px)', overflowY: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-              <thead style={{ position: 'sticky', top: 0, background: 'var(--apple-white)', zIndex: 10, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+          <div style={{ maxHeight: 'calc(100vh - 220px)', overflowY: 'auto' }}>
+            <table className="custom-table">
+              <thead>
                 <tr>
-                  <th style={{ textAlign: 'left', padding: '12px 20px', fontWeight: 600, color: 'var(--apple-gray-1)', borderBottom: '1px solid var(--apple-gray-3)' }}>Brandname</th>
-                  <th style={{ textAlign: 'left', padding: '12px 20px', fontWeight: 600, color: 'var(--apple-gray-1)', borderBottom: '1px solid var(--apple-gray-3)' }}>CP</th>
-                  <th style={{ textAlign: 'left', padding: '12px 20px', fontWeight: 600, color: 'var(--apple-gray-1)', borderBottom: '1px solid var(--apple-gray-3)' }}>Tháng hủy</th>
-                  <th style={{ textAlign: 'left', padding: '12px 20px', fontWeight: 600, color: 'var(--apple-gray-1)', borderBottom: '1px solid var(--apple-gray-3)' }}>Hủy bao nhiêu NCC</th>
-                  <th style={{ textAlign: 'left', padding: '12px 20px', fontWeight: 600, color: 'var(--apple-gray-1)', borderBottom: '1px solid var(--apple-gray-3)' }}>Người nhập hủy</th>
-                  <th style={{ textAlign: 'left', padding: '12px 20px', fontWeight: 600, color: 'var(--apple-gray-1)', borderBottom: '1px solid var(--apple-gray-3)' }}>Ngày nhập hủy</th>
-                  <th style={{ textAlign: 'left', padding: '12px 20px', fontWeight: 600, color: 'var(--apple-gray-1)', borderBottom: '1px solid var(--apple-gray-3)' }}>Ghi chú</th>
-                  <th style={{ width: '40px', borderBottom: '1px solid var(--apple-gray-3)' }}></th>
+                  <th>Brandname</th>
+                  <th>CP_Name</th>
+                  <th>Tháng hủy</th>
+                  <th>Hủy bao nhiêu NCC</th>
+                  <th>Người nhập hủy</th>
+                  <th>Ngày nhập hủy</th>
+                  <th>Ghi chú</th>
+                  <th style={{ width: '50px' }}></th>
                 </tr>
               </thead>
               <tbody>
@@ -257,51 +273,54 @@ function TraCuuContent() {
                   return (
                     <React.Fragment key={item.id}>
                       <tr 
-                        style={{ borderBottom: '1px solid var(--apple-gray-4)', cursor: 'pointer', background: isExpanded ? 'rgba(0,122,255,0.02)' : 'var(--apple-white)', transition: 'var(--apple-transition)' }}
+                        style={{ cursor: 'pointer', background: isExpanded ? 'var(--primary-50)' : '#FFFFFF' }}
                         onClick={() => setExpandedId(isExpanded ? null : item.id)}
-                        className="hover-bg-gray"
                       >
-                        <td style={{ padding: '14px 20px', fontWeight: 600, color: 'var(--apple-blue)' }}>
+                        <td style={{ fontWeight: 700, color: 'var(--primary-700)' }}>
                           {item.brand?.name || '--'}
                         </td>
-                        <td style={{ padding: '14px 20px', color: 'var(--apple-black)' }}>
+                        <td style={{ color: 'var(--neutral-900)', fontWeight: 500 }}>
                           {item.cp?.name || '--'}
                         </td>
-                        <td style={{ padding: '14px 20px', color: 'var(--apple-gray-1)' }}>{formatMonth(item.month)}</td>
-                        <td style={{ padding: '14px 20px', color: 'var(--apple-black)', fontWeight: 500 }}>
+                        <td>{formatMonth(item.month)}</td>
+                        <td style={{ color: 'var(--neutral-900)', fontWeight: 600 }}>
                           {item.details?.length || 0} NCC
                         </td>
-                        <td style={{ padding: '14px 20px', color: 'var(--apple-gray-1)' }}>{item.user?.name || '--'}</td>
-                        <td style={{ padding: '14px 20px', color: 'var(--apple-gray-1)' }}>{formatDate(item.enter_date)}</td>
-                        <td style={{ padding: '14px 20px', color: item.note ? 'var(--apple-black)' : 'var(--apple-gray-1)', fontWeight: item.note ? 500 : 400 }}>
-                          {item.note ? 'Có' : 'Không'}
+                        <td style={{ color: 'var(--neutral-600)' }}>{item.user?.name || '--'}</td>
+                        <td style={{ color: 'var(--neutral-600)' }}>{formatDate(item.enter_date)}</td>
+                        <td>
+                          {item.note ? (
+                            <span className="badge-custom badge-warning" style={{ padding: '2px 8px', fontSize: '11px' }}>Có ghi chú</span>
+                          ) : (
+                            <span style={{ color: 'var(--neutral-400)' }}>--</span>
+                          )}
                         </td>
-                        <td style={{ padding: '14px 20px', color: 'var(--apple-gray-1)', textAlign: 'center' }}>
-                          {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                        <td style={{ textAlign: 'center', color: 'var(--neutral-500)' }}>
+                          {isExpanded ? <ChevronUp size={18} style={{ color: 'var(--primary-600)' }} /> : <ChevronDown size={18} />}
                         </td>
                       </tr>
                       {/* Expanded Details Row */}
                       {isExpanded && (
-                        <tr style={{ background: 'rgba(0,0,0,0.01)', borderBottom: '1px solid var(--apple-gray-3)' }}>
-                          <td colSpan={8} style={{ padding: '20px' }}>
-                            <div style={{ background: 'var(--apple-white)', border: '1px solid var(--apple-border-light)', borderRadius: '12px', padding: '16px', boxShadow: 'var(--apple-shadow-sm)' }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                                <h4 style={{ fontSize: '14px', fontWeight: 600, margin: 0, color: 'var(--apple-black)' }}>Chi tiết Hủy:</h4>
+                        <tr style={{ background: 'var(--neutral-50)' }}>
+                          <td colSpan={8} style={{ padding: '24px', borderBottom: '1px solid var(--neutral-200)' }}>
+                            <div className="card-container animate-fade-in" style={{ background: '#FFFFFF', padding: '20px', boxShadow: 'var(--shadow-sm)' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                                <h4 style={{ fontSize: '14px', fontWeight: 700, margin: 0, color: 'var(--neutral-900)' }}>Chi tiết các nhà cung cấp đã hủy:</h4>
                                 <button 
-                                  className="apple-btn apple-btn-primary" 
-                                  style={{ padding: '6px 12px', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
-                                  onClick={() => router.push('/nhap-huy?editId=' + item.id)}
+                                  className="btn btn-secondary" 
+                                  style={{ padding: '6px 14px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
+                                  onClick={(e) => { e.stopPropagation(); router.push('/nhap-huy?editId=' + item.id); }}
                                 >
-                                  ✏️ Chỉnh sửa
+                                  ✏️ Chỉnh sửa phiếu
                                 </button>
                               </div>
                               {item.note && (
-                                <div style={{ marginBottom: '16px', padding: '12px', background: 'rgba(255,149,0,0.1)', borderLeft: '3px solid var(--apple-orange)', borderRadius: '0 8px 8px 0', fontSize: '13px' }}>
-                                  <strong style={{ color: 'var(--apple-orange)' }}>Ghi chú: </strong>
-                                  <span style={{ color: 'var(--apple-black)', whiteSpace: 'pre-wrap' }}>{item.note}</span>
+                                <div style={{ marginBottom: '20px', padding: '14px 16px', background: 'var(--gold-50)', borderLeft: '4px solid var(--gold-500)', borderRadius: '0 var(--radius-md) var(--radius-md) 0', fontSize: '13.5px', boxShadow: 'var(--shadow-xs)' }}>
+                                  <strong style={{ color: 'var(--gold-700)', display: 'block', marginBottom: '4px' }}>Ghi chú từ người nhập:</strong>
+                                  <span style={{ color: 'var(--neutral-800)', whiteSpace: 'pre-wrap' }}>{item.note}</span>
                                 </div>
                               )}
-                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
                                 {(() => {
                                   const grouped: Record<string, { name: string; providers: string[] }> = {};
                                   item.details?.forEach((d: any) => {
@@ -319,14 +338,17 @@ function TraCuuContent() {
                                   });
 
                                   return Object.values(grouped).map((group: any, idx: number) => (
-                                    <div key={idx} style={{ padding: '12px', border: '1px solid var(--apple-gray-4)', borderRadius: '8px' }}>
-                                      <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--apple-black)', marginBottom: '8px' }}>{group.name}</div>
+                                    <div key={idx} style={{ padding: '14px', border: '1px solid var(--neutral-200)', borderRadius: 'var(--radius-md)', background: 'var(--neutral-50)' }}>
+                                      <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--neutral-900)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--primary-600)' }}></div>
+                                        {group.name}
+                                      </div>
                                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                                         {group.providers.length === 0 ? (
-                                          <span style={{ fontSize: '12.5px', color: 'var(--apple-gray-1)' }}>Không có nhà cung cấp</span>
+                                          <span style={{ fontSize: '12.5px', color: 'var(--neutral-400)', fontStyle: 'italic' }}>Không có nhà cung cấp</span>
                                         ) : (
                                           group.providers.map((pname: string, pIdx: number) => (
-                                            <span key={pIdx} style={{ fontSize: '12.5px', background: '#f2f2f7', color: 'var(--apple-blue)', padding: '4px 10px', borderRadius: '100px', fontWeight: 500 }}>{pname}</span>
+                                            <span key={pIdx} className="badge-custom badge-primary" style={{ padding: '4px 10px', fontSize: '12px' }}>{pname}</span>
                                           ))
                                         )}
                                       </div>
@@ -334,9 +356,9 @@ function TraCuuContent() {
                                   ));
                                 })()}
                               </div>
-                              <div style={{ marginTop: '16px', fontSize: '12px', color: 'var(--apple-gray-1)', display: 'flex', justifyContent: 'space-between' }}>
-                                <span>Record ID: {item.id}</span>
-                                <span>Ngày nhập: {formatDate(item.enter_date)}</span>
+                              <div style={{ marginTop: '20px', paddingOver: '12px', borderTop: '1px dashed var(--neutral-200)', paddingTop: '12px', fontSize: '12px', color: 'var(--neutral-400)', display: 'flex', justifyContent: 'space-between' }}>
+                                <span>Mã phiếu: <strong>{item.id}</strong></span>
+                                <span>Ngày nhập hệ thống: {formatDate(item.enter_date)}</span>
                               </div>
                             </div>
                           </td>
@@ -352,8 +374,6 @@ function TraCuuContent() {
       </div>
       
       <style dangerouslySetInnerHTML={{__html: `
-        .hover-bg-gray:hover { background-color: var(--apple-gray-4) !important; }
-        
         /* Custom dropdown style */
         .custom-dropdown {
           position: absolute;
@@ -361,10 +381,10 @@ function TraCuuContent() {
           left: 0;
           right: 0;
           z-index: 50;
-          background: rgba(255, 255, 255, 0.95);
-          border: 1px solid var(--apple-gray-4);
-          border-radius: 10px;
-          box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+          background: rgba(255, 255, 255, 0.98);
+          border: 1px solid var(--neutral-300);
+          border-radius: var(--radius-md);
+          box-shadow: var(--shadow-lg);
           max-height: 200px;
           overflow-y: auto;
           backdrop-filter: blur(8px);
@@ -372,19 +392,19 @@ function TraCuuContent() {
         .dropdown-item {
           padding: 10px 14px;
           cursor: pointer;
-          font-size: 13px;
-          color: var(--apple-black);
-          border-bottom: 1px solid var(--apple-gray-5);
-          transition: background 0.15s, color 0.15s;
+          font-size: 13.5px;
+          color: var(--neutral-700);
+          border-bottom: 1px solid var(--neutral-200);
+          transition: var(--transition-fast);
           text-align: left;
         }
         .dropdown-item:last-child {
           border-bottom: none;
         }
         .dropdown-item:hover {
-          background-color: rgba(0, 122, 255, 0.06);
-          color: var(--apple-blue);
-          font-weight: 500;
+          background-color: var(--primary-50);
+          color: var(--primary-700);
+          font-weight: 600;
         }
       `}} />
     </div>

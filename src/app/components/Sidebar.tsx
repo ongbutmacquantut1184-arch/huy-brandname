@@ -10,7 +10,7 @@ export default function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {
-    document.documentElement.style.setProperty('--sidebar-width', isCollapsed ? '64px' : '200px');
+    document.documentElement.style.setProperty('--sidebar-width', isCollapsed ? '72px' : '220px');
   }, [isCollapsed]);
 
   const navItems = [
@@ -21,9 +21,9 @@ export default function Sidebar() {
 
   return (
     <aside style={{ 
-      width: isCollapsed ? '64px' : '200px', 
-      backgroundColor: 'var(--apple-white)', 
-      borderRight: '1px solid var(--apple-gray-4)', 
+      width: isCollapsed ? '72px' : '220px', 
+      backgroundColor: 'var(--neutral-950)', 
+      borderRight: '1px solid var(--neutral-200)', 
       padding: isCollapsed ? '24px 8px' : '24px 16px', 
       display: 'flex', 
       flexDirection: 'column',
@@ -31,22 +31,35 @@ export default function Sidebar() {
       position: 'fixed',
       top: 0,
       left: 0,
-      transition: 'all 0.3s ease',
+      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
       zIndex: 100
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: isCollapsed ? 'center' : 'space-between', marginBottom: '32px', padding: isCollapsed ? '0' : '0 12px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: isCollapsed ? 'center' : 'space-between', marginBottom: '36px', padding: isCollapsed ? '0' : '0 12px' }}>
         {!isCollapsed && (
           <div>
-            <h1 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--apple-black)', margin: 0 }}>Brandname</h1>
-            <p style={{ fontSize: '13px', color: 'var(--apple-gray-1)', margin: '4px 0 0 0' }}>Quản lý Hủy</p>
+            <h1 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--neutral-900)', margin: 0, letterSpacing: '0.5px' }}>
+              Brand<span style={{ color: 'var(--primary-500)' }}>name</span>
+            </h1>
+            <p style={{ fontSize: '11px', color: 'var(--neutral-500)', margin: '4px 0 0 0', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600 }}>Quản lý Hủy</p>
           </div>
         )}
         <button 
           onClick={() => setIsCollapsed(!isCollapsed)}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--apple-gray-1)', padding: '4px', borderRadius: '6px' }}
-          className="hover-bg-gray"
+          style={{ 
+            background: 'var(--neutral-50)', 
+            border: '1px solid var(--neutral-200)', 
+            cursor: 'pointer', 
+            color: 'var(--neutral-500)', 
+            padding: '6px', 
+            borderRadius: 'var(--radius-sm)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'var(--transition-fast)'
+          }}
+          className="sidebar-collapse-btn"
         >
-          {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+          {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
         </button>
       </div>
       
@@ -62,36 +75,49 @@ export default function Sidebar() {
               title={isCollapsed ? item.name : undefined}
               style={{ justifyContent: isCollapsed ? 'center' : 'flex-start' }}
             >
-              <Icon size={isCollapsed ? 22 : 18} />
+              <Icon size={isCollapsed ? 20 : 18} />
               {!isCollapsed && <span>{item.name}</span>}
             </Link>
           );
         })}
       </nav>
-
+      
       <style dangerouslySetInnerHTML={{__html: `
         .sidebar-link {
           display: flex;
           align-items: center;
           gap: 12px;
-          padding: 10px 12px;
-          border-radius: var(--apple-radius-sm);
-          color: var(--apple-gray-1);
-          font-size: 15px;
+          padding: 12px 14px;
+          border-radius: var(--radius-md);
+          color: var(--neutral-600);
+          font-size: 14px;
           font-weight: 500;
-          transition: var(--apple-transition);
+          transition: var(--transition-fast);
           text-decoration: none;
+          position: relative;
         }
         .sidebar-link:hover {
-          background-color: var(--apple-gray-4);
-          color: var(--apple-black);
+          background-color: var(--neutral-50);
+          color: var(--neutral-900);
         }
         .sidebar-link.active {
-          background-color: rgba(0, 122, 255, 0.1);
-          color: var(--apple-blue);
+          background-color: var(--primary-50);
+          color: var(--primary-600);
+          font-weight: 600;
         }
-        .hover-bg-gray:hover {
-          background-color: var(--apple-gray-4);
+        .sidebar-link.active::before {
+          content: '';
+          position: absolute;
+          left: 0;
+          top: 25%;
+          height: 50%;
+          width: 3px;
+          background-color: var(--primary-500);
+          border-radius: 0 4px 4px 0;
+        }
+        .sidebar-collapse-btn:hover {
+          background-color: var(--neutral-200);
+          color: var(--neutral-900);
         }
       `}} />
     </aside>

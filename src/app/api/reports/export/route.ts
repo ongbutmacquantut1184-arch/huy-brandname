@@ -91,7 +91,7 @@ export async function GET(request: Request) {
         // Headers
         const headers = ['STT', 'Brandname'];
         operators?.forEach(op => headers.push(`Hủy ${op.name}`));
-        headers.push('Lĩnh vực');
+        headers.push('CP_Name');
         csvContent += headers.map(h => `"${h}"`).join(',') + '\n';
 
         // Data Rows
@@ -140,7 +140,7 @@ export async function GET(request: Request) {
 
       const headers = ['STT', 'Brandname'];
       operators?.forEach(op => headers.push(`Hủy ${op.name}`));
-      headers.push('Lĩnh vực');
+      headers.push('CP_Name');
       
       const headerRow = worksheet.addRow(headers);
       

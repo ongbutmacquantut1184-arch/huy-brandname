@@ -379,39 +379,41 @@ function NhapHuyForm() {
     <div className="animate-fade-in" style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
       
       {/* Left: Form Panel (58%) */}
-      <div className="apple-card p-6" style={{ flex: '0 0 58%', position: 'relative' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--apple-gray-4)', paddingBottom: '12px' }}>
+      <div className="card-container p-6" style={{ flex: '0 0 58%', position: 'relative', boxShadow: 'var(--shadow-md)' }}>
+        <h2 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--neutral-900)', marginBottom: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1.5px solid var(--neutral-200)', paddingBottom: '14px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span>{isEditMode ? `✏️ Chỉnh sửa phiếu hủy (${editId})` : 'Thông tin hủy Brandname'}</span>
-            <button onClick={handleRefreshLookups} title="Tải lại danh mục mới nhất" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--apple-gray-1)', display: 'flex', alignItems: 'center', padding: '4px', borderRadius: '4px' }} className="hover-bg-gray">
+            <button onClick={handleRefreshLookups} title="Tải lại danh mục mới nhất" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--neutral-500)', display: 'flex', alignItems: 'center', padding: '4px', borderRadius: '4px' }} className="hover-bg-gray">
               <RefreshCw size={16} />
             </button>
           </div>
           {isEditMode && (
-            <span style={{ fontSize: '12px', background: 'rgba(0,122,255,0.1)', color: 'var(--apple-blue)', padding: '4px 10px', borderRadius: '100px', fontWeight: 500 }}>
-              Edit Mode
+            <span className="badge-custom badge-primary">
+              Chế độ chỉnh sửa
             </span>
           )}
         </h2>
         
         {errors.length > 0 && (
-          <div style={{ background: 'rgba(255, 59, 48, 0.1)', border: '1px solid rgba(255, 59, 48, 0.3)', borderRadius: '12px', padding: '16px', marginBottom: '24px' }}>
-            <h4 style={{ color: 'var(--apple-red)', margin: '0 0 8px 0', fontSize: '14px', fontWeight: 600 }}>Vui lòng kiểm tra lại:</h4>
-            <ul style={{ margin: 0, paddingLeft: '20px', color: 'var(--apple-red)', fontSize: '13px' }}>
+          <div style={{ background: 'var(--error-50)', border: '1px solid var(--error-100)', borderRadius: 'var(--radius-md)', padding: '16px', marginBottom: '24px' }}>
+            <h4 style={{ color: 'var(--error-700)', margin: '0 0 8px 0', fontSize: '14px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <AlertCircle size={16} /> Vui lòng kiểm tra lại:
+            </h4>
+            <ul style={{ margin: 0, paddingLeft: '20px', color: 'var(--error-700)', fontSize: '13px' }}>
               {errors.map((e, i) => <li key={i}>{e}</li>)}
             </ul>
           </div>
         )}
 
         {successMsg && (
-          <div className="animate-fade-in" style={{ background: 'rgba(52, 199, 89, 0.1)', border: '1px solid rgba(52, 199, 89, 0.3)', borderRadius: '12px', padding: '16px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--apple-green)', fontSize: '14px', fontWeight: 500 }}>
+          <div className="animate-fade-in badge-custom badge-success" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '16px', marginBottom: '24px', width: '100%', borderRadius: 'var(--radius-md)', fontSize: '14px' }}>
             <CheckCircle size={18} /> {successMsg}
           </div>
         )}
 
         <div style={{ marginBottom: '20px' }}>
-          <label className="apple-label">Người nhập hủy <span className="text-apple-red">*</span></label>
-          <select className="apple-input" value={userId} onChange={e => setUserId(e.target.value)}>
+          <label className="label-custom">Người nhập hủy <span className="text-error-600">*</span></label>
+          <select className="input-field" value={userId} onChange={e => setUserId(e.target.value)}>
             <option value="">-- Chọn người nhập --</option>
             {lookups?.users?.map((u: any) => (
               <option key={u.id} value={u.id}>{u.name}</option>
@@ -421,23 +423,23 @@ function NhapHuyForm() {
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
           <div>
-            <label className="apple-label">Tháng hủy <span className="text-apple-red">*</span></label>
-            <input type="month" className="apple-input" value={month} onChange={e => setMonth(e.target.value)} />
+            <label className="label-custom">Tháng hủy <span className="text-error-600">*</span></label>
+            <input type="month" className="input-field" value={month} onChange={e => setMonth(e.target.value)} />
           </div>
           <div>
-            <label className="apple-label">Ngày nhập thông tin hủy <span className="text-apple-red">*</span></label>
-            <input type="date" className="apple-input" value={enterDate} onChange={e => setEnterDate(e.target.value)} />
+            <label className="label-custom">Ngày nhập thông tin hủy <span className="text-error-600">*</span></label>
+            <input type="date" className="input-field" value={enterDate} onChange={e => setEnterDate(e.target.value)} />
           </div>
         </div>
 
         {/* Brandname Input */}
         <div style={{ marginBottom: '20px', position: 'relative' }} ref={brandContainerRef}>
-          <label className="apple-label">Brandname <span className="text-apple-red">*</span></label>
+          <label className="label-custom">Brandname <span className="text-error-600">*</span></label>
           <div style={{ display: 'flex', gap: '10px' }}>
             <div style={{ flex: 1, position: 'relative' }}>
               <input 
                 type="text" 
-                className="apple-input" 
+                className="input-field" 
                 placeholder="Nhập tên thương hiệu..." 
                 value={brandSearch}
                 onChange={e => {
@@ -470,12 +472,12 @@ function NhapHuyForm() {
 
         {/* CP Name Input */}
         <div style={{ marginBottom: '20px', position: 'relative' }} ref={cpContainerRef}>
-          <label className="apple-label">CP_Name <span className="text-apple-red">*</span></label>
+          <label className="label-custom">CP_Name <span className="text-error-600">*</span></label>
           <div style={{ display: 'flex', gap: '10px' }}>
             <div style={{ flex: 1, position: 'relative' }}>
               <input 
                 type="text" 
-                className="apple-input" 
+                className="input-field" 
                 placeholder="Nhập tên CP..." 
                 value={cpSearch}
                 onChange={e => {
@@ -508,8 +510,8 @@ function NhapHuyForm() {
 
         {/* Operators & Providers Checkboxes */}
         <div style={{ marginBottom: '20px' }}>
-          <label className="apple-label">Nhà mạng & Nhà cung cấp <span className="text-apple-red">*</span></label>
-          <div style={{ border: '1px solid var(--apple-gray-4)', borderRadius: '8px', overflow: 'hidden' }}>
+          <label className="label-custom">Nhà mạng & Nhà cung cấp <span className="text-error-600">*</span></label>
+          <div style={{ border: '1px solid var(--neutral-200)', borderRadius: 'var(--radius-md)', overflow: 'hidden', boxShadow: 'var(--shadow-xs)' }}>
             {lookups?.operatorProviderMapping?.map((mapping: any) => {
               const opId = mapping.id;
               const isOpChecked = selectedOperators.includes(opId);
@@ -517,15 +519,16 @@ function NhapHuyForm() {
               const selectedProvs = selectedProviders[opId] || [];
 
               return (
-                <div key={opId} style={{ borderBottom: '1px solid var(--apple-gray-4)', background: isOpChecked ? 'rgba(0,122,255,0.03)' : 'transparent', transition: 'background 0.2s' }}>
+                <div key={opId} style={{ borderBottom: '1px solid var(--neutral-200)', background: isOpChecked ? 'var(--primary-50)' : 'transparent', transition: 'var(--transition-fast)' }}>
                   <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', cursor: 'pointer' }} onClick={() => handleOperatorToggle(opId)}>
                     <input 
                       type="checkbox" 
                       checked={isOpChecked} 
                       readOnly 
-                      style={{ accentColor: 'var(--apple-blue)', transform: 'scale(1.2)', marginRight: '12px', cursor: 'pointer' }} 
+                      className="custom-checkbox"
+                      style={{ marginRight: '12px' }} 
                     />
-                    <span style={{ fontSize: '14px', fontWeight: isOpChecked ? 600 : 500, color: isOpChecked ? 'var(--apple-blue)' : 'var(--apple-black)' }}>
+                    <span style={{ fontSize: '14px', fontWeight: isOpChecked ? 600 : 500, color: isOpChecked ? 'var(--primary-700)' : 'var(--neutral-900)' }}>
                       {mapping.name}
                     </span>
                   </div>
@@ -533,7 +536,7 @@ function NhapHuyForm() {
                   {isOpChecked && (
                     <div style={{ padding: '0 16px 16px 44px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '8px' }}>
                       {providers.length === 0 ? (
-                        <span style={{ fontSize: '13px', color: 'var(--apple-gray-1)', fontStyle: 'italic', gridColumn: '1/-1' }}>Không có cấu hình nhà cung cấp.</span>
+                        <span style={{ fontSize: '13px', color: 'var(--neutral-500)', fontStyle: 'italic', gridColumn: '1/-1' }}>Không có cấu hình nhà cung cấp.</span>
                       ) : (
                         providers.map((p: any) => {
                           const isProvChecked = selectedProvs.includes(p.id);
@@ -543,16 +546,18 @@ function NhapHuyForm() {
                           return (
                             <label key={p.id} style={{
                               display: 'inline-flex', alignItems: 'center', gap: '6px',
-                              padding: '6px 12px', borderRadius: '100px',
-                              border: `1px solid ${isDisabled ? 'var(--apple-gray-3)' : isProvChecked ? 'var(--apple-blue)' : 'var(--apple-gray-3)'}`,
-                              background: isDisabled ? 'var(--apple-gray-5)' : isProvChecked ? 'rgba(0,122,255,0.08)' : 'var(--apple-white)',
-                              color: isDisabled ? 'var(--apple-gray-2)' : isProvChecked ? 'var(--apple-blue)' : 'var(--apple-text-secondary)',
-                              cursor: isDisabled ? 'not-allowed' : 'pointer', fontSize: '13px', transition: 'all 0.2s',
+                              padding: '8px 14px', borderRadius: 'var(--radius-full)',
+                              border: `1px solid ${isDisabled ? 'var(--neutral-200)' : isProvChecked ? 'var(--primary-500)' : 'var(--neutral-300)'}`,
+                              background: isDisabled ? 'var(--neutral-100)' : isProvChecked ? 'var(--primary-50)' : '#FFFFFF',
+                              color: isDisabled ? 'var(--neutral-400)' : isProvChecked ? 'var(--primary-700)' : 'var(--neutral-700)',
+                              cursor: isDisabled ? 'not-allowed' : 'pointer', fontSize: '13px', transition: 'var(--transition-fast)',
                               whiteSpace: 'normal',
                               wordBreak: 'break-word',
                               textAlign: 'left',
                               justifyContent: 'flex-start',
-                              opacity: isDisabled ? 0.7 : 1
+                              opacity: isDisabled ? 0.7 : 1,
+                              fontWeight: isProvChecked && !isDisabled ? 600 : 500,
+                              boxShadow: isProvChecked && !isDisabled ? '0 1px 2px rgba(0, 122, 255, 0.05)' : 'none'
                             }}>
                               <input 
                                 type="checkbox" 
@@ -561,16 +566,16 @@ function NhapHuyForm() {
                                 onChange={(e) => { e.stopPropagation(); handleProviderToggle(opId, p.id); }}
                                 style={{ display: 'none' }}
                               />
-                              {isProvChecked && !isDisabled && <CheckCircle size={14} style={{ flexShrink: 0 }} />}
+                              {isProvChecked && !isDisabled && <CheckCircle size={14} style={{ flexShrink: 0, color: 'var(--primary-600)' }} />}
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                <span style={{ fontWeight: isProvChecked && !isDisabled ? 500 : 400 }}>{p.name}</span>
+                                <span>{p.name}</span>
                                 {overlapId && (
                                   <a 
                                     href={`/tra-cuu?id=${overlapId}`}
                                     target="_blank"
                                     rel="noreferrer"
                                     onClick={(e) => e.stopPropagation()}
-                                    style={{ fontSize: '11px', color: 'var(--apple-blue)', fontStyle: 'italic', textDecoration: 'underline', cursor: 'pointer', pointerEvents: 'auto' }}
+                                    style={{ fontSize: '11px', color: 'var(--primary-600)', fontStyle: 'italic', textDecoration: 'underline', cursor: 'pointer', pointerEvents: 'auto' }}
                                   >
                                     (Đã nhập trong tháng này)
                                   </a>
@@ -589,17 +594,17 @@ function NhapHuyForm() {
         </div>
 
         <div style={{ marginBottom: '24px' }}>
-          <label className="apple-label">Ghi chú</label>
-          <textarea className="apple-input" rows={2} placeholder="Thông tin bổ sung..." value={note} onChange={e => setNote(e.target.value)}></textarea>
+          <label className="label-custom">Ghi chú</label>
+          <textarea className="input-field" rows={2} placeholder="Thông tin bổ sung..." value={note} onChange={e => setNote(e.target.value)}></textarea>
         </div>
 
         <div style={{ display: 'flex', gap: '12px' }}>
-          <button className="apple-btn apple-btn-primary" onClick={handleSubmit} disabled={isSubmitting}>
+          <button className="btn btn-primary" onClick={handleSubmit} disabled={isSubmitting}>
             <Save size={16} /> {isSubmitting ? 'Đang xử lý...' : isEditMode ? 'Cập Nhật Thông Tin Hủy' : 'Lưu Thông Tin Hủy'}
           </button>
           
           {isEditMode && (
-            <button className="apple-btn" style={{ background: 'var(--apple-gray-4)', color: 'var(--apple-black)' }} onClick={handleCancelEdit}>
+            <button className="btn btn-secondary" onClick={handleCancelEdit}>
               Hủy chỉnh sửa
             </button>
           )}
@@ -608,24 +613,24 @@ function NhapHuyForm() {
 
       {/* Right: Preview Panel (42%) */}
       <div style={{ flex: '0 0 42%', position: 'sticky', top: '24px' }}>
-        <div className="apple-card" style={{ padding: 0, overflow: 'hidden' }}>
-          <div style={{ padding: '16px 20px', background: 'var(--apple-gray-4)', borderBottom: '1px solid var(--apple-gray-3)' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: 600, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="card-container" style={{ padding: 0, overflow: 'hidden', boxShadow: 'var(--shadow-md)' }}>
+          <div style={{ padding: '18px 20px', background: 'var(--neutral-100)', borderBottom: '1.5px solid var(--neutral-200)' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--neutral-900)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
               Bản xem trước dữ liệu
             </h3>
           </div>
           
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+          <table className="custom-table" style={{ fontSize: '13.5px' }}>
             <thead>
               <tr>
-                <th style={{ textAlign: 'left', padding: '10px 16px', background: 'var(--apple-gray-5)', color: 'var(--apple-gray-1)', fontWeight: 600, borderBottom: '1px solid var(--apple-gray-4)', width: '35%' }}>Nhà mạng</th>
-                <th style={{ textAlign: 'left', padding: '10px 16px', background: 'var(--apple-gray-5)', color: 'var(--apple-gray-1)', fontWeight: 600, borderBottom: '1px solid var(--apple-gray-4)' }}>Nhà cung cấp đã chọn</th>
+                <th style={{ width: '35%' }}>Nhà mạng</th>
+                <th>Nhà cung cấp đã chọn</th>
               </tr>
             </thead>
             <tbody>
               {selectedOperators.length === 0 ? (
                 <tr>
-                  <td colSpan={2} style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--apple-gray-1)' }}>
+                  <td colSpan={2} style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--neutral-500)' }}>
                     Chưa có nhà mạng nào được chọn
                   </td>
                 </tr>
@@ -633,27 +638,18 @@ function NhapHuyForm() {
                 selectedOperators.map(opId => {
                   const opName = lookups.opMap[opId] || opId;
                   const selectedForOp = selectedProviders[opId] || [];
-                  const providerNames = selectedForOp.map(pid => lookups.provMap[pid] || pid);
 
                   return (
-                    <tr key={opId} style={{ borderBottom: '1px solid var(--apple-gray-4)' }}>
-                      <td style={{ padding: '12px 16px', verticalAlign: 'top', fontWeight: 600, color: 'var(--apple-black)' }}>{opName}</td>
-                      <td style={{ padding: '12px 16px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    <tr key={opId}>
+                      <td style={{ verticalAlign: 'top', fontWeight: 600, color: 'var(--neutral-900)' }}>{opName}</td>
+                      <td style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                         {selectedForOp.length === 0 ? (
-                          <span style={{ color: 'var(--apple-gray-1)' }}>--</span>
+                          <span style={{ color: 'var(--neutral-400)' }}>--</span>
                         ) : (
                           selectedForOp.map(pid => {
                             const pname = lookups.provMap[pid] || pid;
                             return (
-                              <span key={pid} style={{
-                                fontSize: '12px',
-                                background: '#f2f2f7',
-                                color: 'var(--apple-blue)',
-                                padding: '4px 10px',
-                                borderRadius: '100px',
-                                fontWeight: 500,
-                                display: 'inline-block'
-                              }}>
+                              <span key={pid} className="badge-custom badge-primary" style={{ display: 'inline-block' }}>
                                 {pname}
                               </span>
                             );
@@ -669,12 +665,10 @@ function NhapHuyForm() {
         </div>
       </div>
 
-
-      
       <style dangerouslySetInnerHTML={{__html: `
-        .border-red { border-color: var(--apple-red) !important; background-color: rgba(255, 59, 48, 0.05) !important; }
-        .text-apple-red { color: var(--apple-red); }
-        .apple-label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 8px; color: var(--apple-gray-1); }
+        .border-red { border-color: var(--error-600) !important; background-color: var(--error-50) !important; }
+        .text-error-600 { color: var(--error-600); }
+        .label-custom { display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--neutral-700); }
         
         /* Custom dropdown style */
         .custom-dropdown {
@@ -683,10 +677,10 @@ function NhapHuyForm() {
           left: 0;
           right: 0;
           z-index: 50;
-          background: rgba(255, 255, 255, 0.95);
-          border: 1px solid var(--apple-gray-4);
-          border-radius: 10px;
-          box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+          background: rgba(255, 255, 255, 0.98);
+          border: 1px solid var(--neutral-300);
+          border-radius: var(--radius-md);
+          box-shadow: var(--shadow-lg);
           max-height: 200px;
           overflow-y: auto;
           backdrop-filter: blur(8px);
@@ -694,18 +688,18 @@ function NhapHuyForm() {
         .dropdown-item {
           padding: 10px 14px;
           cursor: pointer;
-          font-size: 13px;
-          color: var(--apple-black);
-          border-bottom: 1px solid var(--apple-gray-5);
-          transition: background 0.15s, color 0.15s;
+          font-size: 13.5px;
+          color: var(--neutral-700);
+          border-bottom: 1px solid var(--neutral-200);
+          transition: var(--transition-fast);
         }
         .dropdown-item:last-child {
           border-bottom: none;
         }
         .dropdown-item:hover {
-          background-color: rgba(0, 122, 255, 0.06);
-          color: var(--apple-blue);
-          font-weight: 500;
+          background-color: var(--primary-50);
+          color: var(--primary-700);
+          font-weight: 600;
         }
 
         /* Tiny add button next to input */
@@ -713,33 +707,33 @@ function NhapHuyForm() {
           padding: 0 12px;
           font-size: 12px;
           white-space: nowrap;
-          border: 1px solid var(--apple-blue);
-          color: var(--apple-blue);
+          border: 1px solid var(--primary-600);
+          color: var(--primary-600);
           background: transparent;
-          font-weight: 500;
-          border-radius: 8px;
-          transition: all 0.2s;
+          font-weight: 600;
+          border-radius: var(--radius-sm);
+          transition: var(--transition-fast);
         }
         .add-btn-small:hover {
-          background: rgba(0, 122, 255, 0.05);
+          background: var(--primary-50);
         }
 
         /* Warning styles inside form */
         .alert-inside-form {
           margin-top: 8px;
           padding: 8px 12px;
-          background: rgba(255, 159, 10, 0.06);
-          border: 1px solid rgba(255, 159, 10, 0.25);
-          border-radius: 8px;
+          background: var(--warning-50);
+          border: 1px solid var(--warning-100);
+          border-radius: var(--radius-sm);
           font-size: 12.5px;
-          color: #8f5800;
+          color: var(--warning-700);
           display: flex;
           align-items: center;
         }
         .btn-link-inline {
           background: none;
           border: none;
-          color: var(--apple-blue);
+          color: var(--primary-600);
           text-decoration: underline;
           cursor: pointer;
           padding: 0 4px;
@@ -747,7 +741,7 @@ function NhapHuyForm() {
           font-size: 12.5px;
         }
         .btn-link-inline:hover {
-          color: #0056b3;
+          color: var(--primary-700);
         }
 
         /* Scale Up animations */
