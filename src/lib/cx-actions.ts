@@ -18,9 +18,16 @@ async function generateMonthlyId(prefix: string) {
  */
 async function generateCustomerId(loaiKH: string) {
   const prefix = loaiKH.toLowerCase().includes('subscription') ? 'SUB' : 'CAM';
-  const { data, error } = await supabase.rpc('generate_sequence_id', { prefix });
-  if (error) throw new Error(error.message);
-  return data;
+  for (let i = 0; i < 5; i++) {
+    const { data, error } = await supabase.rpc('generate_sequence_id', { prefix });
+    if (error) throw new Error(error.message);
+    
+    const { data: existing } = await supabase.from('cx_customers').select('customer_id').eq('customer_id', data).single();
+    if (!existing) {
+      return data;
+    }
+  }
+  throw new Error('Không thể tạo ID Khách hàng duy nhất. Vui lòng thử lại.');
 }
 
 /**

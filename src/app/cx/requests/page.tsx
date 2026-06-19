@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Search, Filter, X, ChevronDown, CheckCircle, Info, FileText, ChevronRight, CheckSquare, Eye, EyeOff } from 'lucide-react';
 import { getRequestById, activateRequest, getDropdownConfigs } from '@/lib/cx-actions';
 import { DROPDOWNS as FALLBACK_DROPDOWNS } from '@/lib/constants';
@@ -9,6 +9,7 @@ export default function CSRateAccountPage() {
   const [searchId, setSearchId] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const errorRef = useRef<HTMLDivElement>(null);
   
   const [requestData, setRequestData] = useState<any>(null);
   const [isAlreadyCreated, setIsAlreadyCreated] = useState(false);
@@ -165,6 +166,7 @@ export default function CSRateAccountPage() {
       setIsAlreadyCreated(true);
     } else {
       setError(res.error || 'Có lỗi xảy ra khi tạo khách hàng.');
+      setTimeout(() => errorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
     }
     setLoading(false);
   };
@@ -189,7 +191,7 @@ export default function CSRateAccountPage() {
         </form>
       </div>
 
-      {error && <div style={{ padding: '16px', background: '#fee2e2', color: '#991b1b', borderRadius: '8px', marginBottom: '24px' }}>{error}</div>}
+      {error && <div ref={errorRef} style={{ padding: '16px', background: '#fee2e2', color: '#991b1b', borderRadius: '8px', marginBottom: '24px' }}>{error}</div>}
 
       {/* Success Info Block */}
       {successInfo && (

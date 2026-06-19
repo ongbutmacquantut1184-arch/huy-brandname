@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPendingRequest, getDropdownConfigs, checkEmailExists } from '@/lib/cx-actions';
 import { DROPDOWNS as FALLBACK_DROPDOWNS } from '@/lib/constants';
 
@@ -9,6 +9,7 @@ export default function SaleForm() {
   const [successModalData, setSuccessModalData] = useState<string | null>(null);
   const [copyToast, setCopyToast] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const successRef = useRef<HTMLDivElement>(null);
   
   const [dropdowns, setDropdowns] = useState<Record<string, string[]>>(FALLBACK_DROPDOWNS);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -90,6 +91,21 @@ export default function SaleForm() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    
+    if (name === 'soDienThoai') {
+      let numericValue = value.replace(/\D/g, '');
+      if (numericValue.length > 0 && !numericValue.startsWith('84')) {
+        if (numericValue.startsWith('0')) {
+          numericValue = '84' + numericValue.substring(1);
+        } else {
+          numericValue = '84' + numericValue;
+        }
+      }
+      if (numericValue.length > 11) numericValue = numericValue.substring(0, 11);
+      setFormData(prev => ({ ...prev, [name]: numericValue }));
+      return;
+    }
+
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -153,6 +169,9 @@ export default function SaleForm() {
         hinhThucSD: '', hinhThucThanhToan: '', emailTaoTK: '', emailPhoiHop: '', 
         soDienThoai: '', tenSale: '', phanKhuc: '', soHopDong: '', cpid: '', duLieuInput: []
       });
+      setTimeout(() => {
+        successRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
     } else {
       setSubmitError(res.error || 'Có lỗi xảy ra');
     }
@@ -210,7 +229,12 @@ export default function SaleForm() {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+                <div style={gridStyle}>
+                  <div>
+                    <label style={labelStyle}>Số điện thoại <span style={{ color: 'red' }}>*</span></label>
+                    <input type="tel" name="soDienThoai" value={formData.soDienThoai} onChange={handleChange} onBlur={handleBlur} required style={inputStyle} />
+                    {errors.soDienThoai && <span style={errorTextStyle}>{errors.soDienThoai}</span>}
+                  </div>
                   <div>
                     <label style={labelStyle}>Khu vực <span style={{ color: 'red' }}>*</span></label>
                     <select name="khuVuc" value={formData.khuVuc} onChange={handleChange} onBlur={handleBlur} required style={inputStyle}>
@@ -218,6 +242,9 @@ export default function SaleForm() {
                       {dropdowns.khuVuc.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                     </select>
                   </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div>
                     <label style={labelStyle}>Ngành nghề</label>
                     <select name="nganhNghe" value={formData.nganhNghe} onChange={handleChange} onBlur={handleBlur} style={inputStyle}>
@@ -336,18 +363,13 @@ export default function SaleForm() {
               <legend style={legendStyle}>3. Sale & Liên hệ</legend>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 
-                <div style={gridStyle}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
                   <div>
                     <label style={labelStyle}>Tên Sale phụ trách <span style={{ color: 'red' }}>*</span></label>
                     <select name="tenSale" value={formData.tenSale} onChange={handleChange} onBlur={handleBlur} required style={inputStyle}>
                       <option value="">-- Chọn Sale --</option>
                       {dropdowns.tenSale.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                     </select>
-                  </div>
-                  <div>
-                    <label style={labelStyle}>Số điện thoại <span style={{ color: 'red' }}>*</span></label>
-                    <input type="tel" name="soDienThoai" value={formData.soDienThoai} onChange={handleChange} onBlur={handleBlur} required style={inputStyle} />
-                    {errors.soDienThoai && <span style={errorTextStyle}>{errors.soDienThoai}</span>}
                   </div>
                 </div>
 
@@ -392,7 +414,7 @@ export default function SaleForm() {
             </button>
             
             {successModalData && (
-              <div style={{ marginTop: '24px', padding: '24px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '12px', textAlign: 'center', animation: 'fadeIn 0.5s' }}>
+              <div ref={successRef} style={{ marginTop: '24px', padding: '24px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '12px', textAlign: 'center', animation: 'fadeIn 0.5s' }}>
                 <div style={{ fontSize: '32px', marginBottom: '12px' }}>🎉</div>
                 <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#166534', marginBottom: '8px' }}>Tạo phiếu thành công!</h3>
                 <p style={{ color: '#15803d', fontSize: '14.5px', marginBottom: '16px' }}>Đã tạo thành công Hợp đồng, yêu cầu cập nhật thông tin hợp đồng và dịch vụ tương ứng.</p>
