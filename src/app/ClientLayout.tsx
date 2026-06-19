@@ -9,7 +9,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   
   // Các trang không hiển thị sidebar (VD: Sale form)
-  const isNoSidebarPage = pathname === '/cx/sale';
+  const isNoSidebarPage = pathname === '/cx/sale' || pathname === '/cx/tao-phieu-sale';
 
   if (isNoSidebarPage) {
     return <main style={{ flex: 1, width: '100vw' }}>{children}</main>;
