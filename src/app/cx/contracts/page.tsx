@@ -155,7 +155,10 @@ export default function ContractsPage() {
       (c.so_po || '').toLowerCase().includes(term);
       
     const matchStatus = filterStatus.length === 0 || filterStatus.includes(c.trang_thai);
-    return matchSearch && matchStatus;
+    const matchCS = filterCS.length === 0 || filterCS.includes(c.cs_in_charge);
+    const matchSale = filterSale.length === 0 || filterSale.includes(c.sale_in_charge);
+
+    return matchSearch && matchStatus && matchCS && matchSale;
   });
 
   const openAddModal = () => {
@@ -415,26 +418,6 @@ export default function ContractsPage() {
           )}
         </div>
 
-        {/* SUP Dropdown */}
-        <div style={{ position: 'relative', flex: '1 1 180px' }}>
-          <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: 'var(--neutral-700)' }}>SUP Phụ trách</label>
-          <div className="input-field w-full" style={{ height: '42px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', background: '#FFFFFF' }} onClick={() => setOpenDropdown(openDropdown === 'sup' ? null : 'sup')}>
-            <span style={{ fontSize: '14px', color: filterSUP.length ? 'var(--neutral-900)' : 'var(--neutral-500)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {filterSUP.length === 0 ? 'Tất cả SUP' : filterSUP.join(', ')}
-            </span>
-            <ChevronDown size={16} style={{ color: 'var(--neutral-500)' }} />
-          </div>
-          {openDropdown === 'sup' && (
-            <div className="custom-dropdown">
-              {availableSUP.map((s: string) => (
-                <div key={s} className="dropdown-item" onClick={() => toggleFilter(filterSUP, setFilterSUP, s)} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  {filterSUP.includes(s) ? <CheckSquare size={16} style={{ color: 'var(--primary-600)' }} /> : <Square size={16} style={{ color: 'var(--neutral-400)' }} />}
-                  {s}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
 
         {/* Sale Dropdown */}
         <div style={{ position: 'relative', flex: '1 1 180px' }}>
