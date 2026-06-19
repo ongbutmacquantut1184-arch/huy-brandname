@@ -1,0 +1,417 @@
+"use client";
+
+import React, { useState, useEffect } from 'react';
+import { Search, Filter, X, ChevronDown, CheckCircle, Info, FileText, ChevronRight, CheckSquare, Eye, EyeOff } from 'lucide-react';
+import { getRequestById, activateRequest, getDropdownConfigs } from '@/lib/cx-actions';
+import { DROPDOWNS as FALLBACK_DROPDOWNS } from '@/lib/constants';
+
+export default function CSRateAccountPage() {
+  const [searchId, setSearchId] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  
+  const [requestData, setRequestData] = useState<any>(null);
+  const [isAlreadyCreated, setIsAlreadyCreated] = useState(false);
+  
+  const [dropdowns, setDropdowns] = useState<Record<string, string[]>>(FALLBACK_DROPDOWNS);
+  const [successInfo, setSuccessInfo] = useState<any>(null);
+  const [showSuccessPwd, setShowSuccessPwd] = useState(false);
+
+  useEffect(() => {
+    async function loadConfigs() {
+      const res = await getDropdownConfigs();
+      if (res.success && res.data) {
+        const data = res.data as Record<string, string[]>;
+        const merged: Record<string, string[]> = { ...FALLBACK_DROPDOWNS };
+        for (const key in FALLBACK_DROPDOWNS) {
+          if (data[key] && data[key].length > 0) {
+            merged[key] = data[key];
+          }
+        }
+        setDropdowns(merged);
+      }
+    }
+    loadConfigs();
+  }, []);
+
+  const [formData, setFormData] = useState({
+    requestId: '',
+    loaiKhachHang: '',
+    tenCongTy: '',
+    khuVuc: '',
+    loaiGoiCuoc: '',
+    kenhGuiTin: '',
+    ngayBatDau: '',
+    ngayKetThuc: '',
+    moTaNhuCau: '',
+    nganhNghe: '',
+    agentId: '',
+    hinhThucSD: '',
+    hinhThucThanhToan: '',
+    emailTaoTK: '',
+    emailPhoiHop: '',
+    soDienThoai: '',
+    tenSale: '',
+    phanKhuc: '',
+    soHopDong: '',
+    cpid: '',
+    duLieuInput: '',
+    
+    // CS Fields
+    tenTaiKhoan: '',
+    matKhau: '',
+    orgId: '',
+    customerSuccess: [] as string[],
+    customerSupport: [] as string[],
+  });
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchId.trim()) return;
+    
+    setLoading(true);
+    setError('');
+    setRequestData(null);
+    setSuccessInfo(null);
+    setIsAlreadyCreated(false);
+
+    const res = await getRequestById(searchId.trim());
+    if (res.success && res.data) {
+      const req = res.data;
+      setRequestData(req);
+      
+      if (req.result_customer_id) {
+        setIsAlreadyCreated(true);
+      }
+
+      setFormData({
+        requestId: req.request_id,
+        loaiKhachHang: req.loai_khach_hang || '',
+        tenCongTy: req.ten_cong_ty || '',
+        khuVuc: req.khu_vuc || '',
+        loaiGoiCuoc: req.loai_goi_cuoc || '',
+        kenhGuiTin: req.kenh_gui_tin || '',
+        ngayBatDau: req.ngay_bat_dau || '',
+        ngayKetThuc: req.ngay_ket_thuc || '',
+        moTaNhuCau: req.mo_ta_nhu_cau || '',
+        nganhNghe: req.nganh_nghe || '',
+        agentId: req.agent_id || '',
+        hinhThucSD: req.hinh_thuc_sd || '',
+        hinhThucThanhToan: req.hinh_thuc_thanh_toan || '',
+        emailTaoTK: req.email_tao_tk || '',
+        emailPhoiHop: req.email_phoi_hop || '',
+        soDienThoai: req.so_dien_thoai || '',
+        tenSale: req.ten_sale || '',
+        phanKhuc: req.phan_khuc || '',
+        soHopDong: req.so_hop_dong || '',
+        cpid: req.cpid || '',
+        duLieuInput: req.du_lieu_input || '',
+        
+        // Trống để CS điền
+        tenTaiKhoan: '',
+        matKhau: '',
+        orgId: '',
+        customerSuccess: [],
+        customerSupport: [],
+      });
+    } else {
+      setError('Không tìm thấy mã phiếu yêu cầu này.');
+    }
+    setLoading(false);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const toggleChip = (field: 'customerSuccess' | 'customerSupport', option: string) => {
+    setFormData(prev => {
+      const arr = prev[field];
+      if (arr.includes(option)) {
+        return { ...prev, [field]: arr.filter(x => x !== option) };
+      } else {
+        return { ...prev, [field]: [...arr, option] };
+      }
+    });
+  };
+
+  const handleCreateAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isAlreadyCreated) return;
+    
+    setLoading(true);
+    setError('');
+
+    const payload = {
+      ...formData,
+      customerSuccess: formData.customerSuccess.join(', '),
+      customerSupport: formData.customerSupport.join(', '),
+      actorEmail: 'admin@system.local'
+    };
+
+    const res = await activateRequest(payload);
+
+    if (res.success) {
+      setSuccessInfo({
+        tenTaiKhoan: formData.tenTaiKhoan,
+        matKhau: formData.matKhau,
+        orgId: formData.orgId,
+        hinhThucThanhToan: formData.hinhThucThanhToan,
+        ngayBatDau: formData.ngayBatDau,
+        ngayKetThuc: formData.ngayKetThuc,
+        customerId: res.customerId,
+        contractId: res.contractId
+      });
+      setIsAlreadyCreated(true);
+    } else {
+      setError(res.error || 'Có lỗi xảy ra khi tạo khách hàng.');
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div style={{ maxWidth: '1000px', margin: '40px auto', padding: '24px' }}>
+      <h1 style={{ fontSize: '28px', fontWeight: 600, color: '#111', marginBottom: '24px' }}>Tạo tài khoản từ Phiếu yêu cầu</h1>
+      
+      {/* Search Bar */}
+      <div style={{ background: '#fff', borderRadius: '12px', padding: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', marginBottom: '24px' }}>
+        <form onSubmit={handleSearch} style={{ display: 'flex', gap: '16px' }}>
+          <input 
+            type="text" 
+            placeholder="Nhập mã phiếu yêu cầu (VD: REQ-171842000)" 
+            value={searchId}
+            onChange={(e) => setSearchId(e.target.value)}
+            style={{ flex: 1, padding: '14px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '15px', outline: 'none' }}
+          />
+          <button type="submit" disabled={loading} className="btn btn-primary">
+            Tìm kiếm
+          </button>
+        </form>
+      </div>
+
+      {error && <div style={{ padding: '16px', background: '#fee2e2', color: '#991b1b', borderRadius: '8px', marginBottom: '24px' }}>{error}</div>}
+
+      {/* Success Info Block */}
+      {successInfo && (
+        <div style={{ background: '#ecfdf5', border: '1px solid #10b981', borderRadius: '12px', padding: '24px', marginBottom: '24px' }}>
+          <h2 style={{ fontSize: '18px', color: '#065f46', marginBottom: '16px', fontWeight: 600 }}>✅ Tạo thành công! Gửi thông tin này cho Sale:</h2>
+          <div style={{ background: '#fff', padding: '16px', borderRadius: '8px', fontFamily: 'monospace', fontSize: '14px', border: '1px solid #a7f3d0' }}>
+            <p>Tên tài khoản: {successInfo.tenTaiKhoan}</p>
+            <p style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              Mật khẩu: {showSuccessPwd ? successInfo.matKhau : '••••••••'}
+              <button 
+                onClick={() => setShowSuccessPwd(!showSuccessPwd)} 
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0 }}
+              >
+                {showSuccessPwd ? <EyeOff size={16} color="var(--neutral-500)"/> : <Eye size={16} color="var(--neutral-500)"/>}
+              </button>
+            </p>
+            <p>Org Id: {successInfo.orgId}</p>
+            <p>Hình thức thanh toán: {successInfo.hinhThucThanhToan}</p>
+            <p>Ngày bắt đầu: {successInfo.ngayBatDau}</p>
+            <p>Ngày kết thúc: {successInfo.ngayKetThuc}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Warning if already created */}
+      {isAlreadyCreated && requestData && !successInfo && (
+        <div style={{ padding: '16px', background: '#fffbeb', color: '#b45309', border: '1px solid #fde68a', borderRadius: '8px', marginBottom: '24px', fontWeight: 500 }}>
+          ⚠️ CẢNH BÁO: Phiếu yêu cầu này đã được tạo tài khoản (Mã KH: {requestData.result_customer_id}). Bạn không thể tạo lại.
+        </div>
+      )}
+
+      {/* Review Form */}
+      {requestData && (
+        <form onSubmit={handleCreateAccount} style={{ background: '#fff', borderRadius: '12px', padding: '32px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', gap: '32px', opacity: isAlreadyCreated && !successInfo ? 0.6 : 1, pointerEvents: isAlreadyCreated && !successInfo ? 'none' : 'auto' }}>
+          
+          {/* PHẦN 1: REVIEW THÔNG TIN SALE */}
+          <h2 style={{ fontSize: '20px', fontWeight: 600, borderBottom: '1px solid #eaeaea', paddingBottom: '12px' }}>Phần 1: Thông tin từ Phiếu yêu cầu (Có thể chỉnh sửa)</h2>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={gridStyle}>
+              <div>
+                <label style={labelStyle}>Tên công ty</label>
+                <input type="text" name="tenCongTy" value={formData.tenCongTy} onChange={handleChange} style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Email tạo TK</label>
+                <input type="text" name="emailTaoTK" value={formData.emailTaoTK} onChange={handleChange} style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Số điện thoại</label>
+                <input type="text" name="soDienThoai" value={formData.soDienThoai} onChange={handleChange} style={inputStyle} />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div>
+                <label style={labelStyle}>Ngày bắt đầu</label>
+                <input type="date" onClick={(e) => (e.target as any).showPicker && (e.target as any).showPicker()} name="ngayBatDau" value={formData.ngayBatDau} onChange={handleChange} style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Ngày kết thúc</label>
+                <input type="date" onClick={(e) => (e.target as any).showPicker && (e.target as any).showPicker()} name="ngayKetThuc" value={formData.ngayKetThuc} onChange={handleChange} style={inputStyle} />
+              </div>
+            </div>
+
+            <div style={gridStyle}>
+              <div>
+                <label style={labelStyle}>Loại khách hàng</label>
+                <select name="loaiKhachHang" value={formData.loaiKhachHang} onChange={handleChange} style={inputStyle}>
+                  <option value="Subscription">Subscription</option>
+                  <option value="Campaign">Campaign</option>
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Hình thức thanh toán</label>
+                <select name="hinhThucThanhToan" value={formData.hinhThucThanhToan} onChange={handleChange} style={inputStyle}>
+                  <option value="">-- Chọn --</option>
+                  {dropdowns.hinhThucThanhToan.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div style={gridStyle}>
+              <div>
+                <label style={labelStyle}>Kênh gửi tin (Sale nhập)</label>
+                <input type="text" name="kenhGuiTin" value={formData.kenhGuiTin} onChange={handleChange} style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Dữ liệu đầu vào (Sale nhập)</label>
+                <input type="text" name="duLieuInput" value={formData.duLieuInput} onChange={handleChange} style={inputStyle} />
+              </div>
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
+              <div>
+                <label style={labelStyle}>Mô tả nhu cầu (Sale ghi)</label>
+                <textarea name="moTaNhuCau" value={formData.moTaNhuCau} onChange={handleChange} style={{ ...inputStyle, minHeight: '80px' }} />
+              </div>
+            </div>
+          </div>
+
+          {/* PHẦN 2: BỔ SUNG THÔNG TIN CS */}
+          <h2 style={{ fontSize: '20px', fontWeight: 600, borderBottom: '1px solid #eaeaea', paddingBottom: '12px', marginTop: '16px' }}>Phần 2: Bổ sung thông tin CS (Bắt buộc)</h2>
+          <div style={gridStyle}>
+            <div>
+              <label style={labelStyle}>Tên tài khoản <span style={{ color: 'red' }}>*</span></label>
+              <input type="text" name="tenTaiKhoan" value={formData.tenTaiKhoan} onChange={handleChange} required style={inputStyle} />
+            </div>
+            <div>
+              <label style={labelStyle}>Mật khẩu <span style={{ color: 'red' }}>*</span></label>
+              <input type="text" name="matKhau" value={formData.matKhau} onChange={handleChange} required style={inputStyle} />
+            </div>
+            <div>
+              <label style={labelStyle}>Org ID <span style={{ color: 'red' }}>*</span></label>
+              <input type="text" name="orgId" value={formData.orgId} onChange={handleChange} required style={inputStyle} />
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+            <div>
+              <label style={labelStyle}>Customer Success (Chọn nhiều)</label>
+              <div style={chipGridStyle}>
+                {dropdowns.customerSuccess.map(opt => (
+                  <div 
+                    key={opt}
+                    onClick={() => toggleChip('customerSuccess', opt)}
+                    style={{
+                      ...chipStyle,
+                      background: formData.customerSuccess.includes(opt) ? 'var(--primary-100)' : '#f5f5f7',
+                      color: formData.customerSuccess.includes(opt) ? 'var(--primary-900)' : '#333',
+                      border: formData.customerSuccess.includes(opt) ? '1px solid var(--primary-600)' : '1px solid transparent',
+                    }}
+                  >
+                    {opt}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label style={labelStyle}>Customer Support (Chọn nhiều)</label>
+              <div style={chipGridStyle}>
+                {dropdowns.customerSupport.map(opt => (
+                  <div 
+                    key={opt}
+                    onClick={() => toggleChip('customerSupport', opt)}
+                    style={{
+                      ...chipStyle,
+                      background: formData.customerSupport.includes(opt) ? 'var(--primary-100)' : '#f5f5f7',
+                      color: formData.customerSupport.includes(opt) ? 'var(--primary-900)' : '#333',
+                      border: formData.customerSupport.includes(opt) ? '1px solid var(--primary-600)' : '1px solid transparent',
+                    }}
+                  >
+                    {opt}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {!isAlreadyCreated && (
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="btn btn-primary"
+              style={{ 
+                marginTop: '24px',
+                padding: '16px', 
+                borderRadius: '12px', 
+                fontSize: '17px', 
+                fontWeight: 600,
+                width: '100%',
+                justifyContent: 'center',
+                opacity: loading ? 0.7 : 1,
+                cursor: loading ? 'not-allowed' : 'pointer'
+              }}
+            >
+              {loading ? 'Đang xử lý...' : 'Tạo khách hàng & hợp đồng'}
+            </button>
+          )}
+        </form>
+      )}
+    </div>
+  );
+}
+
+const labelStyle = {
+  display: 'block', 
+  fontSize: '13px', 
+  marginBottom: '6px', 
+  fontWeight: 600,
+  color: '#555'
+};
+
+const inputStyle = {
+  width: '100%',
+  padding: '10px 14px',
+  borderRadius: '8px',
+  border: '1px solid #d2d2d7',
+  fontSize: '14px',
+  outline: 'none',
+  backgroundColor: '#f5f5f7',
+  color: '#1d1d1f'
+};
+
+const gridStyle = {
+  display: 'grid', 
+  gridTemplateColumns: '1fr 1fr 1fr', 
+  gap: '16px'
+};
+
+const chipGridStyle = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+  gap: '8px',
+};
+
+const chipStyle = {
+  padding: '10px 14px',
+  borderRadius: '8px',
+  fontSize: '13px',
+  fontWeight: 500,
+  cursor: 'pointer',
+  textAlign: 'left' as const,
+  transition: 'all 0.2s ease'
+};

@@ -1,0 +1,1161 @@
+"use client";
+
+import React, { useEffect, useState } from 'react';
+import { 
+  getContracts, 
+  getServices, 
+  getCustomers, 
+  getDropdownConfigs, 
+  createContract, 
+  createService, 
+  updateContractInfo, 
+  updateServiceInfo,
+  renewContract 
+} from '@/lib/cx-actions';
+import { DROPDOWNS as FALLBACK_DROPDOWNS } from '@/lib/constants';
+
+export default function ContractsPage() {
+  const [contracts, setContracts] = useState<any[]>([]);
+  const [services, setServices] = useState<any[]>([]);
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [dropdowns, setDropdowns] = useState<Record<string, string[]>>(FALLBACK_DROPDOWNS);
+  const [loading, setLoading] = useState(true);
+
+  // Filters State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterCS, setFilterCS] = useState<string[]>([]);
+  const [filterSUP, setFilterSUP] = useState<string[]>([]);
+  const [filterSale, setFilterSale] = useState<string[]>([]);
+  const [filterExp15, setFilterExp15] = useState(false);
+  const [filterExp45, setFilterExp45] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+
+  // Expands State
+  const [expandedContracts, setExpandedContracts] = useState<Record<string, boolean>>({});
+
+  // Modal States
+  const [activeModal, setActiveModal] = useState<'addContract' | 'editContract' | 'addService' | 'editService' | 'renew' | null>(null);
+  const [selectedRecord, setSelectedRecord] = useState<any>(null);
+  const [modalLoading, setModalLoading] = useState(false);
+
+  // Form States
+  const [contractForm, setContractForm] = useState({
+    contractId: '',
+    customerId: '',
+    soHopDong: '',
+    ngayBatDauHD: '',
+    ngayKetThucHD: '',
+    soPO: '',
+    ngayBatDauPO: '',
+    ngayKetThucPO: '',
+    hinhThucThanhToan: '',
+    trangThai: 'Active',
+    previousContractId: ''
+  });
+
+  const [serviceForm, setServiceForm] = useState({
+    serviceId: '',
+    customerId: '',
+    contractId: '',
+    loaiDichVu: '',
+    brandNameOA: '',
+    cpNameCode: '',
+    thoiHanBrand: '',
+    dauSo: '',
+    cuPhap: '',
+    quocGia: 'Việt Nam',
+    ketNoiAPIGateway: false,
+    ketNoiSMPP: false,
+    ketNoiAPIGapOne: '',
+    ketNoiViZCA: '',
+    ketNoiHeThongKH: '',
+    tenService: '',
+    trangThai: 'Active',
+    ngayBatDau: '',
+    ngayHetHan: '',
+    supPhuTrach: '',
+    ghiChu: ''
+  });
+
+  const [renewForm, setRenewForm] = useState({
+    type: 'contract', // 'contract' | 'service'
+    targetId: '',
+    customerId: '',
+    expDate: '',
+    ngayThanhToan: '',
+    ngayBatDauMoi: '',
+    ngayKetThucMoi: '',
+    soHopDong: '',
+    soPO: '',
+    ghiChu: ''
+  });
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    setLoading(true);
+    const [contractsRes, servicesRes, customersRes, configsRes] = await Promise.all([
+      getContracts(),
+      getServices(),
+      getCustomers(),
+      getDropdownConfigs()
+    ]);
+
+    if (contractsRes.success && contractsRes.data) setContracts(contractsRes.data);
+    if (servicesRes.success && servicesRes.data) setServices(servicesRes.data);
+    if (customersRes.success && customersRes.data) setCustomers(customersRes.data);
+    
+    if (configsRes.success && configsRes.data) {
+      const merged: Record<string, string[]> = { ...FALLBACK_DROPDOWNS };
+      for (const key in FALLBACK_DROPDOWNS) {
+        if (configsRes.data[key] && configsRes.data[key].length > 0) {
+          merged[key] = configsRes.data[key];
+        }
+      }
+      setDropdowns(merged);
+    }
+    setLoading(false);
+  };
+
+  // Date Formatting Helper
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return '—';
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+    return dateStr;
+  };
+
+  // Helper calculation for hybrid renewal start date
+  const calcHybridRenewStart = (oldEndStr: string, paymentDateStr: string) => {
+    if (!oldEndStr || !paymentDateStr) return '';
+    const oldEnd = new Date(oldEndStr);
+    const payment = new Date(paymentDateStr);
+    if (isNaN(oldEnd.getTime()) || isNaN(payment.getTime())) return paymentDateStr;
+
+    oldEnd.setHours(0,0,0,0);
+    payment.setHours(0,0,0,0);
+    
+    const diffTime = payment.getTime() - oldEnd.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays <= 14) {
+      // <= 14 ngày -> Nối li�?n (ngày cũ + 1)
+      const nextDay = new Date(oldEnd.getTime() + 24 * 60 * 60 * 1000);
+      return nextDay.toISOString().split('T')[0];
+    }
+    return paymentDateStr;
+  };
+
+  // Handle changes in Renew payment date
+  const handleRenewPaymentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const pDate = e.target.value;
+    setRenewForm(prev => {
+      let startMoi = prev.ngayBatDauMoi;
+      if (prev.type === 'contract') {
+        startMoi = calcHybridRenewStart(prev.expDate, pDate);
+      }
+      return { ...prev, ngayThanhToan: pDate, ngayBatDauMoi: startMoi };
+    });
+  };
+
+  const getStatusBadge = (status: string) => {
+    const s = (status || '').toLowerCase();
+    if (s === 'active') return <span className="badge-custom badge-success">Active</span>;
+    if (s === 'expired') return <span className="badge-custom badge-error">Expired</span>;
+    if (s === 'expiring') return <span className="badge-custom badge-warning">Expiring</span>;
+    if (s === 'cancelled') return <span className="badge-custom badge-default">Cancelled</span>;
+    return <span className="badge-custom badge-default">{status}</span>;
+  };
+
+  // Toggle dynamic row expand
+  const toggleExpand = (contractId: string) => {
+    setExpandedContracts(prev => ({ ...prev, [contractId]: !prev[contractId] }));
+  };
+
+  // Coverage Alert Calculation
+  const getCoverageAlerts = () => {
+    if (customers.length === 0) return null;
+    const contractCustIds = new Set(contracts.map(c => c.customer_id));
+    const serviceCustIds = new Set(services.map(s => s.customer_id));
+
+    const missingContract = customers.filter(c => c.customer_id && !contractCustIds.has(c.customer_id));
+    const missingService = customers.filter(c => c.customer_id && !serviceCustIds.has(c.customer_id));
+    const missingBoth = customers.filter(c => c.customer_id && !contractCustIds.has(c.customer_id) && !serviceCustIds.has(c.customer_id));
+
+    return {
+      missingContract,
+      missingService,
+      missingBoth
+    };
+  };
+
+  const coverage = getCoverageAlerts();
+
+  // Multi Filter Logic
+  const filteredContracts = contracts.filter(c => {
+    // 1. Text Search query
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const matchText = [
+        c.contract_id,
+        c.customer_id,
+        c.so_hop_dong,
+        c.so_po,
+        c.hinh_thuc_thanh_toan,
+        c.trang_thai
+      ].join(' ').toLowerCase();
+      if (!matchText.includes(q)) return false;
+    }
+
+    // Match Customer Info for CS, SUP, Sale filters
+    const cust = customers.find(cust => cust.customer_id === c.customer_id) || {};
+    
+    // 2. CS Filter
+    if (filterCS.length > 0) {
+      const match = filterCS.some(csVal => (cust.customer_success || '').includes(csVal));
+      if (!match) return false;
+    }
+
+    // 3. Sale Filter
+    if (filterSale.length > 0) {
+      const match = filterSale.some(saleVal => (cust.sale_phu_trach || '').includes(saleVal));
+      if (!match) return false;
+    }
+
+    // 4. SUP Filter
+    if (filterSUP.length > 0) {
+      // Find linked services of this contract
+      const linkedServices = services.filter(s => s.contract_id === c.contract_id);
+      const match = linkedServices.some(s => filterSUP.includes(s.sup_phu_trach));
+      if (!match && linkedServices.length > 0) return false;
+    }
+
+    // 5. Expiry Check (15/45 days)
+    if (filterExp15 || filterExp45) {
+      if (!c.ngay_ket_thuc_hd) return false;
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      const end = new Date(c.ngay_ket_thuc_hd);
+      const diffTime = end.getTime() - today.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays < 0) return false; // expired
+      if (filterExp15 && diffDays > 15) return false;
+      if (filterExp45 && diffDays > 45) return false;
+    }
+
+    return true;
+  });
+
+  // Modal Open Actions
+  const openAddContract = () => {
+    setContractForm({
+      contractId: '',
+      customerId: '',
+      soHopDong: '',
+      ngayBatDauHD: '',
+      ngayKetThucHD: '',
+      soPO: '',
+      ngayBatDauPO: '',
+      ngayKetThucPO: '',
+      hinhThucThanhToan: '',
+      trangThai: 'Active',
+      previousContractId: ''
+    });
+    setActiveModal('addContract');
+  };
+
+  const openEditContract = (c: any) => {
+    setContractForm({
+      contractId: c.contract_id,
+      customerId: c.customer_id,
+      soHopDong: c.so_hop_dong || '',
+      ngayBatDauHD: c.ngay_bat_dau_hd || '',
+      ngayKetThucHD: c.ngay_ket_thuc_hd || '',
+      soPO: c.so_po || '',
+      ngayBatDauPO: c.ngay_bat_dau_po || '',
+      ngayKetThucPO: c.ngay_ket_thuc_po || '',
+      hinhThucThanhToan: c.hinh_thuc_thanh_toan || '',
+      trangThai: c.trang_thai || 'Active',
+      previousContractId: c.previous_contract_id || ''
+    });
+    setActiveModal('editContract');
+  };
+
+  const openAddService = (contractId: string, customerId: string) => {
+    setServiceForm({
+      serviceId: '',
+      customerId,
+      contractId,
+      loaiDichVu: '',
+      brandNameOA: '',
+      cpNameCode: '',
+      thoiHanBrand: '',
+      dauSo: '',
+      cuPhap: '',
+      quocGia: 'Việt Nam',
+      ketNoiAPIGateway: false,
+      ketNoiSMPP: false,
+      ketNoiAPIGapOne: '',
+      ketNoiViZCA: '',
+      ketNoiHeThongKH: '',
+      tenService: '',
+      trangThai: 'Active',
+      ngayBatDau: '',
+      ngayHetHan: '',
+      supPhuTrach: '',
+      ghiChu: ''
+    });
+    setActiveModal('addService');
+  };
+
+  const openEditService = (s: any) => {
+    setServiceForm({
+      serviceId: s.service_id,
+      customerId: s.customer_id,
+      contractId: s.contract_id || '',
+      loai_dich_vu: s.loai_dich_vu || '',
+      brandNameOA: s.brand_name_oa || '',
+      cpNameCode: s.cp_name_code || '',
+      thoiHanBrand: s.thoi_han_brand || '',
+      dauSo: s.dau_so || '',
+      cuPhap: s.cu_phap || '',
+      quocGia: s.quoc_gia || 'Việt Nam',
+      ketNoiAPIGateway: s.ket_noi_api_gateway === 'Có',
+      ketNoiSMPP: s.ket_noi_smpp === 'Có',
+      ketNoiAPIGapOne: s.ket_noi_api_gap_one || '',
+      ketNoiViZCA: s.ket_noi_vi_zca || '',
+      ketNoiHeThongKH: s.ket_noi_he_thong_kh || '',
+      tenService: s.ten_service || '',
+      trangThai: s.trang_thai || 'Active',
+      ngayBatDau: s.ngay_bat_dau || '',
+      ngayHetHan: s.ngay_het_han || '',
+      supPhuTrach: s.sup_phu_trach || '',
+      ghiChu: s.ghi_chu || ''
+    });
+    setActiveModal('editService');
+  };
+
+  const openRenew = (type: 'contract' | 'service', id: string, customerId: string, expDate: string) => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const nextStartStr = type === 'contract' ? calcHybridRenewStart(expDate, todayStr) : expDate;
+    
+    // Find contract details for service
+    let prefilledSoHD = '';
+    let prefilledSoPO = '';
+    if (type === 'service') {
+      const svc = services.find(s => s.service_id === id);
+      if (svc && svc.contract_id) {
+        const ctr = contracts.find(c => c.contract_id === svc.contract_id);
+        if (ctr) {
+          prefilledSoHD = ctr.so_hop_dong || '';
+          prefilledSoPO = ctr.so_po || '';
+        }
+      }
+    }
+
+    setRenewForm({
+      type,
+      targetId: id,
+      customerId,
+      expDate,
+      ngayThanhToan: todayStr,
+      ngayBatDauMoi: nextStartStr || '',
+      ngayKetThucMoi: '',
+      soHopDong: prefilledSoHD,
+      soPO: prefilledSoPO,
+      ghiChu: ''
+    });
+    setActiveModal('renew');
+  };
+
+  // Submit Operations
+  const handleSaveContract = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setModalLoading(true);
+    let res;
+    if (activeModal === 'addContract') {
+      res = await createContract({ ...contractForm, actorEmail: 'admin@system.local' });
+    } else {
+      res = await updateContractInfo({ ...contractForm, actorEmail: 'admin@system.local' });
+    }
+
+    if (res.success) {
+      alert(res.message || 'Lưu thành công!');
+      setActiveModal(null);
+      fetchData();
+    } else {
+      alert(`Lỗi: ${res.error}`);
+    }
+    setModalLoading(false);
+  };
+
+  const handleSaveService = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setModalLoading(true);
+    let res;
+    if (activeModal === 'addService') {
+      res = await createService({ ...serviceForm, actorEmail: 'admin@system.local' });
+    } else {
+      res = await updateServiceInfo({ ...serviceForm, actorEmail: 'admin@system.local' });
+    }
+
+    if (res.success) {
+      alert(res.message || 'Lưu thành công!');
+      setActiveModal(null);
+      fetchData();
+    } else {
+      alert(`Lỗi: ${res.error}`);
+    }
+    setModalLoading(false);
+  };
+
+  const handleRenewSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setModalLoading(true);
+    const res = await renewContract({
+      ...renewForm,
+      contractIdCu: renewForm.targetId,
+      actorEmail: 'admin@system.local'
+    });
+
+    if (res.success) {
+      alert(res.message || 'Gia hạn thành công!');
+      setActiveModal(null);
+      fetchData();
+    } else {
+      alert(`Lỗi: ${res.error}`);
+    }
+    setModalLoading(false);
+  };
+
+  const toggleFilter = (list: string[], setList: React.Dispatch<React.SetStateAction<string[]>>, val: string) => {
+    if (list.includes(val)) {
+      setList(list.filter(x => x !== val));
+    } else {
+      setList([...list, val]);
+    }
+  };
+
+  return (
+    <div className="flex-col gap-6" style={{ maxWidth: '1280px', margin: '40px auto', padding: '0 24px' }}>
+      
+      {/* HEADER SECTION */}
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-neutral m-0">Quản lý Hợp đồng / PO</h1>
+          <p className="text-muted mt-2 text-sm">Xem danh sách, gia hạn và sửa thông tin chi tiết</p>
+        </div>
+        <button 
+          onClick={openAddContract}
+          className="btn btn-primary"
+        >
+          + Thêm Hợp đồng
+        </button>
+      </div>
+
+      {/* COVERAGE ALERTS */}
+      {coverage && (coverage.missingContract.length > 0 || coverage.missingService.length > 0) && (
+        <div style={{ background: '#fff9db', border: '1px solid #ffe066', borderRadius: '12px', padding: '16px', marginBottom: '24px' }}>
+          <h4 style={{ margin: '0 0 8px 0', color: '#f59f00', fontSize: '15px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            ⚠�? Cảnh báo độ phủ khách hàng
+          </h4>
+          <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#666', lineHeight: '1.5' }}>
+            {coverage.missingContract.length > 0 && `Có ${coverage.missingContract.length} khách hàng chưa được gán hợp đồng. `}
+            {coverage.missingService.length > 0 && `Có ${coverage.missingService.length} khách hàng chưa được gán dịch vụ.`}
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+            {coverage.missingBoth.slice(0, 10).map(c => (
+              <span key={c.customer_id} style={{ background: '#fff', border: '1px solid #ffe066', padding: '4px 10px', borderRadius: '20px', fontSize: '12px', color: '#854d0e', fontWeight: 500 }}>
+                {c.customer_id} · {c.ten_cong_ty || 'Trống'} (Chưa H�? & DV)
+              </span>
+            ))}
+            {coverage.missingBoth.length > 10 && (
+              <span style={{ padding: '4px 10px', fontSize: '12px', color: '#854d0e', fontWeight: 500 }}>
+                +{coverage.missingBoth.length - 10} khách hàng khác
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* FILTER PANEL */}
+      <div className="card-container p-6 mb-6 flex flex-col gap-4">
+        
+        {/* Search Input */}
+        <div className="flex gap-3">
+          <input 
+            type="text" 
+            placeholder="Tìm kiếm theo mã H� , mã KH, số H� /PO..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="input-field flex-1"
+          />
+        </div>
+
+        {/* Dynamic Multi-Select Chips Filters */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
+          
+          {/* L?c CS */}
+          <div style={{ position: 'relative' }}>
+            <label style={labelStyle}>Customer Success</label>
+            <div 
+               className="input-field w-full flex items-center justify-between cursor-pointer" 
+               style={{ background: 'var(--neutral-50)', height: '40px', padding: '0 14px' }}
+               onClick={() => setOpenDropdown(openDropdown === 'cs' ? null : 'cs')}
+            >
+              <span className="text-sm font-medium truncate" style={{ color: filterCS.length > 0 ? 'var(--primary-600)' : 'var(--neutral-700)' }}>
+                {filterCS.length > 0 ? `?� ch?n (${filterCS.length})` : '-- T?t c? --'}
+              </span>
+              <span style={{ fontSize: '10px', color: 'var(--neutral-500)', flexShrink: 0, marginLeft: '8px' }}>?</span>
+            </div>
+            {openDropdown === 'cs' && (
+              <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50, border: '1px solid var(--neutral-200)', borderRadius: 'var(--radius-sm)', maxHeight: '200px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px', background: 'var(--neutral-50)', boxShadow: 'var(--shadow-md)', marginTop: '4px' }}>
+                {dropdowns.customerSuccess.map(opt => (
+                  <label key={opt} className="custom-checkbox text-sm" style={{ cursor: 'pointer' }}>
+                    <input type="checkbox" checked={filterCS.includes(opt)} onChange={() => toggleFilter(filterCS, setFilterCS, opt)} />
+                    <span className="checkmark"></span>
+                    {opt}
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* L?c SUP */}
+          <div style={{ position: 'relative' }}>
+            <label style={labelStyle}>SUP Ph? tr�ch</label>
+            <div 
+               className="input-field w-full flex items-center justify-between cursor-pointer" 
+               style={{ background: 'var(--neutral-50)', height: '40px', padding: '0 14px' }}
+               onClick={() => setOpenDropdown(openDropdown === 'sup' ? null : 'sup')}
+            >
+              <span className="text-sm font-medium truncate" style={{ color: filterSUP.length > 0 ? 'var(--primary-600)' : 'var(--neutral-700)' }}>
+                {filterSUP.length > 0 ? `?� ch?n (${filterSUP.length})` : '-- T?t c? --'}
+              </span>
+              <span style={{ fontSize: '10px', color: 'var(--neutral-500)', flexShrink: 0, marginLeft: '8px' }}>?</span>
+            </div>
+            {openDropdown === 'sup' && (
+              <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50, border: '1px solid var(--neutral-200)', borderRadius: 'var(--radius-sm)', maxHeight: '200px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px', background: 'var(--neutral-50)', boxShadow: 'var(--shadow-md)', marginTop: '4px' }}>
+                {dropdowns.customerSupport.map(opt => (
+                  <label key={opt} className="custom-checkbox text-sm" style={{ cursor: 'pointer' }}>
+                    <input type="checkbox" checked={filterSUP.includes(opt)} onChange={() => toggleFilter(filterSUP, setFilterSUP, opt)} />
+                    <span className="checkmark"></span>
+                    {opt}
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* L?c Sale */}
+          <div style={{ position: 'relative' }}>
+            <label style={labelStyle}>T�n Sale</label>
+            <div 
+               className="input-field w-full flex items-center justify-between cursor-pointer" 
+               style={{ background: 'var(--neutral-50)', height: '40px', padding: '0 14px' }}
+               onClick={() => setOpenDropdown(openDropdown === 'sale' ? null : 'sale')}
+            >
+              <span className="text-sm font-medium truncate" style={{ color: filterSale.length > 0 ? 'var(--primary-600)' : 'var(--neutral-700)' }}>
+                {filterSale.length > 0 ? `?� ch?n (${filterSale.length})` : '-- T?t c? --'}
+              </span>
+              <span style={{ fontSize: '10px', color: 'var(--neutral-500)', flexShrink: 0, marginLeft: '8px' }}>?</span>
+            </div>
+            {openDropdown === 'sale' && (
+              <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50, border: '1px solid var(--neutral-200)', borderRadius: 'var(--radius-sm)', maxHeight: '200px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px', background: 'var(--neutral-50)', boxShadow: 'var(--shadow-md)', marginTop: '4px' }}>
+                {dropdowns.tenSale.map(opt => (
+                  <label key={opt} className="custom-checkbox text-sm" style={{ cursor: 'pointer' }}>
+                    <input type="checkbox" checked={filterSale.includes(opt)} onChange={() => toggleFilter(filterSale, setFilterSale, opt)} />
+                    <span className="checkmark"></span>
+                    {opt}
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+
+        </div>
+
+        {/* Expiry Quick filter */}
+        <div style={{ display: 'flex', gap: '24px', borderTop: '1px solid #eaeaea', paddingTop: '16px' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 500, color: '#333', cursor: 'pointer' }}>
+            <input type="checkbox" checked={filterExp15} onChange={(e) => { setFilterExp15(e.target.checked); if (e.target.checked) setFilterExp45(false); }} />
+            Hết hạn trong 15 ngày tới
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 500, color: '#333', cursor: 'pointer' }}>
+            <input type="checkbox" checked={filterExp45} onChange={(e) => { setFilterExp45(e.target.checked); if (e.target.checked) setFilterExp15(false); }} />
+            Hết hạn trong 45 ngày tới
+          </label>
+        </div>
+
+      </div>
+
+      {/* CONTRACTS TABLE */}
+      <div className="card-container">
+        {loading ? (
+          <div style={{ padding: '48px', textAlign: 'center', color: '#666' }}>�?ang tải dữ liệu...</div>
+        ) : filteredContracts.length === 0 ? (
+          <div style={{ padding: '48px', textAlign: 'center', color: '#666' }}>Không tìm thấy hợp đồng phù hợp.</div>
+        ) : (
+          <table className="custom-table">
+            <thead>
+              <tr>
+                <th style={{ width: '40px' }}></th>
+                <th>Mã H�?</th>
+                <th>Khách hàng</th>
+                <th>Số H�? / PO</th>
+                <th>Bắt đầu</th>
+                <th>Kết thúc</th>
+                <th>Trạng thái</th>
+                <th>Dịch vụ</th>
+                <th style={{ textAlign: 'right' }}>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredContracts.map(c => {
+                const isExpanded = !!expandedContracts[c.contract_id];
+                const linkedServices = services.filter(s => s.contract_id === c.contract_id);
+                const cust = customers.find(cust => cust.customer_id === c.customer_id) || {};
+
+                return (
+                  <React.Fragment key={c.contract_id}>
+                    {/* Main Contract Row */}
+                    <tr style={{ borderBottom: '1px solid #e5e7eb', background: isExpanded ? '#f9f9fb' : 'transparent', transition: 'background 0.2s' }}>
+                      <td 
+                        onClick={() => toggleExpand(c.contract_id)}
+                        style={{ padding: '16px', cursor: 'pointer', textAlign: 'center', fontSize: '12px', color: '#86868b' }}
+                      >
+                        {linkedServices.length > 0 ? (isExpanded ? '▼' : '▶') : ''}
+                      </td>
+                      <td style={{ padding: '16px', fontSize: '14px', fontWeight: 600, color: '#1d1d1f' }}>{c.contract_id}</td>
+                      <td style={{ padding: '16px', fontSize: '14px', color: '#1d1d1f' }}>
+                        <div><strong>{c.customer_id}</strong></div>
+                        <div style={{ fontSize: '12px', color: '#86868b', marginTop: '2px' }}>{cust.ten_cong_ty || 'N/A'}</div>
+                      </td>
+                      <td style={{ padding: '16px', fontSize: '14px', color: '#4b5563' }}>
+                        {c.so_hop_dong && <div>H�?: {c.so_hop_dong}</div>}
+                        {c.so_po && <div style={{ fontSize: '12px', color: '#86868b', marginTop: '2px' }}>PO: {c.so_po}</div>}
+                        {!c.so_hop_dong && !c.so_po && '—'}
+                      </td>
+                      <td style={{ padding: '16px', fontSize: '14px', color: '#4b5563' }}>{formatDate(c.ngay_bat_dau_hd)}</td>
+                      <td style={{ padding: '16px', fontSize: '14px', color: '#4b5563' }}>{formatDate(c.ngay_ket_thuc_hd)}</td>
+                      <td style={{ padding: '16px' }}>{getStatusBadge(c.trang_thai)}</td>
+                      <td style={{ padding: '16px' }}>
+                        <span style={{ background: '#e0f2fe', color: '#0369a1', padding: '2px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: 700 }}>
+                          {linkedServices.length} DV
+                        </span>
+                      </td>
+                      <td style={{ padding: '16px', textAlign: 'right' }}>
+                        <div className="flex gap-2 justify-end">
+                          <button 
+                            onClick={() => openAddService(c.contract_id, c.customer_id)}
+                            className="btn btn-secondary"
+                          >
+                            + DV
+                          </button>
+                          <button 
+                            onClick={() => openEditContract(c)}
+                            className="btn btn-secondary"
+                          >
+                            Sửa
+                          </button>
+                          <button 
+                            onClick={() => openRenew('contract', c.contract_id, c.customer_id, c.ngay_ket_thuc_hd)}
+                            className="btn btn-primary"
+                          >
+                            Gia hạn
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+
+                    {/* Expandable Services Row */}
+                    {isExpanded && linkedServices.length > 0 && (
+                      <tr>
+                        <td></td>
+                        <td colSpan={8} style={{ padding: '12px 24px', background: '#fcfcfd', borderBottom: '1px solid #e5e7eb' }}>
+                          <div style={{ fontWeight: 600, fontSize: '12px', color: '#86868b', marginBottom: '8px', letterSpacing: '0.5px' }}>
+                            DANH S�?CH DỊCH VỤ �?I KÈM
+                          </div>
+                          <table className="custom-table" style={{ fontSize: '13px', border: '1px solid var(--neutral-200)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
+                            <thead>
+                              <tr>
+                                <th>Mã DV</th>
+                                <th>Loại dịch vụ</th>
+                                <th>Brand / OA</th>
+                                <th>CPID / Mã kết nối</th>
+                                <th>Bắt đầu</th>
+                                <th>Hết hạn</th>
+                                <th>SUP</th>
+                                <th>Trạng thái</th>
+                                <th style={{ textAlign: 'right' }}>Thao tác</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {linkedServices.map(s => (
+                                <tr key={s.service_id} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                                  <td style={{ padding: '10px', fontWeight: 600 }}>{s.service_id}</td>
+                                  <td style={{ padding: '10px' }}>{s.loai_dich_vu}</td>
+                                  <td style={{ padding: '10px' }}>{s.brand_name_oa || '—'}</td>
+                                  <td style={{ padding: '10px' }}>{s.cp_name_code || '—'}</td>
+                                  <td style={{ padding: '10px' }}>{formatDate(s.ngay_bat_dau)}</td>
+                                  <td style={{ padding: '10px' }}>{formatDate(s.ngay_het_han)}</td>
+                                  <td style={{ padding: '10px' }}>{s.sup_phu_trach || '—'}</td>
+                                  <td style={{ padding: '10px' }}>{getStatusBadge(s.trang_thai)}</td>
+                                  <td style={{ padding: '10px', textAlign: 'right' }}>
+                                    <div className="flex gap-2 justify-end">
+                                      <button 
+                                        onClick={() => openEditService(s)}
+                                        className="btn btn-secondary"
+                                        style={{ padding: '4px 8px', fontSize: '11px' }}
+                                      >
+                                        Sửa
+                                      </button>
+                                      <button 
+                                        onClick={() => openRenew('service', s.service_id, s.customer_id, s.ngay_het_han)}
+                                        className="btn btn-primary"
+                                        style={{ padding: '4px 8px', fontSize: '11px' }}
+                                      >
+                                        Gia hạn
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* ======================================================= */}
+      {/* MODALS IMPLEMENTATION */}
+      {/* ======================================================= */}
+      
+      {/* 1. Add/Edit Contract Modal */}
+      {(activeModal === 'addContract' || activeModal === 'editContract') && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ width: '700px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: 700, margin: 0 }}>
+                {activeModal === 'addContract' ? 'Tạo hợp đồng mới' : `Sửa hợp đồng ${contractForm.contractId}`}
+              </h2>
+              <button onClick={() => setActiveModal(null)} style={{ border: 'none', background: 'transparent', fontSize: '20px', cursor: 'pointer', color: '#86868b' }}>✕</button>
+            </div>
+            
+            <form onSubmit={handleSaveContract} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div>
+                  <label style={labelStyle}>Mã khách hàng <span style={{ color: 'red' }}>*</span></label>
+                  <input 
+                    type="text" 
+                    required 
+                    value={contractForm.customerId} 
+                    onChange={e => setContractForm({...contractForm, customerId: e.target.value})} 
+                    placeholder="VD: SUB-0001"
+                    style={inputStyle} 
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Số hợp đồng</label>
+                  <input 
+                    type="text" 
+                    value={contractForm.soHopDong} 
+                    onChange={e => setContractForm({...contractForm, soHopDong: e.target.value})} 
+                    placeholder="VD: 123/2026/H�?"
+                    style={inputStyle} 
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div>
+                  <label style={labelStyle}>Ngày bắt đầu H�? <span style={{ color: 'red' }}>*</span></label>
+                  <input 
+                    type="date" 
+                    required 
+                    value={contractForm.ngayBatDauHD} 
+                    onChange={e => setContractForm({...contractForm, ngayBatDauHD: e.target.value})} 
+                    style={inputStyle} 
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Ngày kết thúc H�? <span style={{ color: 'red' }}>*</span></label>
+                  <input 
+                    type="date" 
+                    required 
+                    value={contractForm.ngayKetThucHD} 
+                    onChange={e => setContractForm({...contractForm, ngayKetThucHD: e.target.value})} 
+                    style={inputStyle} 
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', borderTop: '1px solid #eaeaea', paddingTop: '16px' }}>
+                <div>
+                  <label style={labelStyle}>Số PO</label>
+                  <input 
+                    type="text" 
+                    value={contractForm.soPO} 
+                    onChange={e => setContractForm({...contractForm, soPO: e.target.value})} 
+                    placeholder="VD: PO-2026"
+                    style={inputStyle} 
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Bắt đầu PO</label>
+                  <input 
+                    type="date" 
+                    value={contractForm.ngayBatDauPO} 
+                    onChange={e => setContractForm({...contractForm, ngayBatDauPO: e.target.value})} 
+                    style={inputStyle} 
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Kết thúc PO</label>
+                  <input 
+                    type="date" 
+                    value={contractForm.ngayKetThucPO} 
+                    onChange={e => setContractForm({...contractForm, ngayKetThucPO: e.target.value})} 
+                    style={inputStyle} 
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div>
+                  <label style={labelStyle}>Hình thức thanh toán</label>
+                  <select 
+                    value={contractForm.hinhThucThanhToan} 
+                    onChange={e => setContractForm({...contractForm, hinhThucThanhToan: e.target.value})} 
+                    style={inputStyle}
+                  >
+                    <option value="">-- Ch�?n hình thức --</option>
+                    {dropdowns.hinhThucThanhToan.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={labelStyle}>Trạng thái</label>
+                  <select 
+                    value={contractForm.trangThai} 
+                    onChange={e => setContractForm({...contractForm, trangThai: e.target.value})} 
+                    style={inputStyle}
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Expiring">Expiring</option>
+                    <option value="Expired">Expired</option>
+                    <option value="Cancelled">Cancelled</option>
+                  </select>
+                </div>
+              </div>
+
+              {activeModal === 'editContract' && (
+                <div>
+                  <label style={labelStyle}>Liên kết H�? trước (Previous Contract ID)</label>
+                  <input 
+                    type="text" 
+                    value={contractForm.previousContractId} 
+                    onChange={e => setContractForm({...contractForm, previousContractId: e.target.value})} 
+                    style={inputStyle} 
+                  />
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
+                <button 
+                  type="submit" 
+                  disabled={modalLoading}
+                  className="btn btn-primary" style={{ flex: 1 }}
+                >
+                  {modalLoading ? '�?ang lưu...' : 'Lưu thông tin'}
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => setActiveModal(null)} 
+                  className="btn btn-secondary" style={{ flex: 1 }}
+                >
+                  Huỷ
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 2. Add/Edit Service Modal */}
+      {(activeModal === 'addService' || activeModal === 'editService') && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ width: '760px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: 700, margin: 0 }}>
+                {activeModal === 'addService' ? 'Thêm dịch vụ đi kèm' : `Sửa dịch vụ ${serviceForm.serviceId}`}
+              </h2>
+              <button onClick={() => setActiveModal(null)} style={{ border: 'none', background: 'transparent', fontSize: '20px', cursor: 'pointer', color: '#86868b' }}>✕</button>
+            </div>
+            
+            <form onSubmit={handleSaveService} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={labelStyle}>Mã khách hàng <span style={{ color: 'red' }}>*</span></label>
+                  <input type="text" required readOnly={activeModal === 'addService'} value={serviceForm.customerId} onChange={e => setServiceForm({...serviceForm, customerId: e.target.value})} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Mã hợp đồng liên kết</label>
+                  <input type="text" readOnly={activeModal === 'addService'} value={serviceForm.contractId} onChange={e => setServiceForm({...serviceForm, contractId: e.target.value})} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Loại dịch vụ <span style={{ color: 'red' }}>*</span></label>
+                  <select required value={serviceForm.loaiDichVu} onChange={e => setServiceForm({...serviceForm, loaiDichVu: e.target.value})} style={inputStyle}>
+                    <option value="">-- Ch�?n --</option>
+                    {dropdowns.loaiDichVu.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={labelStyle}>BrandName / OA</label>
+                  <input type="text" value={serviceForm.brandNameOA} onChange={e => setServiceForm({...serviceForm, brandNameOA: e.target.value})} placeholder="Tên Brand/OA" style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>CPID / Mã kết nối</label>
+                  <input type="text" value={serviceForm.cpNameCode} onChange={e => setServiceForm({...serviceForm, cpNameCode: e.target.value})} placeholder="CP Name Code" style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Th�?i hạn Brand/OA</label>
+                  <input type="date" onClick={(e) => (e.target as any).showPicker && (e.target as any).showPicker()} value={serviceForm.thoiHanBrand} onChange={e => setServiceForm({...serviceForm, thoiHanBrand: e.target.value})} style={inputStyle} />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={labelStyle}>�?ầu số</label>
+                  <input type="text" value={serviceForm.dauSo} onChange={e => setServiceForm({...serviceForm, dauSo: e.target.value})} placeholder="VD: 1900xxxx" style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Cú pháp</label>
+                  <input type="text" value={serviceForm.cuPhap} onChange={e => setServiceForm({...serviceForm, cuPhap: e.target.value})} placeholder="VD: HUY" style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Quốc gia</label>
+                  <input type="text" value={serviceForm.quocGia} onChange={e => setServiceForm({...serviceForm, quocGia: e.target.value})} style={inputStyle} />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '24px', padding: '8px 0' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 600, color: '#333' }}>
+                  <input type="checkbox" checked={serviceForm.ketNoiAPIGateway} onChange={e => setServiceForm({...serviceForm, ketNoiAPIGateway: e.target.checked})} />
+                  Kết nối API Gateway
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 600, color: '#333' }}>
+                  <input type="checkbox" checked={serviceForm.ketNoiSMPP} onChange={e => setServiceForm({...serviceForm, ketNoiSMPP: e.target.checked})} />
+                  Kết nối SMPP
+                </label>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={labelStyle}>API GapOne</label>
+                  <input type="text" value={serviceForm.ketNoiAPIGapOne} onChange={e => setServiceForm({...serviceForm, ketNoiAPIGapOne: e.target.value})} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Ví ZCA</label>
+                  <input type="text" value={serviceForm.ketNoiViZCA} onChange={e => setServiceForm({...serviceForm, ketNoiViZCA: e.target.value})} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Hệ thống KH</label>
+                  <input type="text" value={serviceForm.ketNoiHeThongKH} onChange={e => setServiceForm({...serviceForm, ketNoiHeThongKH: e.target.value})} style={inputStyle} />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={labelStyle}>Tên dịch vụ</label>
+                  <input type="text" value={serviceForm.tenService} onChange={e => setServiceForm({...serviceForm, tenService: e.target.value})} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>SUP phụ trách <span style={{ color: 'red' }}>*</span></label>
+                  <select required value={serviceForm.supPhuTrach} onChange={e => setServiceForm({...serviceForm, supPhuTrach: e.target.value})} style={inputStyle}>
+                    <option value="">-- Ch�?n SUP --</option>
+                    {dropdowns.customerSupport.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={labelStyle}>Trạng thái</label>
+                  <select value={serviceForm.trangThai} onChange={e => setServiceForm({...serviceForm, trangThai: e.target.value})} style={inputStyle}>
+                    <option value="Active">Active</option>
+                    <option value="Suspended">Suspended</option>
+                    <option value="Expired">Expired</option>
+                    <option value="Cancelled">Cancelled</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={labelStyle}>Ngày bắt đầu <span style={{ color: 'red' }}>*</span></label>
+                  <input type="date" onClick={(e) => (e.target as any).showPicker && (e.target as any).showPicker()} required value={serviceForm.ngayBatDau} onChange={e => setServiceForm({...serviceForm, ngayBatDau: e.target.value})} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Ngày hết hạn <span style={{ color: 'red' }}>*</span></label>
+                  <input type="date" onClick={(e) => (e.target as any).showPicker && (e.target as any).showPicker()} required value={serviceForm.ngayHetHan} onChange={e => setServiceForm({...serviceForm, ngayHetHan: e.target.value})} style={inputStyle} />
+                </div>
+              </div>
+
+              <div>
+                <label style={labelStyle}>Ghi chú</label>
+                <textarea value={serviceForm.ghiChu} onChange={e => setServiceForm({...serviceForm, ghiChu: e.target.value})} style={{ ...inputStyle, minHeight: '60px' }} />
+              </div>
+
+              <div className="flex gap-3 mt-2">
+                <button type="submit" disabled={modalLoading} className="btn btn-primary" style={{ flex: 1 }}>
+                  {modalLoading ? '�?ang lưu...' : 'Lưu thông tin'}
+                </button>
+                <button type="button" onClick={() => setActiveModal(null)} className="btn btn-secondary" style={{ flex: 1 }}>Huỷ</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Renew Modal (Contract or Service) */}
+      {activeModal === 'renew' && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ width: '500px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: 700, margin: 0 }}>
+                Gia hạn {renewForm.type === 'contract' ? 'Hợp đồng' : 'Dịch vụ'}
+              </h2>
+              <button onClick={() => setActiveModal(null)} style={{ border: 'none', background: 'transparent', fontSize: '20px', cursor: 'pointer', color: '#86868b' }}>✕</button>
+            </div>
+
+            <div style={{ background: '#f5f5f7', padding: '12px 16px', borderRadius: '8px', fontSize: '13px', color: '#515154', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div><strong>�?ối tượng:</strong> {renewForm.type === 'contract' ? 'Hợp đồng' : 'Dịch vụ'} ({renewForm.targetId})</div>
+              <div><strong>Mã khách hàng:</strong> {renewForm.customerId}</div>
+              <div><strong>Hết hạn cũ:</strong> {formatDate(renewForm.expDate)}</div>
+            </div>
+            
+            <form onSubmit={handleRenewSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              
+              {renewForm.type === 'contract' && (
+                <div>
+                  <label style={labelStyle}>Ngày xác nhận/Thanh toán <span style={{ color: 'red' }}>*</span></label>
+                  <input 
+                    type="date" 
+                    required 
+                    value={renewForm.ngayThanhToan} 
+                    onChange={handleRenewPaymentChange} 
+                    style={inputStyle} 
+                  />
+                  <small style={{ color: '#86868b', fontSize: '11px', display: 'block', marginTop: '4px' }}>
+                    * �?p dụng logic cũ: Nối li�?n (ngày cũ + 1) nếu thanh toán trễ dưới 14 ngày, ngược lại lấy ngày thanh toán.
+                  </small>
+                </div>
+              )}
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={labelStyle}>Ngày bắt đầu mới <span style={{ color: 'red' }}>*</span></label>
+                  <input 
+                    type="date" 
+                    required 
+                    value={renewForm.ngayBatDauMoi} 
+                    onChange={e => setRenewForm({...renewForm, ngayBatDauMoi: e.target.value})} 
+                    style={inputStyle} 
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Ngày kết thúc mới <span style={{ color: 'red' }}>*</span></label>
+                  <input 
+                    type="date" 
+                    required 
+                    value={renewForm.ngayKetThucMoi} 
+                    onChange={e => setRenewForm({...renewForm, ngayKetThucMoi: e.target.value})} 
+                    style={inputStyle} 
+                  />
+                </div>
+              </div>
+
+              {renewForm.type === 'contract' && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <label style={labelStyle}>Số hợp đồng mới</label>
+                    <input 
+                      type="text" 
+                      value={renewForm.soHopDong} 
+                      onChange={e => setRenewForm({...renewForm, soHopDong: e.target.value})} 
+                      placeholder="VD: 123/2026/H�?"
+                      style={inputStyle} 
+                    />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Số PO mới</label>
+                    <input 
+                      type="text" 
+                      value={renewForm.soPO} 
+                      onChange={e => setRenewForm({...renewForm, soPO: e.target.value})} 
+                      placeholder="VD: PO-2026"
+                      style={inputStyle} 
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label style={labelStyle}>Ghi chú gia hạn</label>
+                <textarea 
+                  value={renewForm.ghiChu} 
+                  onChange={e => setRenewForm({...renewForm, ghiChu: e.target.value})} 
+                  style={{ ...inputStyle, minHeight: '60px' }} 
+                />
+              </div>
+
+              <div className="flex gap-3 mt-2">
+                <button type="submit" disabled={modalLoading} className="btn btn-primary" style={{ flex: 1 }}>
+                  {modalLoading ? '�?ang gia hạn...' : 'Xác nhận gia hạn'}
+                </button>
+                <button type="button" onClick={() => setActiveModal(null)} className="btn btn-secondary" style={{ flex: 1 }}>Huỷ</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}
+
+// Inline Styles Tokens
+const labelStyle = {
+  display: 'block', 
+  fontSize: '12px', 
+  marginBottom: '6px', 
+  fontWeight: 600,
+  color: '#515154'
+};
+
+const inputStyle = {
+  width: '100%',
+  padding: '10px 14px',
+  borderRadius: '8px',
+  border: '1px solid #d2d2d7',
+  fontSize: '14px',
+  outline: 'none',
+  backgroundColor: '#f5f5f7',
+  color: '#1d1d1f',
+  boxSizing: 'border-box' as const
+};
+
