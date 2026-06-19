@@ -721,115 +721,126 @@ export default function ContractsPage() {
               </div>
               
               <form onSubmit={handleServiceSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                  <div>
-                    <label className="label-custom">Khách hàng <span className="text-error-600">*</span></label>
-                    <select required className="input-field w-full" value={serviceFormData.customerId} onChange={e => setServiceFormData({...serviceFormData, customerId: e.target.value})} disabled={activeServiceModal === 'renew'}>
-                      <option value="">-- Chọn Khách hàng --</option>
-                      {customers.map(c => <option key={c.customer_id} value={c.customer_id}>{c.customer_id} - {c.ten_cong_ty}</option>)}
-                    </select>
+                {/* NHÓM 1: THÔNG TIN CHUNG */}
+                <div style={{ background: '#fafafa', padding: '20px', borderRadius: '8px', border: '1px solid #e5e7eb', marginBottom: '16px' }}>
+                  <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#374151', marginBottom: '16px', borderBottom: '1px solid #e5e7eb', paddingBottom: '8px' }}>1. Thông tin chung</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                    <div>
+                      <label className="label-custom">Khách hàng <span className="text-error-600">*</span></label>
+                      <select required className="input-field w-full" value={serviceFormData.customerId} onChange={e => setServiceFormData({...serviceFormData, customerId: e.target.value})} disabled={activeServiceModal === 'renew'}>
+                        <option value="">-- Chọn Khách hàng --</option>
+                        {customers.map(c => <option key={c.customer_id} value={c.customer_id}>{c.customer_id} - {c.ten_cong_ty}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="label-custom">HĐ/PO liên kết</label>
+                      <input className="input-field w-full" value={serviceFormData.contractId} disabled style={{ background: 'var(--neutral-100)' }} />
+                    </div>
                   </div>
-                  <div>
-                    <label className="label-custom">HĐ/PO liên kết</label>
-                    <input className="input-field w-full" value={serviceFormData.contractId} disabled style={{ background: 'var(--neutral-100)' }} />
-                  </div>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
-                  <div>
-                    <label className="label-custom">Loại Dịch vụ <span className="text-error-600">*</span></label>
-                    <select required className="input-field w-full" value={serviceFormData.loaiDichVu} onChange={e => setServiceFormData({...serviceFormData, loaiDichVu: e.target.value})}>
-                      <option value="">-- Chọn Loại DV --</option>
-                      {(lookups.loaiDichVu || []).map((t: string) => <option key={t} value={t}>{t}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="label-custom">Trạng thái</label>
-                    <select className="input-field w-full" value={serviceFormData.trangThai} onChange={e => setServiceFormData({...serviceFormData, trangThai: e.target.value})}>
-                      <option value="Active">Active</option>
-                      <option value="Pending">Pending</option>
-                      <option value="Expired">Expired</option>
-                      <option value="Cancelled">Cancelled</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="label-custom">SUP Phụ trách</label>
-                    <select className="input-field w-full" value={serviceFormData.supPhuTrach} onChange={e => setServiceFormData({...serviceFormData, supPhuTrach: e.target.value})}>
-                      <option value="">-- Chọn SUP --</option>
-                      {(lookups.customerSupport || []).map((sup: string) => <option key={sup} value={sup}>{sup}</option>)}
-                    </select>
-                  </div>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                  <div>
-                    <label className="label-custom">CP Name/Mã kết nối</label>
-                    <input className="input-field w-full" value={serviceFormData.cpNameCode} onChange={e => setServiceFormData({...serviceFormData, cpNameCode: e.target.value})} />
-                  </div>
-                  <div>
-                    <label className="label-custom">Brand/OA</label>
-                    <input className="input-field w-full" value={serviceFormData.brandNameOA} onChange={e => setServiceFormData({...serviceFormData, brandNameOA: e.target.value})} />
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+                    <div>
+                      <label className="label-custom">Loại Dịch vụ <span className="text-error-600">*</span></label>
+                      <select required className="input-field w-full" value={serviceFormData.loaiDichVu} onChange={e => setServiceFormData({...serviceFormData, loaiDichVu: e.target.value})}>
+                        <option value="">-- Chọn Loại DV --</option>
+                        {(lookups.loaiDichVu || []).map((t: string) => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="label-custom">SUP Phụ trách</label>
+                      <select className="input-field w-full" value={serviceFormData.supPhuTrach} onChange={e => setServiceFormData({...serviceFormData, supPhuTrach: e.target.value})}>
+                        <option value="">-- Chọn SUP --</option>
+                        {(lookups.customerSupport || []).map((sup: string) => <option key={sup} value={sup}>{sup}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="label-custom">Trạng thái</label>
+                      <select className="input-field w-full" value={serviceFormData.trangThai} onChange={e => setServiceFormData({...serviceFormData, trangThai: e.target.value})}>
+                        <option value="Active">Active</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Expired">Expired</option>
+                        <option value="Cancelled">Cancelled</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
-                  <div>
-                    <label className="label-custom">Đầu số</label>
-                    <input className="input-field w-full" value={serviceFormData.dauSo} onChange={e => setServiceFormData({...serviceFormData, dauSo: e.target.value})} />
+                {/* NHÓM 2: CHI TIẾT KẾT NỐI */}
+                <div style={{ background: '#fafafa', padding: '20px', borderRadius: '8px', border: '1px solid #e5e7eb', marginBottom: '16px' }}>
+                  <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#374151', marginBottom: '16px', borderBottom: '1px solid #e5e7eb', paddingBottom: '8px' }}>2. Chi tiết nghiệp vụ</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                    <div>
+                      <label className="label-custom">CP Name/Mã kết nối</label>
+                      <input className="input-field w-full" value={serviceFormData.cpNameCode} onChange={e => setServiceFormData({...serviceFormData, cpNameCode: e.target.value})} />
+                    </div>
+                    <div>
+                      <label className="label-custom">Brand/OA</label>
+                      <input className="input-field w-full" value={serviceFormData.brandNameOA} onChange={e => setServiceFormData({...serviceFormData, brandNameOA: e.target.value})} />
+                    </div>
                   </div>
-                  <div>
-                    <label className="label-custom">Cú pháp</label>
-                    <input className="input-field w-full" value={serviceFormData.cuPhap} onChange={e => setServiceFormData({...serviceFormData, cuPhap: e.target.value})} />
-                  </div>
-                  <div>
-                    <label className="label-custom">Quốc gia</label>
-                    <input className="input-field w-full" value={serviceFormData.quocGia} onChange={e => setServiceFormData({...serviceFormData, quocGia: e.target.value})} />
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+                    <div>
+                      <label className="label-custom">Đầu số</label>
+                      <input className="input-field w-full" value={serviceFormData.dauSo} onChange={e => setServiceFormData({...serviceFormData, dauSo: e.target.value})} />
+                    </div>
+                    <div>
+                      <label className="label-custom">Cú pháp</label>
+                      <input className="input-field w-full" value={serviceFormData.cuPhap} onChange={e => setServiceFormData({...serviceFormData, cuPhap: e.target.value})} />
+                    </div>
+                    <div>
+                      <label className="label-custom">Quốc gia</label>
+                      <input className="input-field w-full" value={serviceFormData.quocGia} onChange={e => setServiceFormData({...serviceFormData, quocGia: e.target.value})} />
+                    </div>
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                  <div>
-                    <label className="label-custom">Ngày bắt đầu</label>
-                    <input type="date" className="input-field w-full" value={serviceFormData.ngayBatDau} onChange={e => setServiceFormData({...serviceFormData, ngayBatDau: e.target.value})} onClick={(e) => (e.target as any).showPicker && (e.target as any).showPicker()} />
+                {/* NHÓM 3: CẤU HÌNH KỸ THUẬT */}
+                <div style={{ background: '#fafafa', padding: '20px', borderRadius: '8px', border: '1px solid #e5e7eb', marginBottom: '16px' }}>
+                  <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#374151', marginBottom: '16px', borderBottom: '1px solid #e5e7eb', paddingBottom: '8px' }}>3. Cấu hình kỹ thuật</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                      <input type="checkbox" style={{ width: '16px', height: '16px' }} checked={serviceFormData.ketNoiAPIGateway === 'Có'} onChange={e => setServiceFormData({...serviceFormData, ketNoiAPIGateway: e.target.checked ? 'Có' : ''})} />
+                      <span className="label-custom" style={{ margin: 0, cursor: 'pointer' }}>API Gateway</span>
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                      <input type="checkbox" style={{ width: '16px', height: '16px' }} checked={serviceFormData.ketNoiSMPP === 'Có'} onChange={e => setServiceFormData({...serviceFormData, ketNoiSMPP: e.target.checked ? 'Có' : ''})} />
+                      <span className="label-custom" style={{ margin: 0, cursor: 'pointer' }}>Kết nối SMPP</span>
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                      <input type="checkbox" style={{ width: '16px', height: '16px' }} checked={serviceFormData.ketNoiAPIGapOne === 'Có'} onChange={e => setServiceFormData({...serviceFormData, ketNoiAPIGapOne: e.target.checked ? 'Có' : ''})} />
+                      <span className="label-custom" style={{ margin: 0, cursor: 'pointer' }}>API GapOne</span>
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                      <input type="checkbox" style={{ width: '16px', height: '16px' }} checked={serviceFormData.ketNoiViZCA === 'Có'} onChange={e => setServiceFormData({...serviceFormData, ketNoiViZCA: e.target.checked ? 'Có' : ''})} />
+                      <span className="label-custom" style={{ margin: 0, cursor: 'pointer' }}>Ví ZCA</span>
+                    </label>
                   </div>
-                  <div>
-                    <label className="label-custom">Ngày hết hạn</label>
-                    <input type="date" className="input-field w-full" value={serviceFormData.ngayHetHan} onChange={e => setServiceFormData({...serviceFormData, ngayHetHan: e.target.value})} onClick={(e) => (e.target as any).showPicker && (e.target as any).showPicker()} />
-                  </div>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '16px' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                    <input type="checkbox" checked={serviceFormData.ketNoiAPIGateway === 'Có'} onChange={e => setServiceFormData({...serviceFormData, ketNoiAPIGateway: e.target.checked ? 'Có' : ''})} />
-                    <span className="label-custom" style={{ margin: 0 }}>Kết nối API Gateway</span>
-                  </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                    <input type="checkbox" checked={serviceFormData.ketNoiSMPP === 'Có'} onChange={e => setServiceFormData({...serviceFormData, ketNoiSMPP: e.target.checked ? 'Có' : ''})} />
-                    <span className="label-custom" style={{ margin: 0 }}>Kết nối SMPP</span>
-                  </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                    <input type="checkbox" checked={serviceFormData.ketNoiAPIGapOne === 'Có'} onChange={e => setServiceFormData({...serviceFormData, ketNoiAPIGapOne: e.target.checked ? 'Có' : ''})} />
-                    <span className="label-custom" style={{ margin: 0 }}>API GapOne</span>
-                  </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                    <input type="checkbox" checked={serviceFormData.ketNoiViZCA === 'Có'} onChange={e => setServiceFormData({...serviceFormData, ketNoiViZCA: e.target.checked ? 'Có' : ''})} />
-                    <span className="label-custom" style={{ margin: 0 }}>Ví ZCA</span>
-                  </label>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', marginBottom: '8px' }}>
-                      <input type="checkbox" checked={!!serviceFormData.ketNoiHeThongKH} onChange={e => setServiceFormData({...serviceFormData, ketNoiHeThongKH: e.target.checked ? 'Có' : ''})} />
-                      <span className="label-custom" style={{ margin: 0 }}>Hệ thống KH</span>
+                      <input type="checkbox" style={{ width: '16px', height: '16px' }} checked={!!serviceFormData.ketNoiHeThongKH} onChange={e => setServiceFormData({...serviceFormData, ketNoiHeThongKH: e.target.checked ? 'Có' : ''})} />
+                      <span className="label-custom" style={{ margin: 0, cursor: 'pointer' }}>Tích hợp Hệ thống Khách hàng</span>
                     </label>
                     {!!serviceFormData.ketNoiHeThongKH && (
-                      <input className="input-field w-full animate-fade-in" value={serviceFormData.ketNoiHeThongKH} onChange={e => setServiceFormData({...serviceFormData, ketNoiHeThongKH: e.target.value})} placeholder="Nhập thông tin hệ thống..." />
+                      <input className="input-field w-full animate-fade-in" value={serviceFormData.ketNoiHeThongKH} onChange={e => setServiceFormData({...serviceFormData, ketNoiHeThongKH: e.target.value})} placeholder="Nhập tên/thông tin hệ thống KH..." style={{ marginTop: '8px' }} />
                     )}
                   </div>
+                </div>
+
+                {/* NHÓM 4: THỜI GIAN & GHI CHÚ */}
+                <div style={{ background: '#fafafa', padding: '20px', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+                  <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#374151', marginBottom: '16px', borderBottom: '1px solid #e5e7eb', paddingBottom: '8px' }}>4. Thời gian & Ghi chú</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                    <div>
+                      <label className="label-custom">Ngày bắt đầu</label>
+                      <input type="date" className="input-field w-full" value={serviceFormData.ngayBatDau} onChange={e => setServiceFormData({...serviceFormData, ngayBatDau: e.target.value})} onClick={(e) => (e.target as any).showPicker && (e.target as any).showPicker()} />
+                    </div>
+                    <div>
+                      <label className="label-custom">Ngày hết hạn</label>
+                      <input type="date" className="input-field w-full" value={serviceFormData.ngayHetHan} onChange={e => setServiceFormData({...serviceFormData, ngayHetHan: e.target.value})} onClick={(e) => (e.target as any).showPicker && (e.target as any).showPicker()} />
+                    </div>
+                  </div>
                   <div>
-                    <label className="label-custom" style={{ marginBottom: '8px', display: 'block' }}>Ghi chú</label>
-                    <input className="input-field w-full" value={serviceFormData.ghiChu} onChange={e => setServiceFormData({...serviceFormData, ghiChu: e.target.value})} />
+                    <label className="label-custom" style={{ marginBottom: '8px', display: 'block' }}>Ghi chú bổ sung</label>
+                    <textarea className="input-field w-full" rows={3} value={serviceFormData.ghiChu} onChange={e => setServiceFormData({...serviceFormData, ghiChu: e.target.value})} placeholder="Nhập ghi chú..." style={{ resize: 'vertical' }} />
                   </div>
                 </div>
 
