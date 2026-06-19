@@ -17,6 +17,14 @@ export default function CSRateAccountPage() {
   const [dropdowns, setDropdowns] = useState<Record<string, string[]>>(FALLBACK_DROPDOWNS);
   const [successInfo, setSuccessInfo] = useState<any>(null);
   const [showSuccessPwd, setShowSuccessPwd] = useState(false);
+  const successRef = useRef<HTMLDivElement>(null);
+
+  const handleCopyAll = () => {
+    if (!successInfo) return;
+    const text = `Tên tài khoản: ${successInfo.tenTaiKhoan}\nMật khẩu: ${successInfo.matKhau}\nOrg Id: ${successInfo.orgId}\nHình thức thanh toán: ${successInfo.hinhThucThanhToan}\nNgày bắt đầu: ${successInfo.ngayBatDau}\nNgày kết thúc: ${successInfo.ngayKetThuc}\nMã Hợp đồng: ${successInfo.contractId}\nMã Khách hàng: ${successInfo.customerId}\n\n⚠️ Có hợp đồng mới được tạo. Vui lòng vào hệ thống để hoàn tất thông tin Hợp đồng và tạo Dịch vụ tương ứng.`;
+    navigator.clipboard.writeText(text);
+    alert('Đã copy toàn bộ thông tin!');
+  };
 
   useEffect(() => {
     async function loadConfigs() {
@@ -164,6 +172,7 @@ export default function CSRateAccountPage() {
         contractId: res.contractId
       });
       setIsAlreadyCreated(true);
+      setTimeout(() => successRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
     } else {
       setError(res.error || 'Có lỗi xảy ra khi tạo khách hàng.');
       setTimeout(() => errorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
@@ -193,28 +202,7 @@ export default function CSRateAccountPage() {
 
       {error && <div ref={errorRef} style={{ padding: '16px', background: '#fee2e2', color: '#991b1b', borderRadius: '8px', marginBottom: '24px' }}>{error}</div>}
 
-      {/* Success Info Block */}
-      {successInfo && (
-        <div style={{ background: '#ecfdf5', border: '1px solid #10b981', borderRadius: '12px', padding: '24px', marginBottom: '24px' }}>
-          <h2 style={{ fontSize: '18px', color: '#065f46', marginBottom: '16px', fontWeight: 600 }}>✅ Tạo thành công! Gửi thông tin này cho Sale:</h2>
-          <div style={{ background: '#fff', padding: '16px', borderRadius: '8px', fontFamily: 'monospace', fontSize: '14px', border: '1px solid #a7f3d0' }}>
-            <p>Tên tài khoản: {successInfo.tenTaiKhoan}</p>
-            <p style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              Mật khẩu: {showSuccessPwd ? successInfo.matKhau : '••••••••'}
-              <button 
-                onClick={() => setShowSuccessPwd(!showSuccessPwd)} 
-                style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0 }}
-              >
-                {showSuccessPwd ? <EyeOff size={16} color="var(--neutral-500)"/> : <Eye size={16} color="var(--neutral-500)"/>}
-              </button>
-            </p>
-            <p>Org Id: {successInfo.orgId}</p>
-            <p>Hình thức thanh toán: {successInfo.hinhThucThanhToan}</p>
-            <p>Ngày bắt đầu: {successInfo.ngayBatDau}</p>
-            <p>Ngày kết thúc: {successInfo.ngayKetThuc}</p>
-          </div>
-        </div>
-      )}
+      {/* Success Info Block Moved to Bottom */}
 
       {/* Warning if already created */}
       {isAlreadyCreated && requestData && !successInfo && (
@@ -372,6 +360,44 @@ export default function CSRateAccountPage() {
             </button>
           )}
         </form>
+      )}
+
+      {/* Success Info Block at Bottom */}
+      {successInfo && (
+        <div ref={successRef} style={{ background: '#ecfdf5', border: '1px solid #10b981', borderRadius: '12px', padding: '32px', marginTop: '32px', boxShadow: '0 4px 12px rgba(16,185,129,0.1)' }}>
+          <h2 style={{ fontSize: '20px', color: '#065f46', marginBottom: '16px', fontWeight: 700 }}>🎉 TẠO TÀI KHOẢN & HỢP ĐỒNG THÀNH CÔNG!</h2>
+          <div style={{ background: '#fff', padding: '20px', borderRadius: '8px', fontFamily: 'monospace', fontSize: '15px', border: '1px solid #a7f3d0', lineHeight: '1.6', position: 'relative' }}>
+            <p><strong style={{color: '#065f46'}}>Tên tài khoản:</strong> {successInfo.tenTaiKhoan}</p>
+            <p style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <strong style={{color: '#065f46'}}>Mật khẩu:</strong> {showSuccessPwd ? successInfo.matKhau : '••••••••'}
+              <button 
+                type="button"
+                onClick={() => setShowSuccessPwd(!showSuccessPwd)} 
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0 }}
+              >
+                {showSuccessPwd ? <EyeOff size={16} color="var(--neutral-500)"/> : <Eye size={16} color="var(--neutral-500)"/>}
+              </button>
+            </p>
+            <p><strong style={{color: '#065f46'}}>Org Id:</strong> {successInfo.orgId}</p>
+            <p><strong style={{color: '#065f46'}}>Hình thức thanh toán:</strong> {successInfo.hinhThucThanhToan}</p>
+            <p><strong style={{color: '#065f46'}}>Ngày bắt đầu:</strong> {successInfo.ngayBatDau}</p>
+            <p><strong style={{color: '#065f46'}}>Ngày kết thúc:</strong> {successInfo.ngayKetThuc}</p>
+            <p><strong style={{color: '#065f46'}}>Mã Khách hàng:</strong> {successInfo.customerId}</p>
+            <p><strong style={{color: '#065f46'}}>Mã Hợp đồng:</strong> {successInfo.contractId}</p>
+            
+            <div style={{ marginTop: '16px', padding: '12px', background: '#fffbeb', borderLeft: '4px solid #f59e0b', color: '#b45309', borderRadius: '0 4px 4px 0', fontSize: '14px', fontWeight: 500 }}>
+              ⚠️ Lưu ý: Hệ thống đã tự động tạo hợp đồng. Vui lòng vào phần Quản lý hợp đồng & dịch vụ để bổ sung thông tin chi tiết và khởi tạo các dịch vụ tương ứng.
+            </div>
+
+            <button 
+              type="button" 
+              onClick={handleCopyAll}
+              style={{ position: 'absolute', top: '20px', right: '20px', padding: '8px 16px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}
+            >
+              📋 Copy Toàn Bộ
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
