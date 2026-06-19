@@ -219,7 +219,7 @@ export async function activateRequest(data: any) {
       cpid: data.cpid || req.cpid,
       cp_name: data.cpName,
       org_id: data.orgId,
-      ten_cong_ty: req.ten_cong_ty,
+      ten_cong_ty: data.tenCongTy || req.ten_cong_ty,
       nganh_nghe: data.nganhNghe || req.nganh_nghe,
       phan_khuc: data.phanKhuc || req.phan_khuc,
       khu_vuc: req.khu_vuc,
@@ -236,7 +236,7 @@ export async function activateRequest(data: any) {
       mat_khau: data.matKhau,
       customer_success: data.customerSuccess,
       customer_support: data.customerSupport,
-      sale_phu_trach: data.salePhuTrach || req.ten_sale,
+      sale_phu_trach: data.tenSale || data.salePhuTrach || req.ten_sale,
       created_by: data.actorEmail || req.sale_email,
     };
 
