@@ -121,7 +121,7 @@ export async function getContracts() {
     const contractIds = contracts.map(c => c.contract_id);
 
     const [{ data: customers }, { data: services }] = await Promise.all([
-      supabase.from('cx_customers').select('customer_id, ten_cong_ty, org_id, sale_in_charge, cs_in_charge, sale_phu_trach, customer_success').in('customer_id', customerIds),
+      supabase.from('cx_customers').select('customer_id, ten_cong_ty, org_id, sale_phu_trach, customer_success').in('customer_id', customerIds),
       supabase.from('cx_services').select('service_id, contract_id').in('contract_id', contractIds)
     ]);
 
@@ -142,8 +142,8 @@ export async function getContracts() {
       ...c,
       ten_cong_ty: custMap[c.customer_id]?.ten_cong_ty || '',
       org_id: custMap[c.customer_id]?.org_id || '',
-      sale_in_charge: custMap[c.customer_id]?.sale_in_charge || custMap[c.customer_id]?.sale_phu_trach || '',
-      cs_in_charge: custMap[c.customer_id]?.cs_in_charge || custMap[c.customer_id]?.customer_success || '',
+      sale_in_charge: custMap[c.customer_id]?.sale_phu_trach || '',
+      cs_in_charge: custMap[c.customer_id]?.customer_success || '',
       total_services: srvMap[c.contract_id] || 0
     }));
 
