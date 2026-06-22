@@ -159,6 +159,28 @@ export async function POST(request: Request) {
       }
     }
 
+    // 4. Auto-update cx_services
+    if (brand_id && cp_id) {
+      const { data: affectedServices, error: updateSvcErr } = await supabase
+        .from('cx_services')
+        .update({ trang_thai: 'Cancelled' })
+        .match({ brand_id, cp_id })
+        .select('service_id, customer_id');
+
+      if (!updateSvcErr && affectedServices && affectedServices.length > 0) {
+        const logs = affectedServices.map((svc: any) => ({
+          log_id: `LOG-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+          action: 'CANCEL_SERVICE',
+          target_type: 'service',
+          target_id: svc.service_id,
+          detail: `Hệ thống tự động hủy do tiếp nhận chứng từ Hủy số: ${cancellationId}`,
+          performed_by: user_name || 'system',
+          related_customer_id: svc.customer_id
+        }));
+        await supabase.from('cx_activity_logs').insert(logs);
+      }
+    }
+
     // Đồng bộ sang Google Sheets chạy ngầm (không await để tránh block 5 giây)
     syncToGoogleSheets('create', cancellationId, body).catch(e => console.error(e));
 

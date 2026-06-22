@@ -99,8 +99,8 @@ export default function DashboardPage() {
   const chartContractBuckets = bucketOrder.map(b => ({ name: b, count: contractBuckets[b] }));
 
   const serviceBuckets: Record<string, number> = { 'Quá hạn (< 0)': 0, '0-7 ngày': 0, '8-15 ngày': 0, '16-30 ngày': 0, '31-60 ngày': 0, '> 60 ngày': 0 };
-  allServices.filter(s => s.trang_thai === 'Active' && s.ngay_het_han).forEach(s => {
-    const days = getDaysDiff(s.ngay_het_han);
+  allServices.filter(s => s.trang_thai === 'Active' && (s.effective_service_end || s.ngay_het_han)).forEach(s => {
+    const days = getDaysDiff(s.effective_service_end || s.ngay_het_han);
     if (days !== null) serviceBuckets[getBucket(days)]++;
   });
   const chartServiceBuckets = bucketOrder.map(b => ({ name: b, count: serviceBuckets[b] }));

@@ -32,7 +32,7 @@ export default function SaleForm() {
   }, []);
 
   const [formData, setFormData] = useState({
-    loaiKhachHang: 'Subscription',
+    loaiYeuCau: 'Subscription',
     tenCongTy: '',
     khuVuc: '',
     loaiGoiCuoc: '',
@@ -125,7 +125,7 @@ export default function SaleForm() {
   };
 
   const setCustomerType = (type: string) => {
-    setFormData({ ...formData, loaiKhachHang: type });
+    setFormData({ ...formData, loaiYeuCau: type });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -163,7 +163,7 @@ export default function SaleForm() {
     if (res.success) {
       setSuccessModalData(res.requestId || null);
       setFormData({
-        loaiKhachHang: formData.loaiKhachHang, 
+        loaiYeuCau: formData.loaiYeuCau, 
         tenCongTy: '', khuVuc: '', loaiGoiCuoc: '', kenhGuiTin: [], 
         ngayBatDau: '', ngayKetThuc: '', moTaNhuCau: '', nganhNghe: '', agentId: '',
         hinhThucSD: '', hinhThucThanhToan: '', emailTaoTK: '', emailPhoiHop: '', 
@@ -198,10 +198,10 @@ export default function SaleForm() {
           <div style={{ marginBottom: '32px' }}>
             <p style={{ fontSize: '15px', fontWeight: 600, color: '#555', marginBottom: '12px' }}>Chọn Loại Khách Hàng <span style={{color: 'red'}}>*</span></p>
             <div style={{ display: 'inline-flex', background: '#f5f5f7', padding: '4px', borderRadius: '12px' }}>
-              <button type="button" onClick={() => setCustomerType('Subscription')} style={{ ...toggleBtnStyle, background: formData.loaiKhachHang === 'Subscription' ? '#fff' : 'transparent', color: formData.loaiKhachHang === 'Subscription' ? 'var(--primary-700)' : '#6e6e73', boxShadow: formData.loaiKhachHang === 'Subscription' ? '0 2px 8px rgba(0,0,0,0.1)' : 'none' }}>
-                Subscription
+              <button type="button" onClick={() => setCustomerType('Subscription')} style={{ ...toggleBtnStyle, background: formData.loaiYeuCau === 'Subscription' ? '#fff' : 'transparent', color: formData.loaiYeuCau === 'Subscription' ? 'var(--primary-700)' : '#6e6e73', boxShadow: formData.loaiYeuCau === 'Subscription' ? '0 2px 8px rgba(0,0,0,0.1)' : 'none' }}>
+                Subscription (Phần mềm)
               </button>
-              <button type="button" onClick={() => setCustomerType('Campaign')} style={{ ...toggleBtnStyle, background: formData.loaiKhachHang === 'Campaign' ? '#fff' : 'transparent', color: formData.loaiKhachHang === 'Campaign' ? 'var(--primary-700)' : '#6e6e73', boxShadow: formData.loaiKhachHang === 'Campaign' ? '0 2px 8px rgba(0,0,0,0.1)' : 'none' }}>
+              <button type="button" onClick={() => setCustomerType('Campaign')} style={{ ...toggleBtnStyle, background: formData.loaiYeuCau === 'Campaign' ? '#fff' : 'transparent', color: formData.loaiYeuCau === 'Campaign' ? 'var(--primary-700)' : '#6e6e73', boxShadow: formData.loaiYeuCau === 'Campaign' ? '0 2px 8px rgba(0,0,0,0.1)' : 'none' }}>
                 Campaign
               </button>
             </div>
@@ -223,9 +223,13 @@ export default function SaleForm() {
                     <input type="text" name="tenCongTy" value={formData.tenCongTy} onChange={handleChange} onBlur={handleBlur} required style={inputStyle} />
                   </div>
                   <div>
-                    <label style={labelStyle}>Email tạo TK <span style={{ color: 'red' }}>*</span></label>
-                    <input type="email" name="emailTaoTK" value={formData.emailTaoTK} onChange={handleChange} onBlur={handleBlur} required style={inputStyle} />
-                    {errors.emailTaoTK && <span style={errorTextStyle}>{errors.emailTaoTK}</span>}
+                    {formData.loaiYeuCau === 'Subscription' && (
+                      <>
+                        <label style={labelStyle}>Email tạo TK <span style={{ color: 'red' }}>*</span></label>
+                        <input type="email" name="emailTaoTK" value={formData.emailTaoTK} onChange={handleChange} onBlur={handleBlur} required style={inputStyle} />
+                        {errors.emailTaoTK && <span style={errorTextStyle}>{errors.emailTaoTK}</span>}
+                      </>
+                    )}
                   </div>
                 </div>
 

@@ -45,7 +45,7 @@ export default function CSRateAccountPage() {
 
   const [formData, setFormData] = useState({
     requestId: '',
-    loaiKhachHang: '',
+    loaiYeuCau: '',
     tenCongTy: '',
     khuVuc: '',
     loaiGoiCuoc: '',
@@ -95,7 +95,7 @@ export default function CSRateAccountPage() {
 
       setFormData({
         requestId: req.request_id,
-        loaiKhachHang: req.loai_khach_hang || '',
+        loaiYeuCau: req.loai_yeu_cau || '',
         tenCongTy: req.ten_cong_ty || '',
         khuVuc: req.khu_vuc || '',
         loaiGoiCuoc: req.loai_goi_cuoc || '',
@@ -247,8 +247,8 @@ export default function CSRateAccountPage() {
 
             <div style={gridStyle}>
               <div>
-                <label style={labelStyle}>Loại khách hàng</label>
-                <select name="loaiKhachHang" value={formData.loaiKhachHang} onChange={handleChange} style={inputStyle}>
+                <label style={labelStyle}>Loại yêu cầu</label>
+                <select name="loaiYeuCau" value={formData.loaiYeuCau} onChange={handleChange} style={inputStyle}>
                   <option value="Subscription">Subscription</option>
                   <option value="Campaign">Campaign</option>
                 </select>
@@ -281,63 +281,67 @@ export default function CSRateAccountPage() {
             </div>
           </div>
 
-          {/* PHẦN 2: BỔ SUNG THÔNG TIN CS */}
-          <h2 style={{ fontSize: '20px', fontWeight: 600, borderBottom: '1px solid #eaeaea', paddingBottom: '12px', marginTop: '16px' }}>Phần 2: Bổ sung thông tin CS (Bắt buộc)</h2>
-          <div style={gridStyle}>
-            <div>
-              <label style={labelStyle}>Tên tài khoản <span style={{ color: 'red' }}>*</span></label>
-              <input type="text" name="tenTaiKhoan" value={formData.tenTaiKhoan} onChange={handleChange} required style={inputStyle} />
-            </div>
-            <div>
-              <label style={labelStyle}>Mật khẩu <span style={{ color: 'red' }}>*</span></label>
-              <input type="text" name="matKhau" value={formData.matKhau} onChange={handleChange} required style={inputStyle} />
-            </div>
-            <div>
-              <label style={labelStyle}>Org ID <span style={{ color: 'red' }}>*</span></label>
-              <input type="text" name="orgId" value={formData.orgId} onChange={handleChange} required style={inputStyle} />
-            </div>
-          </div>
+          {/* PHẦN 2: BỔ SUNG THÔNG TIN CS (Chỉ hiển thị cho phần mềm Subscription) */}
+          {formData.loaiYeuCau === 'Subscription' && (
+            <>
+              <h2 style={{ fontSize: '20px', fontWeight: 600, borderBottom: '1px solid #eaeaea', paddingBottom: '12px', marginTop: '16px' }}>Phần 2: Bổ sung thông tin CS (Bắt buộc cho Subscription)</h2>
+              <div style={gridStyle}>
+                <div>
+                  <label style={labelStyle}>Tên tài khoản <span style={{ color: 'red' }}>*</span></label>
+                  <input type="text" name="tenTaiKhoan" value={formData.tenTaiKhoan} onChange={handleChange} required style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Mật khẩu <span style={{ color: 'red' }}>*</span></label>
+                  <input type="text" name="matKhau" value={formData.matKhau} onChange={handleChange} required style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Org ID <span style={{ color: 'red' }}>*</span></label>
+                  <input type="text" name="orgId" value={formData.orgId} onChange={handleChange} required style={inputStyle} />
+                </div>
+              </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-            <div>
-              <label style={labelStyle}>Customer Success (Chọn nhiều)</label>
-              <div style={chipGridStyle}>
-                {dropdowns.customerSuccess.map(opt => (
-                  <div 
-                    key={opt}
-                    onClick={() => toggleChip('customerSuccess', opt)}
-                    style={{
-                      ...chipStyle,
-                      background: formData.customerSuccess.includes(opt) ? 'var(--primary-100)' : '#f5f5f7',
-                      color: formData.customerSuccess.includes(opt) ? 'var(--primary-900)' : '#333',
-                      border: formData.customerSuccess.includes(opt) ? '1px solid var(--primary-600)' : '1px solid transparent',
-                    }}
-                  >
-                    {opt}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                <div>
+                  <label style={labelStyle}>Customer Success (Chọn nhiều)</label>
+                  <div style={chipGridStyle}>
+                    {dropdowns.customerSuccess.map(opt => (
+                      <div 
+                        key={opt}
+                        onClick={() => toggleChip('customerSuccess', opt)}
+                        style={{
+                          ...chipStyle,
+                          background: formData.customerSuccess.includes(opt) ? 'var(--primary-100)' : '#f5f5f7',
+                          color: formData.customerSuccess.includes(opt) ? 'var(--primary-900)' : '#333',
+                          border: formData.customerSuccess.includes(opt) ? '1px solid var(--primary-600)' : '1px solid transparent',
+                        }}
+                      >
+                        {opt}
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
-            <div>
-              <label style={labelStyle}>Customer Support (Chọn nhiều)</label>
-              <div style={chipGridStyle}>
-                {dropdowns.customerSupport.map(opt => (
-                  <div 
-                    key={opt}
-                    onClick={() => toggleChip('customerSupport', opt)}
-                    style={{
-                      ...chipStyle,
-                      background: formData.customerSupport.includes(opt) ? 'var(--primary-100)' : '#f5f5f7',
-                      color: formData.customerSupport.includes(opt) ? 'var(--primary-900)' : '#333',
-                      border: formData.customerSupport.includes(opt) ? '1px solid var(--primary-600)' : '1px solid transparent',
-                    }}
-                  >
-                    {opt}
+                </div>
+                <div>
+                  <label style={labelStyle}>Customer Support (Chọn nhiều)</label>
+                  <div style={chipGridStyle}>
+                    {dropdowns.customerSupport.map(opt => (
+                      <div 
+                        key={opt}
+                        onClick={() => toggleChip('customerSupport', opt)}
+                        style={{
+                          ...chipStyle,
+                          background: formData.customerSupport.includes(opt) ? 'var(--primary-100)' : '#f5f5f7',
+                          color: formData.customerSupport.includes(opt) ? 'var(--primary-900)' : '#333',
+                          border: formData.customerSupport.includes(opt) ? '1px solid var(--primary-600)' : '1px solid transparent',
+                        }}
+                      >
+                        {opt}
+                      </div>
+                    ))}
                   </div>
-                ))}
+                </div>
               </div>
-            </div>
-          </div>
+            </>
+          )}
 
           {!isAlreadyCreated && (
             <button 

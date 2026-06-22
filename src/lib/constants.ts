@@ -11,7 +11,7 @@ export const DROPDOWNS = {
   
   trangThaiService: ["Active", "Pending", "Suspended", "Expired", "Cancelled"],
   loaiDichVu: ["Subscription", "Campaign"],
-  loaiKhachHang: ["Subscription", "Campaign"],
+  loaiYeuCau: ["Subscription", "Campaign"],
   
   customerSupport: ["Team Hỗ trợ kỹ thuật 1", "Team Hỗ trợ kỹ thuật 2", "SUP Default"],
   customerSuccess: ["CS Tùng", "CS Default"],

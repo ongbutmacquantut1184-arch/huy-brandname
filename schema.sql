@@ -81,6 +81,7 @@ ALTER TABLE cancellation_details DISABLE ROW LEVEL SECURITY;
 
 CREATE TABLE cx_requests (
     request_id TEXT PRIMARY KEY,
+    loai_yeu_cau TEXT,
     loai_dich_vu TEXT,
     ten_cong_ty TEXT,
     khu_vuc TEXT,
@@ -145,6 +146,7 @@ CREATE TABLE cx_customers (
 CREATE TABLE cx_contracts (
     contract_id TEXT PRIMARY KEY,
     customer_id TEXT REFERENCES cx_customers(customer_id) ON DELETE CASCADE,
+    loai_hop_dong TEXT DEFAULT 'Subscription',
     so_hop_dong TEXT,
     ngay_bat_dau_hd DATE,
     ngay_ket_thuc_hd DATE,
@@ -166,6 +168,15 @@ CREATE TABLE cx_services (
     service_id TEXT PRIMARY KEY,
     customer_id TEXT REFERENCES cx_customers(customer_id) ON DELETE CASCADE,
     contract_id TEXT REFERENCES cx_contracts(contract_id) ON DELETE SET NULL,
+    brand_id TEXT REFERENCES brands(id) ON DELETE SET NULL,
+    cp_id TEXT REFERENCES cps(id) ON DELETE SET NULL,
+    channel TEXT,
+    usage_method TEXT,
+    package_type TEXT,
+    package_start_date DATE,
+    package_end_date DATE,
+    term_type TEXT,
+    template_registration_method TEXT,
     loai_dich_vu TEXT,
     cp_name_code TEXT,
     brand_name_oa TEXT,
@@ -216,3 +227,11 @@ ALTER TABLE cx_contracts DISABLE ROW LEVEL SECURITY;
 ALTER TABLE cx_services DISABLE ROW LEVEL SECURITY;
 ALTER TABLE cx_activity_logs DISABLE ROW LEVEL SECURITY;
 ALTER TABLE cx_config DISABLE ROW LEVEL SECURITY;
+
+CREATE OR REPLACE VIEW vw_cx_services_details AS
+SELECT 
+    s.*,
+    c.ngay_ket_thuc_hd,
+    COALESCE(s.package_end_date, s.ngay_het_han, c.ngay_ket_thuc_hd) as effective_service_end
+FROM cx_services s
+LEFT JOIN cx_contracts c ON s.contract_id = c.contract_id;

@@ -63,7 +63,7 @@ export async function createPendingRequest(data: any) {
 
     const reqData = {
       request_id: requestId,
-      loai_khach_hang: data.loaiKhachHang,
+      loai_yeu_cau: data.loaiYeuCau,
       ten_cong_ty: data.tenCongTy?.trim(),
       khu_vuc: data.khuVuc,
       loai_goi_cuoc: data.loaiGoiCuoc,
@@ -163,6 +163,18 @@ export async function getServices() {
   return { success: true, data };
 }
 
+export async function getBrands() {
+  const { data, error } = await supabase.from('brands').select('*').order('name');
+  if (error) return { success: false, error: error.message };
+  return { success: true, data };
+}
+
+export async function getCps() {
+  const { data, error } = await supabase.from('cps').select('*').order('name');
+  if (error) return { success: false, error: error.message };
+  return { success: true, data };
+}
+
 export async function checkEmailExists(email: string) {
   const { data, error } = await supabase
     .from('cx_customers')
@@ -200,7 +212,7 @@ export async function activateRequest(data: any) {
     if (req.result_customer_id) throw new Error(`Phiếu đã được kích hoạt: ${req.result_customer_id}`);
 
     // 2. Sinh ID
-    const customerId = await generateCustomerId(req.loai_khach_hang);
+    const customerId = await generateCustomerId(req.loai_yeu_cau);
     const contractId = await generateContractId(customerId);
 
     // 3. Tính toán ngày cho Hợp đồng
@@ -212,7 +224,7 @@ export async function activateRequest(data: any) {
     // 4. Insert Customer
     const custData = {
       customer_id: customerId,
-      loai_khach_hang: req.loai_khach_hang,
+      loai_khach_hang: req.loai_yeu_cau,
       agent_id: req.agent_id,
       trang_thai: 'Active',
       request_id: req.request_id,
@@ -247,6 +259,7 @@ export async function activateRequest(data: any) {
     const contractData = {
       contract_id: contractId,
       customer_id: customerId,
+      loai_hop_dong: req.loai_yeu_cau,
       so_hop_dong: data.soHopDong || req.so_hop_dong,
       ngay_bat_dau_hd: req.ngay_bat_dau,
       ngay_ket_thuc_hd: req.ngay_ket_thuc,
@@ -418,10 +431,40 @@ export async function createService(data: any) {
   try {
     const serviceId = generateServiceId(data.customerId);
     
+    let brandId = data.brandId || null;
+    let cpId = data.cpId || null;
+
+    if (data.cpNameCode && !cpId) {
+      const { data: cpData } = await supabase.from('cps').select('id').eq('name', data.cpNameCode).single();
+      if (cpData) cpId = cpData.id;
+      else {
+        cpId = `CP-${Date.now()}`;
+        await supabase.from('cps').insert([{ id: cpId, name: data.cpNameCode }]);
+      }
+    }
+
+    if (data.brandNameOA && !brandId) {
+      const { data: brandData } = await supabase.from('brands').select('id').eq('name', data.brandNameOA).single();
+      if (brandData) brandId = brandData.id;
+      else {
+        brandId = `BR-${Date.now()}`;
+        await supabase.from('brands').insert([{ id: brandId, name: data.brandNameOA, cp_id: cpId }]);
+      }
+    }
+
     const svcData = {
       service_id: serviceId,
       customer_id: data.customerId,
       contract_id: data.contractId || null,
+      brand_id: brandId,
+      cp_id: cpId,
+      channel: data.channel || '',
+      usage_method: data.usageMethod || '',
+      package_type: data.packageType || '',
+      package_start_date: data.packageStartDate || null,
+      package_end_date: data.packageEndDate || null,
+      term_type: data.termType || 'contract_bound',
+      template_registration_method: data.templateRegistrationMethod || 'not_required',
       loai_dich_vu: data.loaiDichVu,
       cp_name_code: data.cpNameCode || '',
       brand_name_oa: data.brandNameOA || '',
@@ -516,8 +559,38 @@ export async function updateContractInfo(data: any) {
 
 export async function updateServiceInfo(data: any) {
   try {
+    let brandId = data.brandId || null;
+    let cpId = data.cpId || null;
+
+    if (data.cpNameCode && !cpId) {
+      const { data: cpData } = await supabase.from('cps').select('id').eq('name', data.cpNameCode).single();
+      if (cpData) cpId = cpData.id;
+      else {
+        cpId = `CP-${Date.now()}`;
+        await supabase.from('cps').insert([{ id: cpId, name: data.cpNameCode }]);
+      }
+    }
+
+    if (data.brandNameOA && !brandId) {
+      const { data: brandData } = await supabase.from('brands').select('id').eq('name', data.brandNameOA).single();
+      if (brandData) brandId = brandData.id;
+      else {
+        brandId = `BR-${Date.now()}`;
+        await supabase.from('brands').insert([{ id: brandId, name: data.brandNameOA, cp_id: cpId }]);
+      }
+    }
+
     const svcData = {
       contract_id: data.contractId || null,
+      brand_id: brandId,
+      cp_id: cpId,
+      channel: data.channel || '',
+      usage_method: data.usageMethod || '',
+      package_type: data.packageType || '',
+      package_start_date: data.packageStartDate || null,
+      package_end_date: data.packageEndDate || null,
+      term_type: data.termType || 'contract_bound',
+      template_registration_method: data.templateRegistrationMethod || 'not_required',
       loai_dich_vu: data.loaiDichVu,
       cp_name_code: data.cpNameCode || '',
       brand_name_oa: data.brandNameOA || '',
@@ -568,7 +641,7 @@ export async function updateServiceInfo(data: any) {
 export async function updateCustomerInfo(data: any) {
   try {
     const custData = {
-      loai_khach_hang: data.loaiKhachHang,
+      loai_khach_hang: data.loaiYeuCau,
       agent_id: data.agentId || null,
       trang_thai: data.trangThai || 'Active',
       cpid: data.cpid || '',
@@ -812,12 +885,14 @@ export async function getCustomer360(customerId: string) {
       { data: customer },
       { data: contracts },
       { data: services },
-      { data: requests }
+      { data: requests },
+      { data: logs }
     ] = await Promise.all([
       supabase.from('cx_customers').select('*').eq('customer_id', customerId).single(),
       supabase.from('cx_contracts').select('*').eq('customer_id', customerId).order('created_at', { ascending: false }),
       supabase.from('cx_services').select('*').eq('customer_id', customerId).order('created_at', { ascending: false }),
-      supabase.from('cx_requests').select('*').eq('result_customer_id', customerId).order('submitted_at', { ascending: false })
+      supabase.from('cx_requests').select('*').eq('result_customer_id', customerId).order('submitted_at', { ascending: false }),
+      supabase.from('cx_activity_logs').select('*').eq('related_customer_id', customerId).eq('action', 'CANCEL_SERVICE').order('created_at', { ascending: false })
     ]);
     
     return { 
@@ -826,7 +901,8 @@ export async function getCustomer360(customerId: string) {
         customer: customer || null,
         contracts: contracts || [],
         services: services || [],
-        requests: requests || []
+        requests: requests || [],
+        cancelLogs: logs || []
       }
     };
   } catch (error: any) {
@@ -848,7 +924,7 @@ export async function getCustomersOverview() {
     
     const [ {data: contracts}, {data: services} ] = await Promise.all([
       supabase.from('cx_contracts').select('*').in('customer_id', customerIds),
-      supabase.from('cx_services').select('*').in('customer_id', customerIds)
+      supabase.from('vw_cx_services_details').select('*').in('customer_id', customerIds)
     ]);
     
     const contractsMap = new Map<string, any[]>();
@@ -888,7 +964,7 @@ export async function getCustomersOverview() {
         active_services: cServices.filter(s => s.trang_thai === 'Active').length,
         service_types: Array.from(new Set(cServices.map(s => s.loai_dich_vu).filter(Boolean))),
         sup_phu_trach_list: Array.from(new Set(cServices.map(s => s.sup_phu_trach).filter(Boolean))),
-        service_expiries: cServices.map(s => s.ngay_het_han).filter(Boolean),
+        service_expiries: cServices.map(s => s.effective_service_end || s.ngay_het_han).filter(Boolean),
         trang_thai: cServices.some(s => s.trang_thai === 'Active') ? 'Active' : 'Inactive',
         searchText
       };

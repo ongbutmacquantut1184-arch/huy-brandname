@@ -70,6 +70,7 @@ export default function Customer360Drawer({ customerId, isOpen, onClose }: Modal
             <>
               <SectionInfo customer={data.customer} />
               <SectionServices contracts={data.contracts} services={data.services} />
+              <SectionCancelLogs logs={data.cancelLogs} />
               <SectionHistory requests={data.requests} />
             </>
           )}
@@ -190,12 +191,13 @@ function SectionServices({ contracts, services }: { contracts: any[], services: 
         <h3 style={{ fontSize: '18px', fontWeight: 700, margin: '0 0 20px 0', color: 'var(--neutral-900)' }}>Danh sách Hợp đồng ({contracts.length})</h3>
         <div style={{ overflowX: 'auto', border: '1px solid var(--neutral-200)', borderRadius: 'var(--radius-md)' }}>
           <table className="custom-table" style={{ fontSize: '13px', margin: 0 }}>
-            <thead><tr><th>Mã Hợp đồng</th><th>Số HĐ / PO</th><th>Bắt đầu</th><th>Kết thúc</th><th>Trạng thái</th><th style={{ textAlign: 'center' }}>Thao tác</th></tr></thead>
+            <thead><tr><th>Mã Hợp đồng</th><th>Số HĐ / PO</th><th>Loại HĐ</th><th>Bắt đầu</th><th>Kết thúc</th><th>Trạng thái</th><th style={{ textAlign: 'center' }}>Thao tác</th></tr></thead>
             <tbody>
               {contracts.map(c => (
                 <tr key={c.contract_id}>
                   <td style={{ fontWeight: 600, color: 'var(--primary-700)' }}>{c.contract_id}</td>
                   <td style={{ fontWeight: 500, color: 'var(--neutral-800)' }}>{c.so_hop_dong || '--'}</td>
+                  <td>{c.loai_hop_dong === 'Campaign' ? <span className="badge-custom" style={{ background: 'var(--gold-50)', color: 'var(--gold-700)' }}>Campaign</span> : <span className="badge-custom" style={{ background: 'var(--primary-50)', color: 'var(--primary-700)' }}>Subscription</span>}</td>
                   <td>{formatDate(c.ngay_bat_dau_hd)}</td>
                   <td>{formatDate(c.ngay_ket_thuc_hd)}</td>
                   <td>{c.trang_thai}</td>
@@ -206,7 +208,7 @@ function SectionServices({ contracts, services }: { contracts: any[], services: 
                   </td>
                 </tr>
               ))}
-              {contracts.length === 0 && <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--neutral-500)', padding: '24px' }}>Chưa có hợp đồng nào.</td></tr>}
+              {contracts.length === 0 && <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--neutral-500)', padding: '24px' }}>Chưa có hợp đồng nào.</td></tr>}
             </tbody>
           </table>
         </div>
@@ -228,12 +230,37 @@ function SectionHistory({ requests }: { requests: any[] }) {
               <tr key={r.request_id}>
                 <td style={{ fontWeight: 600, color: 'var(--primary-700)' }}>{r.request_id}</td>
                 <td>{formatDate(r.submitted_at)}</td>
-                <td><span style={{ fontWeight: 500 }}>{r.loai_khach_hang}</span></td>
+                <td><span style={{ fontWeight: 500 }}>{r.loai_yeu_cau}</span></td>
                 <td style={{ maxWidth: '300px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={r.mo_ta_nhu_cau}>{r.mo_ta_nhu_cau || '--'}</td>
                 <td><span className="badge-custom" style={{ background: 'var(--primary-50)', color: 'var(--primary-700)' }}>Hoàn tất</span></td>
               </tr>
             ))}
             {requests.length === 0 && <tr><td colSpan={5} style={{ textAlign: 'center', color: 'var(--neutral-500)', padding: '24px' }}>Không có lịch sử yêu cầu nào.</td></tr>}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function SectionCancelLogs({ logs }: { logs: any[] }) {
+  if (!logs || logs.length === 0) return null;
+  const formatDate = (ds: string) => ds ? new Date(ds).toLocaleDateString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '--';
+  return (
+    <div style={{ background: '#fff', padding: '24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--error-200)', boxShadow: 'var(--shadow-sm)' }}>
+      <h3 style={{ fontSize: '18px', fontWeight: 700, margin: '0 0 20px 0', color: 'var(--error-700)' }}>Lịch sử Hủy Dịch vụ ({logs.length})</h3>
+      <div style={{ overflowX: 'auto', border: '1px solid var(--neutral-200)', borderRadius: 'var(--radius-md)' }}>
+        <table className="custom-table" style={{ fontSize: '13px', margin: 0 }}>
+          <thead><tr><th>Thời gian</th><th>Người thực hiện</th><th>Dịch vụ liên quan</th><th>Lý do / Chi tiết</th></tr></thead>
+          <tbody>
+            {logs.map((l, i) => (
+              <tr key={i}>
+                <td style={{ whiteSpace: 'nowrap' }}>{formatDate(l.created_at)}</td>
+                <td style={{ fontWeight: 500 }}>{l.performed_by || '--'}</td>
+                <td style={{ color: 'var(--primary-700)', fontWeight: 600 }}>{l.target_id || '--'}</td>
+                <td>{l.detail || '--'}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
