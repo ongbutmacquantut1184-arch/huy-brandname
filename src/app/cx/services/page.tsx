@@ -130,7 +130,14 @@ export default function ServicesPage() {
             ngayBatDau: serviceToEdit.ngay_bat_dau || '',
             ngayHetHan: serviceToEdit.ngay_het_han || '',
             ghiChu: serviceToEdit.ghi_chu || '',
-            actorEmail: serviceToEdit.created_by || ''
+            actorEmail: serviceToEdit.created_by || '',
+            channel: serviceToEdit.channel || '',
+            usageMethod: serviceToEdit.usage_method || '',
+            packageType: serviceToEdit.package_type || '',
+            packageStartDate: serviceToEdit.package_start_date || '',
+            packageEndDate: serviceToEdit.package_end_date || '',
+            termType: serviceToEdit.term_type || 'contract_bound',
+            templateRegistrationMethod: serviceToEdit.template_registration_method || 'not_required'
           });
           setActiveModal('edit');
           window.history.replaceState({}, document.title, window.location.pathname);
@@ -196,7 +203,8 @@ export default function ServicesPage() {
     setFormData({
       customerId: '', contractId: '', loaiDichVu: '', trangThai: 'Active', cpNameCode: '', brandNameOA: '', 
       thoiHanBrand: '', dauSo: '', cuPhap: '', quocGia: '', ketNoiAPIGateway: '', ketNoiSMPP: '', ketNoiAPIGapOne: '', 
-      ketNoiViZCA: '', ketNoiHeThongKH: '', tenService: '', supPhuTrach: '', ngayBatDau: '', ngayHetHan: '', ghiChu: '', actorEmail: userEmail || ''
+      ketNoiViZCA: '', ketNoiHeThongKH: '', tenService: '', supPhuTrach: '', ngayBatDau: '', ngayHetHan: '', ghiChu: '', actorEmail: userEmail || '',
+      channel: '', usageMethod: '', packageType: '', packageStartDate: '', packageEndDate: '', termType: 'contract_bound', templateRegistrationMethod: 'not_required'
     });
     setActiveModal('add');
   };
@@ -224,7 +232,14 @@ export default function ServicesPage() {
       ngayBatDau: s.ngay_bat_dau || '',
       ngayHetHan: s.ngay_het_han || '',
       ghiChu: s.ghi_chu || '',
-      actorEmail: s.created_by || ''
+      actorEmail: s.created_by || '',
+      channel: s.channel || '',
+      usageMethod: s.usage_method || '',
+      packageType: s.package_type || '',
+      packageStartDate: s.package_start_date || '',
+      packageEndDate: s.package_end_date || '',
+      termType: s.term_type || 'contract_bound',
+      templateRegistrationMethod: s.template_registration_method || 'not_required'
     });
     setActiveModal('edit');
   };
@@ -252,7 +267,14 @@ export default function ServicesPage() {
       ngayBatDau: s.ngay_het_han || '',
       ngayHetHan: '',
       ghiChu: s.ghi_chu || '',
-      actorEmail: userEmail || ''
+      actorEmail: userEmail || '',
+      channel: s.channel || '',
+      usageMethod: s.usage_method || '',
+      packageType: s.package_type || '',
+      packageStartDate: s.package_start_date || '',
+      packageEndDate: s.package_end_date || '',
+      termType: s.term_type || 'contract_bound',
+      templateRegistrationMethod: s.template_registration_method || 'not_required'
     });
     setActiveModal('renew');
   };
