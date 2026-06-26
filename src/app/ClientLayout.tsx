@@ -1,6 +1,6 @@
 "use client";
 
-import React, { ReactNode } from "react";
+import React, { ReactNode, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Sidebar from "./components/Sidebar";
 import { AuthProvider } from "@/lib/AuthContext";
@@ -8,8 +8,16 @@ import { AuthProvider } from "@/lib/AuthContext";
 export default function ClientLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   
-  // Các trang không hiển thị sidebar (VD: Sale form)
-  const isNoSidebarPage = pathname === '/cx/sale' || pathname === '/cx/tao-phieu-sale';
+  useEffect(() => {
+    const savedColor = localStorage.getItem('theme-color');
+    if (savedColor) {
+      document.documentElement.style.setProperty('--primary-600', savedColor);
+      document.documentElement.style.setProperty('--primary-700', savedColor);
+    }
+  }, []);
+  
+  // Các trang không hiển thị sidebar (VD: Sale form dành cho user ngoài)
+  const isNoSidebarPage = pathname === '/cx/sale';
 
   if (isNoSidebarPage) {
     return <main style={{ flex: 1, width: '100vw' }}>{children}</main>;

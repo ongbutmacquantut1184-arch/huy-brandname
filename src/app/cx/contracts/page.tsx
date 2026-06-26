@@ -1,19 +1,21 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from 'react';
-import { getContracts, getServicesByContractId, getContractsByCustomerId, createContract, updateContractInfo, getDropdownConfigs, getCustomers, createService, updateServiceInfo } from '@/lib/cx-actions';
+import { getContracts, getServicesByContractId, getContractsByCustomerId, createContract, updateContractInfo, getDropdownConfigs, getCustomers, createService, updateServiceInfo, getBrands, getCps } from '@/lib/cx-actions';
 import { Search as SearchIcon, Filter, CheckSquare, Square, ChevronDown, Plus, Edit2, Info, X } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 
 export default function ContractsPage() {
   const [contracts, setContracts] = useState<any[]>([]);
+  const [customers, setCustomers] = useState<any[]>([]);
   const [lookups, setLookups] = useState<any>({});
+  const [brandsList, setBrandsList] = useState<any[]>([]);
+  const [cpsList, setCpsList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [expandedData, setExpandedData] = useState<{ services: any[], relatedContracts: any[] }>({ services: [], relatedContracts: [] });
   const [loadingExpanded, setLoadingExpanded] = useState(false);
-  const [customers, setCustomers] = useState<any[]>([]);
   const { userEmail } = useAuth();
 
   // Filters
@@ -51,7 +53,8 @@ export default function ContractsPage() {
   const [serviceFormData, setServiceFormData] = useState({
     customerId: '', contractId: '', loaiDichVu: '', trangThai: 'Active', cpNameCode: '', brandNameOA: '', 
     thoiHanBrand: '', dauSo: '', cuPhap: '', quocGia: '', ketNoiAPIGateway: '', ketNoiSMPP: '', ketNoiAPIGapOne: '', 
-    ketNoiViZCA: '', ketNoiHeThongKH: '', tenService: '', supPhuTrach: '', ngayBatDau: '', ngayHetHan: '', ghiChu: '', actorEmail: ''
+    ketNoiViZCA: '', ketNoiHeThongKH: '', tenService: '', supPhuTrach: '', ngayBatDau: '', ngayHetHan: '', ghiChu: '', actorEmail: '',
+    channel: '', usageMethod: '', packageType: '', packageStartDate: '', packageEndDate: '', termType: 'contract_bound', templateRegistrationMethod: 'not_required'
   });
 
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -72,10 +75,12 @@ export default function ContractsPage() {
 
   async function fetchData() {
     setLoading(true);
-    const [res, configsRes, custRes] = await Promise.all([
+    const [res, configsRes, custRes, brandsRes, cpsRes] = await Promise.all([
       getContracts(),
       getDropdownConfigs(),
-      getCustomers()
+      getCustomers(),
+      getBrands(),
+      getCps()
     ]);
     
     if (configsRes.success && configsRes.data) {
@@ -84,6 +89,13 @@ export default function ContractsPage() {
     
     if (custRes.success && custRes.data) {
       setCustomers(custRes.data);
+    }
+
+    if (brandsRes.success && brandsRes.data) {
+      setBrandsList(brandsRes.data);
+    }
+    if (cpsRes.success && cpsRes.data) {
+      setCpsList(cpsRes.data);
     }
     
     if (res.success && res.data) {
@@ -212,7 +224,8 @@ export default function ContractsPage() {
     setServiceFormData({
       customerId: c.customer_id || '', contractId: c.contract_id || '', loaiDichVu: '', trangThai: 'Active', cpNameCode: '', brandNameOA: '', 
       thoiHanBrand: '', dauSo: '', cuPhap: '', quocGia: '', ketNoiAPIGateway: '', ketNoiSMPP: '', ketNoiAPIGapOne: '', 
-      ketNoiViZCA: '', ketNoiHeThongKH: '', tenService: '', supPhuTrach: '', ngayBatDau: '', ngayHetHan: '', ghiChu: '', actorEmail: userEmail || ''
+      ketNoiViZCA: '', ketNoiHeThongKH: '', tenService: '', supPhuTrach: '', ngayBatDau: '', ngayHetHan: '', ghiChu: '', actorEmail: userEmail || '',
+      channel: '', usageMethod: '', packageType: '', packageStartDate: '', packageEndDate: '', termType: 'contract_bound', templateRegistrationMethod: 'not_required'
     });
     setActiveServiceModal('add');
   };
@@ -224,7 +237,14 @@ export default function ContractsPage() {
       cpNameCode: s.cp_name_code || '', brandNameOA: s.brand_name_oa || '', thoiHanBrand: s.thoi_han_brand || '', dauSo: s.dau_so || '', cuPhap: s.cu_phap || '', 
       quocGia: s.quoc_gia || '', ketNoiAPIGateway: s.ket_noi_api_gateway || '', ketNoiSMPP: s.ket_noi_smpp || '', ketNoiAPIGapOne: s.ket_noi_api_gap_one || '', 
       ketNoiViZCA: s.ket_noi_vi_zca || '', ketNoiHeThongKH: s.ket_noi_he_thong_kh || '', tenService: s.ten_service || '', supPhuTrach: s.sup_phu_trach || '', 
-      ngayBatDau: s.ngay_bat_dau || '', ngayHetHan: s.ngay_het_han || '', ghiChu: s.ghi_chu || '', actorEmail: s.created_by || ''
+      ngayBatDau: s.ngay_bat_dau || '', ngayHetHan: s.ngay_het_han || '', ghiChu: s.ghi_chu || '', actorEmail: s.created_by || '',
+      channel: s.channel || '',
+      usageMethod: s.usage_method || '',
+      packageType: s.package_type || '',
+      packageStartDate: s.package_start_date || '',
+      packageEndDate: s.package_end_date || '',
+      termType: s.term_type || 'contract_bound',
+      templateRegistrationMethod: s.template_registration_method || 'not_required'
     });
     setActiveServiceModal('edit');
   };
@@ -236,7 +256,14 @@ export default function ContractsPage() {
       cpNameCode: s.cp_name_code || '', brandNameOA: s.brand_name_oa || '', thoiHanBrand: '', dauSo: s.dau_so || '', cuPhap: s.cu_phap || '', 
       quocGia: s.quoc_gia || '', ketNoiAPIGateway: s.ket_noi_api_gateway || '', ketNoiSMPP: s.ket_noi_smpp || '', ketNoiAPIGapOne: s.ket_noi_api_gap_one || '', 
       ketNoiViZCA: s.ket_noi_vi_zca || '', ketNoiHeThongKH: s.ket_noi_he_thong_kh || '', tenService: s.ten_service || '', supPhuTrach: s.sup_phu_trach || '', 
-      ngayBatDau: s.ngay_het_han || '', ngayHetHan: '', ghiChu: s.ghi_chu || '', actorEmail: userEmail || ''
+      ngayBatDau: s.ngay_het_han || '', ngayHetHan: '', ghiChu: s.ghi_chu || '', actorEmail: userEmail || '',
+      channel: s.channel || '',
+      usageMethod: s.usage_method || '',
+      packageType: s.package_type || '',
+      packageStartDate: s.package_start_date || '',
+      packageEndDate: s.package_end_date || '',
+      termType: s.term_type || 'contract_bound',
+      templateRegistrationMethod: s.template_registration_method || 'not_required'
     });
     setActiveServiceModal('renew');
   };
@@ -450,7 +477,6 @@ export default function ContractsPage() {
           <table className="custom-table">
             <thead>
               <tr>
-                <th>Mã KH</th>
                 <th>Công ty</th>
                 <th>Org ID</th>
                 <th>Số HĐ</th>
@@ -469,8 +495,7 @@ export default function ContractsPage() {
                 return (
                   <React.Fragment key={c.contract_id}>
                     <tr onClick={() => handleExpand(c)} style={{ cursor: 'pointer', background: isExpanded ? 'var(--neutral-50)' : 'transparent', transition: 'background 0.2s ease' }}>
-                      <td style={{ fontWeight: 600, color: 'var(--primary-700)' }}>{c.customer_id}</td>
-                      <td style={{ color: 'var(--neutral-900)' }}>{c.ten_cong_ty || '--'}</td>
+                      <td style={{ color: 'var(--neutral-900)', fontWeight: 600 }}>{c.ten_cong_ty || '--'}</td>
                       <td style={{ color: 'var(--neutral-600)' }}>{c.org_id || '--'}</td>
                       <td style={{ color: 'var(--neutral-900)' }}>{c.so_hop_dong || '--'}</td>
                       <td>{formatDate(c.ngay_bat_dau_hd)}</td>
@@ -750,17 +775,56 @@ export default function ContractsPage() {
                 {/* NHÓM 2: CHI TIẾT KẾT NỐI */}
                 <div style={{ background: '#fafafa', padding: '20px', borderRadius: '8px', border: '1px solid #e5e7eb', marginBottom: '16px' }}>
                   <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#374151', marginBottom: '16px', borderBottom: '1px solid #e5e7eb', paddingBottom: '8px' }}>2. Chi tiết nghiệp vụ</h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                  <datalist id="cps-list">
+                    {cpsList.map(cp => <option key={cp.id} value={cp.name} />)}
+                  </datalist>
+                  <datalist id="brands-list">
+                    {brandsList.map(b => <option key={b.id} value={b.name} />)}
+                  </datalist>
+                  
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                     <div>
                       <label className="label-custom">CP Name/Mã kết nối</label>
-                      <input className="input-field w-full" value={serviceFormData.cpNameCode} onChange={e => setServiceFormData({...serviceFormData, cpNameCode: e.target.value})} />
+                      <input className="input-field w-full" list="cps-list" value={serviceFormData.cpNameCode} onChange={e => setServiceFormData({...serviceFormData, cpNameCode: e.target.value})} placeholder="Chọn hoặc nhập mới" />
                     </div>
                     <div>
                       <label className="label-custom">Brand/OA</label>
-                      <input className="input-field w-full" value={serviceFormData.brandNameOA} onChange={e => setServiceFormData({...serviceFormData, brandNameOA: e.target.value})} />
+                      <input className="input-field w-full" list="brands-list" value={serviceFormData.brandNameOA} onChange={e => setServiceFormData({...serviceFormData, brandNameOA: e.target.value})} placeholder="Chọn hoặc nhập mới" />
+                    </div>
+                    <div>
+                      <label className="label-custom">Kênh gửi tin</label>
+                      <select className="input-field w-full" value={serviceFormData.channel} onChange={e => setServiceFormData({...serviceFormData, channel: e.target.value})}>
+                        <option value="">-- Chọn kênh --</option>
+                        {(lookups.kenhGuiTin || []).map((k: string) => <option key={k} value={k}>{k}</option>)}
+                      </select>
                     </div>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                    <div>
+                      <label className="label-custom">Hình thức gửi tin</label>
+                      <select className="input-field w-full" value={serviceFormData.usageMethod} onChange={e => setServiceFormData({...serviceFormData, usageMethod: e.target.value})}>
+                        <option value="">-- Chọn hình thức --</option>
+                        {(lookups.hinhThucSD || []).map((h: string) => <option key={h} value={h}>{h}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="label-custom">Loại gói cước</label>
+                      <select className="input-field w-full" value={serviceFormData.packageType} onChange={e => setServiceFormData({...serviceFormData, packageType: e.target.value})}>
+                        <option value="">-- Chọn gói cước --</option>
+                        {(lookups.loaiGoiCuoc || []).map((p: string) => <option key={p} value={p}>{p}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="label-custom">Hình thức ĐK Mẫu tin</label>
+                      <select className="input-field w-full" value={serviceFormData.templateRegistrationMethod} onChange={e => setServiceFormData({...serviceFormData, templateRegistrationMethod: e.target.value})}>
+                        <option value="not_required">Không yêu cầu</option>
+                        <option value="provider_approval">Duyệt qua nhà mạng</option>
+                        <option value="zalo_approval">Duyệt qua Zalo</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                     <div>
                       <label className="label-custom">Đầu số</label>
                       <input className="input-field w-full" value={serviceFormData.dauSo} onChange={e => setServiceFormData({...serviceFormData, dauSo: e.target.value})} />
@@ -772,6 +836,24 @@ export default function ContractsPage() {
                     <div>
                       <label className="label-custom">Quốc gia</label>
                       <input className="input-field w-full" value={serviceFormData.quocGia} onChange={e => setServiceFormData({...serviceFormData, quocGia: e.target.value})} />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+                    <div>
+                      <label className="label-custom">Tính chất thời hạn</label>
+                      <select className="input-field w-full" value={serviceFormData.termType} onChange={e => setServiceFormData({...serviceFormData, termType: e.target.value})}>
+                        <option value="contract_bound">Theo Hợp đồng</option>
+                        <option value="independent">Độc lập</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="label-custom">Ngày bắt đầu gói</label>
+                      <input type="date" className="input-field w-full" value={serviceFormData.packageStartDate} onChange={e => setServiceFormData({...serviceFormData, packageStartDate: e.target.value})} onClick={(e) => (e.target as any).showPicker && (e.target as any).showPicker()} />
+                    </div>
+                    <div>
+                      <label className="label-custom">Ngày kết thúc gói</label>
+                      <input type="date" className="input-field w-full" value={serviceFormData.packageEndDate} onChange={e => setServiceFormData({...serviceFormData, packageEndDate: e.target.value})} onClick={(e) => (e.target as any).showPicker && (e.target as any).showPicker()} />
                     </div>
                   </div>
                 </div>
@@ -811,7 +893,7 @@ export default function ContractsPage() {
                 {/* NHÓM 4: THỜI GIAN & GHI CHÚ */}
                 <div style={{ background: '#fafafa', padding: '20px', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
                   <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#374151', marginBottom: '16px', borderBottom: '1px solid #e5e7eb', paddingBottom: '8px' }}>4. Thời gian & Ghi chú</h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                     <div>
                       <label className="label-custom">Ngày bắt đầu</label>
                       <input type="date" className="input-field w-full" value={serviceFormData.ngayBatDau} onChange={e => setServiceFormData({...serviceFormData, ngayBatDau: e.target.value})} onClick={(e) => (e.target as any).showPicker && (e.target as any).showPicker()} />
@@ -819,6 +901,10 @@ export default function ContractsPage() {
                     <div>
                       <label className="label-custom">Ngày hết hạn</label>
                       <input type="date" className="input-field w-full" value={serviceFormData.ngayHetHan} onChange={e => setServiceFormData({...serviceFormData, ngayHetHan: e.target.value})} onClick={(e) => (e.target as any).showPicker && (e.target as any).showPicker()} />
+                    </div>
+                    <div>
+                      <label className="label-custom">Hạn mức Brand</label>
+                      <input type="date" className="input-field w-full" value={serviceFormData.thoiHanBrand} onChange={e => setServiceFormData({...serviceFormData, thoiHanBrand: e.target.value})} onClick={(e) => (e.target as any).showPicker && (e.target as any).showPicker()} />
                     </div>
                   </div>
                   <div>

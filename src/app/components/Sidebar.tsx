@@ -106,6 +106,39 @@ export default function Sidebar() {
       </nav>
 
       <div style={{ marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid var(--neutral-200)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {/* THEME PICKER */}
+        {!isCollapsed && (
+          <div style={{ padding: '0 12px', marginBottom: '8px' }}>
+            <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--neutral-500)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>
+              Màu Giao Diện
+            </div>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              {['#24b47e', '#0070f3', '#f5a623', '#e30000', '#6366f1'].map(color => (
+                <button
+                  key={color}
+                  onClick={() => {
+                    document.documentElement.style.setProperty('--primary-600', color);
+                    document.documentElement.style.setProperty('--primary-700', color);
+                    localStorage.setItem('theme-color', color);
+                  }}
+                  style={{ width: '20px', height: '20px', borderRadius: '50%', backgroundColor: color, border: 'none', cursor: 'pointer', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.1)' }}
+                  title="Đổi màu"
+                />
+              ))}
+              <input 
+                type="color" 
+                onChange={(e) => {
+                    const color = e.target.value;
+                    document.documentElement.style.setProperty('--primary-600', color);
+                    document.documentElement.style.setProperty('--primary-700', color);
+                    localStorage.setItem('theme-color', color);
+                }}
+                style={{ width: '24px', height: '24px', padding: 0, border: 'none', background: 'transparent', cursor: 'pointer' }}
+                title="Màu tùy chỉnh"
+              />
+            </div>
+          </div>
+        )}
         {!isCollapsed ? (
           <div style={{ padding: '12px', background: 'var(--neutral-50)', borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

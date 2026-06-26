@@ -419,8 +419,6 @@ export default function ServicesPage() {
           <table className="custom-table">
             <thead>
               <tr>
-                <th>Mã DV</th>
-                <th>Khách hàng</th>
                 <th>Công ty</th>
                 <th>Org ID</th>
                 <th>Loại DV</th>
@@ -436,8 +434,6 @@ export default function ServicesPage() {
                 return (
                 <React.Fragment key={s.service_id}>
                   <tr style={{ cursor: 'pointer', background: isExpanded ? 'var(--neutral-50)' : 'transparent', transition: 'var(--transition-fast)' }} onClick={() => toggleExpand(s.service_id)}>
-                    <td style={{ fontWeight: 600, color: 'var(--primary-700)' }}>{s.service_id}</td>
-                    <td style={{ color: 'var(--neutral-900)' }}>{s.customer_id || '--'}</td>
                     <td style={{ color: 'var(--neutral-900)' }}>{s.cx_customers?.ten_cong_ty || '--'}</td>
                     <td style={{ color: 'var(--neutral-600)' }}>{s.cx_customers?.org_id || '--'}</td>
                     <td style={{ color: 'var(--neutral-900)' }}>{s.loai_dich_vu || '--'}</td>
