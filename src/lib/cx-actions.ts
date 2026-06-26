@@ -281,6 +281,39 @@ export async function activateRequest(data: any) {
       .update({ result_customer_id: customerId })
       .eq('request_id', req.request_id);
 
+    // 6.5 Tự động sinh Dịch vụ (Pending)
+    let createdServicesCount = 0;
+    try {
+      let channels: string[] = [];
+      if (typeof req.kenh_gui_tin === 'string') {
+        try { channels = JSON.parse(req.kenh_gui_tin); } catch(e) {
+          if (req.kenh_gui_tin) channels = req.kenh_gui_tin.split(',').map((s: string) => s.trim());
+        }
+      } else if (Array.isArray(req.kenh_gui_tin)) {
+        channels = req.kenh_gui_tin;
+      }
+      
+      if (channels && channels.length > 0) {
+        for (const channel of channels) {
+          const svcData = {
+            customerId: customerId,
+            contractId: contractId,
+            channel: channel,
+            loaiDichVu: req.loai_yeu_cau,
+            usageMethod: req.hinh_thuc_sd,
+            packageType: req.loai_goi_cuoc,
+            ngayBatDau: req.ngay_bat_dau,
+            ngayHetHan: req.ngay_ket_thuc,
+            cpNameCode: data.cpid || req.cpid,
+            actorEmail: data.actorEmail || req.sale_email,
+            trangThai: 'Pending',
+          };
+          await createService(svcData);
+          createdServicesCount++;
+        }
+      }
+    } catch(e) { console.error("Auto create services failed:", e); }
+
     // 7. Insert Log
     await supabase.from('cx_activity_logs').insert([{
       log_id: `LOG-${Date.now()}`,
@@ -292,7 +325,7 @@ export async function activateRequest(data: any) {
       related_customer_id: customerId
     }]);
 
-    return { success: true, customerId, contractId };
+    return { success: true, customerId, contractId, createdServicesCount };
   } catch (error: any) {
     console.error('activateRequest error:', error);
     return { success: false, error: error.message };

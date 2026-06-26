@@ -28,6 +28,8 @@ export default function ContractsPage() {
 
   // Modals
   const [activeModal, setActiveModal] = useState<'add' | 'edit' | 'renew' | null>(null);
+  const [activeServiceModal, setActiveServiceModal] = useState<'add' | 'edit' | 'renew' | null>(null);
+  const [isWizardStep2, setIsWizardStep2] = useState(false);
   const [selectedContract, setSelectedContract] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -47,7 +49,6 @@ export default function ContractsPage() {
   });
 
   // Service Modals
-  const [activeServiceModal, setActiveServiceModal] = useState<'add' | 'edit' | 'renew' | null>(null);
   const [selectedService, setSelectedService] = useState<any>(null);
   const [isSubmittingService, setIsSubmittingService] = useState(false);
   const [serviceFormData, setServiceFormData] = useState({
@@ -295,6 +296,18 @@ export default function ContractsPage() {
       if (activeModal === 'add') {
         const res = await createContract(formData);
         if (!res.success) throw new Error(res.error);
+        
+        // Chuyển sang bước 2: Bắt buộc tạo dịch vụ
+        setActiveModal(null);
+        setServiceFormData(prev => ({ 
+          ...prev, 
+          customerId: formData.customerId, 
+          contractId: res.contractId || '' // ContractId trả về từ hàm create
+        }));
+        setActiveServiceModal('add');
+        setIsWizardStep2(true);
+        setIsSubmitting(false);
+        return; // Dừng lại ở đây, không gọi fetchData vội
       } else if (activeModal === 'edit') {
         const payload = { ...formData, contractId: selectedContract.contract_id };
         const res = await updateContractInfo(payload);
@@ -367,6 +380,12 @@ export default function ContractsPage() {
         });
         setLoadingExpanded(false);
       }
+      if (isWizardStep2) {
+        setIsWizardStep2(false);
+        alert('Tạo Hợp đồng và Dịch vụ thành công!');
+        await fetchData();
+      }
+      
       setActiveServiceModal(null);
     } catch (err: any) {
       alert("Lỗi: " + err.message);
@@ -704,6 +723,13 @@ export default function ContractsPage() {
                 <input required type="email" className="input-field w-full" value={formData.actorEmail} onChange={e => setFormData({...formData, actorEmail: e.target.value})} placeholder="Email người nhập liệu" disabled style={{ background: 'var(--neutral-100)', color: 'var(--neutral-600)', cursor: 'not-allowed' }} />
               </div>
 
+              {activeModal === 'renew' && (
+                <div style={{ marginTop: '8px', padding: '12px', background: 'var(--warning-50)', borderLeft: '4px solid var(--warning-500)', color: 'var(--warning-700)', borderRadius: '0 4px 4px 0', fontSize: '13px', lineHeight: 1.5 }}>
+                  <strong style={{ display: 'block', marginBottom: '4px' }}>⚠️ Lưu ý khi gia hạn:</strong>
+                  Khi gia hạn thành công, toàn bộ Dịch vụ của hợp đồng cũ sẽ tự động được nhân bản (clone) sang Hợp đồng mới và cập nhật thời hạn mới. Bạn có thể vào chỉnh sửa chi tiết từng dịch vụ sau khi hoàn tất.
+                </div>
+              )}
+
               <div style={{ display: 'flex', gap: '12px', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--neutral-200)' }}>
                 <button type="submit" disabled={isSubmitting} className="btn btn-primary" style={{ flex: 1, padding: '12px' }}>
                   {isSubmitting ? 'Đang lưu...' : activeModal === 'renew' ? 'Lưu Gia hạn Hợp đồng' : 'Lưu Hợp đồng'}
@@ -723,11 +749,15 @@ export default function ContractsPage() {
         <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.4)', overflowY: 'auto', backdropFilter: 'blur(4px)' }}>
           <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
             <div className="card-container animate-fade-in" style={{ width: '100%', maxWidth: '800px', padding: '32px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                <h2 style={{ fontSize: '20px', fontWeight: 700, margin: 0, color: 'var(--neutral-900)' }}>
-                  {activeServiceModal === 'add' ? 'Thêm mới Dịch vụ' : activeServiceModal === 'renew' ? 'Gia hạn Dịch vụ' : 'Chỉnh sửa Dịch vụ'}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', borderBottom: '1px solid var(--neutral-200)', paddingBottom: '16px' }}>
+                <h2 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--neutral-900)' }}>
+                  {isWizardStep2 ? 'Bước 2: Tạo Dịch vụ đi kèm (Bắt buộc)' : (activeServiceModal === 'add' ? 'Thêm mới Dịch vụ' : activeServiceModal === 'edit' ? 'Chỉnh sửa Dịch vụ' : 'Gia hạn Dịch vụ')}
                 </h2>
-                <button onClick={() => setActiveServiceModal(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--neutral-400)' }}><X size={24} /></button>
+                {!isWizardStep2 && (
+                  <button onClick={() => setActiveServiceModal(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px' }}>
+                    <X size={20} color="var(--neutral-500)" />
+                  </button>
+                )}
               </div>
               
               <form onSubmit={handleServiceSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -919,9 +949,11 @@ export default function ContractsPage() {
                   <button type="submit" disabled={isSubmittingService} className="btn btn-primary" style={{ flex: 1, padding: '12px' }}>
                     {isSubmittingService ? 'Đang lưu...' : activeServiceModal === 'renew' ? 'Lưu Gia hạn' : 'Lưu Dịch vụ'}
                   </button>
-                  <button type="button" onClick={() => setActiveServiceModal(null)} className="btn btn-secondary" style={{ flex: 1, padding: '12px' }}>
-                    Hủy
-                  </button>
+                  {!isWizardStep2 && (
+                    <button type="button" onClick={() => setActiveServiceModal(null)} className="btn btn-secondary" style={{ flex: 1, padding: '12px' }}>
+                      Hủy
+                    </button>
+                  )}
                 </div>
               </form>
             </div>

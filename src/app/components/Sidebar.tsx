@@ -5,18 +5,37 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
   FilePlus, Search, BarChart3, ChevronLeft, ChevronRight, 
-  Users, LayoutDashboard, UserPlus, FileText, Server, LogOut, UserCircle 
+  Users, LayoutDashboard, UserPlus, FileText, Server, LogOut, UserCircle, History
 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function Sidebar() {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { userEmail, logout } = useAuth();
+  const [pendingCount, setPendingCount] = useState(0);
 
   useEffect(() => {
     document.documentElement.style.setProperty('--sidebar-width', isCollapsed ? '72px' : '240px');
   }, [isCollapsed]);
+
+  useEffect(() => {
+    async function fetchPending() {
+      const { count } = await supabase.from('cx_services').select('*', { count: 'exact', head: true }).eq('trang_thai', 'Pending');
+      setPendingCount(count || 0);
+    }
+    fetchPending();
+    
+    // Đăng ký realtime lắng nghe thay đổi
+    const channel = supabase.channel('pending_services_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'cx_services' }, () => {
+        fetchPending();
+      })
+      .subscribe();
+      
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   const menuGroups = [
     {
@@ -27,7 +46,7 @@ export default function Sidebar() {
         { name: "Yêu cầu dịch vụ (Sale)", path: "/cx/tao-phieu-sale", icon: FilePlus },
         { name: "Tạo tài khoản", path: "/cx/requests", icon: UserPlus },
         { name: "Hợp đồng", path: "/cx/contracts", icon: FileText },
-        { name: "Dịch vụ", path: "/cx/services", icon: Server },
+        { name: "Dịch vụ", path: "/cx/services", icon: Server, badge: pendingCount > 0 ? pendingCount : null },
         { name: "Cấu hình hệ thống", path: "/cx/settings", icon: Server },
       ]
     },
@@ -37,6 +56,12 @@ export default function Sidebar() {
         { name: "Nhập phiếu hủy", path: "/nhap-huy", icon: FilePlus },
         { name: "Tra cứu", path: "/tra-cuu", icon: Search },
         { name: "Báo cáo", path: "/bao-cao", icon: BarChart3 }
+      ]
+    },
+    {
+      title: "Hệ thống",
+      items: [
+        { name: "Lịch sử hoạt động", path: "/cx/history", icon: History }
       ]
     }
   ];
@@ -93,10 +118,22 @@ export default function Sidebar() {
                     href={item.path} 
                     className={`sidebar-link ${isActive ? 'active' : ''}`}
                     title={isCollapsed ? item.name : undefined}
-                    style={{ justifyContent: isCollapsed ? 'center' : 'flex-start' }}
+                    style={{ position: 'relative' }}
                   >
-                    <Icon size={isCollapsed ? 22 : 18} style={{ flexShrink: 0 }} />
-                    {!isCollapsed && <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</span>}
+                    <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+                    {!isCollapsed && (
+                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</span>
+                        {(item as any).badge && (
+                          <span style={{ background: 'var(--error-500)', color: '#fff', fontSize: '11px', fontWeight: 700, padding: '2px 6px', borderRadius: '100px' }}>
+                            {(item as any).badge}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {isCollapsed && (item as any).badge && (
+                      <span style={{ position: 'absolute', top: '6px', right: '6px', width: '8px', height: '8px', background: 'var(--error-500)', borderRadius: '50%' }} />
+                    )}
                   </Link>
                 );
               })}

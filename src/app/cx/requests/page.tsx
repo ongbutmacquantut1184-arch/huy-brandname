@@ -169,7 +169,8 @@ export default function CSRateAccountPage() {
         ngayBatDau: formData.ngayBatDau,
         ngayKetThuc: formData.ngayKetThuc,
         customerId: res.customerId,
-        contractId: res.contractId
+        contractId: res.contractId,
+        createdServicesCount: res.createdServicesCount || 0
       });
       setIsAlreadyCreated(true);
       setTimeout(() => successRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
@@ -390,7 +391,7 @@ export default function CSRateAccountPage() {
             <p><strong style={{color: '#065f46'}}>Mã Hợp đồng:</strong> {successInfo.contractId}</p>
             
             <div style={{ marginTop: '16px', padding: '12px', background: '#fffbeb', borderLeft: '4px solid #f59e0b', color: '#b45309', borderRadius: '0 4px 4px 0', fontSize: '14px', fontWeight: 500 }}>
-              ⚠️ Lưu ý: Hệ thống đã tự động tạo hợp đồng. Vui lòng vào phần Quản lý hợp đồng & dịch vụ để bổ sung thông tin chi tiết và khởi tạo các dịch vụ tương ứng.
+              ⚠️ Lưu ý: Hệ thống đã tự động tạo hợp đồng và <strong>{successInfo.createdServicesCount} dịch vụ ở trạng thái Pending</strong>. Vui lòng vào phần Quản lý hợp đồng & dịch vụ để bổ sung cấu hình và Active dịch vụ.
             </div>
 
             <button 
