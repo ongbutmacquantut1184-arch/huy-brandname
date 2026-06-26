@@ -176,7 +176,7 @@ export default function Sidebar() {
           color: var(--neutral-900);
         }
         .sidebar-link.active {
-          background-color: var(--primary-50);
+          background-color: color-mix(in srgb, var(--primary-600) 10%, transparent);
           color: var(--primary-600);
           font-weight: 600;
         }
