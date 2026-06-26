@@ -8,7 +8,7 @@ import {
   Users, LayoutDashboard, UserPlus, FileText, Server, LogOut, UserCircle, History
 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabase";
 
 export default function Sidebar() {
   const pathname = usePathname();

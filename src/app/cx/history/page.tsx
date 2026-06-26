@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Search, RotateCcw } from "lucide-react";
-import { supabase } from "@/lib/supabaseClient";
-import Layout from "@/app/components/Layout";
+import { supabase } from "@/lib/supabase";
 
 export default function HistoryPage() {
   const [logs, setLogs] = useState<any[]>([]);
@@ -47,9 +46,8 @@ export default function HistoryPage() {
   };
 
   return (
-    <Layout>
-      <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+    <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
           <div>
             <h1 style={{ fontSize: '24px', fontWeight: 700, color: 'var(--neutral-900)', marginBottom: '8px' }}>Lịch sử hoạt động</h1>
             <p style={{ color: 'var(--neutral-500)' }}>Tra cứu lịch sử thao tác trên hệ thống (200 bản ghi gần nhất).</p>
@@ -152,6 +150,5 @@ export default function HistoryPage() {
           </div>
         </div>
       </div>
-    </Layout>
   );
 }
