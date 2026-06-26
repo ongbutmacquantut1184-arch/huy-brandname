@@ -565,10 +565,10 @@ export default function ContractsPage() {
                                         <td>{getStatusBadge(s.trang_thai)}</td>
                                         <td style={{ textAlign: 'center' }}>
                                           <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                                            <button className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '12px' }} onClick={() => openRenewServiceModal(s)}>Gia hạn</button>
                                             <button className="btn btn-secondary" style={{ padding: '6px', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-md)' }} onClick={() => openEditServiceModal(s)} title="Sửa dịch vụ">
                                               <Edit2 size={14} style={{ color: 'var(--primary-600)' }} />
                                             </button>
+                                            <button className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '12px' }} onClick={() => openRenewServiceModal(s)}>Gia hạn</button>
                                           </div>
                                         </td>
                                       </tr>

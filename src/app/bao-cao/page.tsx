@@ -178,7 +178,7 @@ export default function BaoCaoPage() {
               <Layers size={16} /> Lập báo cáo hủy
             </h2>
             {!showFilters && selectedMonth && (
-              <span style={{ fontSize: '13px', color: 'var(--primary-600)', background: 'rgba(0,122,255,0.1)', padding: '2px 10px', borderRadius: '100px' }}>
+              <span style={{ fontSize: '13px', color: 'var(--primary-600)', background: 'var(--primary-50)', padding: '2px 10px', borderRadius: '100px' }}>
                 Tháng {formatMonth(selectedMonth)} • Chọn {selectedProviders.length} NCC
               </span>
             )}
@@ -343,9 +343,9 @@ export default function BaoCaoPage() {
 
               return (
                 <div key={pid} className="report-table-container">
-                  <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--primary-600)', marginBottom: '14px', borderBottom: '2px solid rgba(0,122,255,0.1)', paddingBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--primary-600)', marginBottom: '14px', borderBottom: '2px solid var(--primary-100)', paddingBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span>📦 {providerName}</span>
-                    <span style={{ fontSize: '12px', background: 'rgba(0,122,255,0.08)', color: 'var(--primary-600)', padding: '2px 8px', borderRadius: '100px', fontWeight: 500 }}>
+                    <span style={{ fontSize: '12px', background: 'var(--primary-50)', color: 'var(--primary-600)', padding: '2px 8px', borderRadius: '100px', fontWeight: 500 }}>
                       {data.brands.length} brandname
                     </span>
                   </h3>
