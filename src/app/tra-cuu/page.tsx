@@ -146,94 +146,102 @@ function TraCuuContent() {
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       
       {/* Top Bar: Filters */}
-      <div className="card-container p-6 mb-6 flex gap-6 items-end flex-wrap" style={{ boxShadow: 'var(--shadow-sm)', overflow: 'visible' }}>
-        <div style={{ flex: '1 1 200px', zIndex: 50 }}>
-          <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: 'var(--neutral-700)' }}>
-            <Filter size={14} style={{ display: 'inline', marginBottom: '-2px', marginRight: '4px', color: 'var(--primary-600)' }}/> Từ khóa
-          </label>
-          <div style={{ position: 'relative', zIndex: 50 }} ref={keywordContainerRef}>
-            <SearchIcon size={16} style={{ position: 'absolute', left: '12px', top: '13px', color: 'var(--neutral-400)', zIndex: 5 }} />
-            <input 
-              type="text" 
-              className="input-field" 
-              placeholder="Brandname, Ghi chú..." 
-              style={{ paddingLeft: '36px' }} 
-              value={keyword}
-              onChange={e => {
-                setKeyword(e.target.value);
-                setShowSuggestions(true);
-              }}
-              onFocus={() => setShowSuggestions(true)}
-              onKeyDown={e => e.key === 'Enter' && (setShowSuggestions(false), handleSearch())}
-            />
-            
-            {/* Suggestions list */}
-            {showSuggestions && keyword && filteredBrands.length > 0 && (
-              <div className="custom-dropdown">
-                {filteredBrands.map((b: any) => (
-                  <div 
-                    key={b.id} 
-                    className="dropdown-item"
-                    onClick={() => {
-                      setKeyword(b.name);
-                      setShowSuggestions(false);
-                      handleSearch(b.name);
-                    }}
-                  >
-                    {b.name}
-                  </div>
-                ))}
-              </div>
-            )}
+      <div className="card-container p-6 mb-6" style={{ display: 'flex', flexDirection: 'column', gap: '20px', boxShadow: 'var(--shadow-sm)', overflow: 'visible' }}>
+        {/* Row 1: Basic Filters */}
+        <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+          <div style={{ flex: '1 1 250px', zIndex: 50 }}>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: 'var(--neutral-700)' }}>
+              <Filter size={14} style={{ display: 'inline', marginBottom: '-2px', marginRight: '4px', color: 'var(--primary-600)' }}/> Từ khóa
+            </label>
+            <div style={{ position: 'relative', zIndex: 50 }} ref={keywordContainerRef}>
+              <SearchIcon size={16} style={{ position: 'absolute', left: '12px', top: '13px', color: 'var(--neutral-400)', zIndex: 5 }} />
+              <input 
+                type="text" 
+                className="input-field" 
+                placeholder="Brandname, Ghi chú..." 
+                style={{ paddingLeft: '36px' }} 
+                value={keyword}
+                onChange={e => {
+                  setKeyword(e.target.value);
+                  setShowSuggestions(true);
+                }}
+                onFocus={() => setShowSuggestions(true)}
+                onKeyDown={e => e.key === 'Enter' && (setShowSuggestions(false), handleSearch())}
+              />
+              
+              {/* Suggestions list */}
+              {showSuggestions && keyword && filteredBrands.length > 0 && (
+                <div className="custom-dropdown">
+                  {filteredBrands.map((b: any) => (
+                    <div 
+                      key={b.id} 
+                      className="dropdown-item"
+                      onClick={() => {
+                        setKeyword(b.name);
+                        setShowSuggestions(false);
+                        handleSearch(b.name);
+                      }}
+                    >
+                      {b.name}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div style={{ width: '150px' }}>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: 'var(--neutral-700)' }}>Tháng</label>
+            <input type="month" onClick={(e) => (e.target as any).showPicker && (e.target as any).showPicker()} className="input-field" value={month} onChange={e => setMonth(e.target.value)} />
+          </div>
+
+          <div style={{ width: '180px' }}>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: 'var(--neutral-700)' }}>Người nhập</label>
+            <select className="input-field" value={userId} onChange={e => setUserId(e.target.value)}>
+              <option value="">-- Tất cả --</option>
+              {lookups?.users?.map((u: any) => (
+                <option key={u.id} value={u.id}>{u.name}</option>
+              ))}
+            </select>
           </div>
         </div>
 
-        <div style={{ width: '150px' }}>
-          <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: 'var(--neutral-700)' }}>Tháng</label>
-          <input type="month" onClick={(e) => (e.target as any).showPicker && (e.target as any).showPicker()} className="input-field" value={month} onChange={e => setMonth(e.target.value)} />
-        </div>
-
-        <div style={{ width: '180px' }}>
-          <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: 'var(--neutral-700)' }}>Người nhập</label>
-          <select className="input-field" value={userId} onChange={e => setUserId(e.target.value)}>
-            <option value="">-- Tất cả --</option>
-            {lookups?.users?.map((u: any) => (
-              <option key={u.id} value={u.id}>{u.name}</option>
-            ))}
-          </select>
-        </div>
-
-        <div style={{ flex: '2 1 300px' }}>
-          <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: 'var(--neutral-700)' }}>Nhà mạng</label>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-            {lookups?.operators?.map((op: any) => {
-              const isChecked = selectedOperators.includes(op.id);
-              return (
-                <label key={op.id} style={{ 
-                  display: 'inline-flex', 
-                  alignItems: 'center', 
-                  gap: '6px', 
-                  cursor: 'pointer', 
-                  padding: '8px 16px', 
-                  borderRadius: 'var(--radius-full)', 
-                  border: isChecked ? '1px solid var(--primary-600)' : '1px solid var(--neutral-300)', 
-                  background: isChecked ? 'var(--primary-100)' : '#FFFFFF', 
-                  transition: 'var(--transition-fast)',
-                  fontWeight: isChecked ? 600 : 500,
-                  boxShadow: 'none'
-                }}>
-                  <input type="checkbox" checked={isChecked} onChange={() => handleOperatorToggle(op.id)} style={{ display: 'none' }} />
-                  {isChecked && <CheckCircle size={14} style={{ color: 'var(--primary-600)' }} />}
-                  <span style={{ fontSize: '13px', color: isChecked ? 'var(--primary-800)' : 'var(--neutral-700)' }}>{op.name}</span>
-                </label>
-              );
-            })}
+        {/* Row 2: Operators & Search Button */}
+        <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+          <div style={{ flex: '1 1 auto' }}>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: 'var(--neutral-700)' }}>Nhà mạng</label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+              {lookups?.operators?.map((op: any) => {
+                const isChecked = selectedOperators.includes(op.id);
+                return (
+                  <label key={op.id} style={{ 
+                    display: 'inline-flex', 
+                    alignItems: 'center', 
+                    gap: '6px', 
+                    cursor: 'pointer', 
+                    padding: '8px 16px', 
+                    borderRadius: 'var(--radius-full)', 
+                    border: isChecked ? '1px solid var(--primary-600)' : '1px solid var(--neutral-300)', 
+                    background: isChecked ? 'var(--primary-100)' : '#FFFFFF', 
+                    transition: 'var(--transition-fast)',
+                    fontWeight: isChecked ? 600 : 500,
+                    boxShadow: 'none'
+                  }}>
+                    <input type="checkbox" checked={isChecked} onChange={() => handleOperatorToggle(op.id)} style={{ display: 'none' }} />
+                    {isChecked && <CheckCircle size={14} style={{ color: 'var(--primary-600)' }} />}
+                    <span style={{ fontSize: '13px', color: isChecked ? 'var(--primary-800)' : 'var(--neutral-700)' }}>{op.name}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+          
+          <div style={{ display: 'flex', alignItems: 'flex-end', height: '100%' }}>
+            <button className="btn btn-primary" style={{ padding: '0 32px', height: '42px', flexShrink: 0, marginTop: '26px' }} onClick={() => handleSearch()} disabled={isSearching}>
+              {isSearching ? 'Đang tìm...' : 'Tìm Kiếm'}
+            </button>
           </div>
         </div>
-
-        <button className="btn btn-primary" style={{ padding: '0 24px', height: '42px', flexShrink: 0 }} onClick={() => handleSearch()} disabled={isSearching}>
-          {isSearching ? 'Đang tìm...' : 'Tìm Kiếm'}
-        </button>
       </div>
 
       {/* Right Content: Results */}

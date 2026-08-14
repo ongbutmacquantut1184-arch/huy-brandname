@@ -294,7 +294,7 @@ export default function BaoCaoPage() {
                 {isSearching ? 'Đang tải...' : 'Xem báo cáo'}
               </button>
 
-              <button className="apple-btn" style={{ padding: '8px', fontSize: '12.5px', background: 'var(--teal-600)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }} onClick={() => handleExport('xlsx')} disabled={!selectedMonth || selectedProviders.length === 0}>
+              <button className="apple-btn" style={{ padding: '8px', fontSize: '12.5px', background: 'var(--emerald-600)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }} onClick={() => handleExport('xlsx')} disabled={!selectedMonth || selectedProviders.length === 0}>
                 <Download size={14} /> Xuất Excel
               </button>
               

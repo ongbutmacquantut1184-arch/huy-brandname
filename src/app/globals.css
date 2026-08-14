@@ -366,6 +366,13 @@ input[type="checkbox"] {
 }
 .badge-default::before { background-color: var(--neutral-400); }
 
+.badge-primary {
+  background-color: var(--primary-50);
+  color: var(--primary-700);
+  border: 1px solid color-mix(in srgb, var(--primary-600) 20%, transparent);
+}
+.badge-primary::before { background-color: var(--primary-600); }
+
 /* Accordion Row */
 .accordion-row {
   animation: fadeIn 0.2s ease;
