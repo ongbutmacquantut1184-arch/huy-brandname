@@ -148,21 +148,21 @@ export default function DashboardPage() {
   const dqOrphanContracts = allContracts.filter(c => !contractIdsInServices.has(c.contract_id));
 
   // Columns for DataTables
-  const csColumns = [
+  const csColumns: any[] = [
     { header: 'CS Phụ trách', accessor: (row: any) => <strong style={{ color: 'var(--neutral-900)' }}>{row.csName}</strong> },
-    { header: 'Tổng KH', accessor: 'total' },
+    { header: 'Tổng KH', accessor: (row: any) => row.total },
     { header: 'KH Active', accessor: (row: any) => <span style={{ color: 'var(--primary-600)', fontWeight: 600 }}>{row.active}</span> },
     { header: 'Có rủi ro', accessor: (row: any) => row.riskCount > 0 ? <StatusBadge status={`${row.riskCount} KH`} variant="warning" /> : <span style={{ color: 'var(--neutral-400)' }}>0</span> },
-    { header: 'Chi tiết', align: 'center' as const, accessor: (row: any) => (
+    { header: 'Chi tiết', align: 'center', accessor: (row: any) => (
       <button className="btn btn-secondary" onClick={() => openDrawer(`Khách hàng của ${row.csName}`, 'cs', row.customers)}>
         Chi tiết <ChevronRight size={14} />
       </button>
     )}
   ];
 
-  const supColumns = [
+  const supColumns: any[] = [
     { header: 'SUP Phụ trách', accessor: (row: any) => <strong style={{ color: 'var(--neutral-900)' }}>{row.supName}</strong> },
-    { header: 'Tổng DV', accessor: 'total' },
+    { header: 'Tổng DV', accessor: (row: any) => row.total },
     { header: 'Đang chạy', accessor: (row: any) => <span style={{ color: 'var(--info-600)', fontWeight: 600 }}>{row.active}</span> },
     { header: 'Chờ duyệt', accessor: (row: any) => <span style={{ color: 'var(--warning-600)', fontWeight: 600 }}>{row.pending}</span> },
     { header: 'Có rủi ro', accessor: (row: any) => row.riskCount > 0 ? <StatusBadge status={`${row.riskCount} DV`} variant="warning" /> : <span style={{ color: 'var(--neutral-400)' }}>0</span> },
