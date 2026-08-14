@@ -133,6 +133,7 @@ function TraCuuContent() {
   }, [lookups, idParam, hasSearched, isSearching]);
 
   if (loading) return <div className="p-8 text-center text-gray">Đang tải dữ liệu danh mục...</div>;
+  if (lookups?.error) return <div className="p-8 text-center text-error-600" style={{ color: 'red' }}>Lỗi tải dữ liệu: {lookups.error}</div>;
 
   // Filters for keyword suggestions
   const filteredBrands = lookups?.brands

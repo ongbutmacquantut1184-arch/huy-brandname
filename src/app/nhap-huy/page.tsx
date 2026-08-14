@@ -78,7 +78,7 @@ function NhapHuyForm() {
   };
 
   useEffect(() => {
-    if (!lookups) return;
+    if (!lookups || lookups.error || !lookups.brands) return;
     const b = lookups.brands.find((x: any) => x.name.trim() === brandSearch.trim());
     setSelectedBrand(b || null);
     if (b) {
@@ -90,7 +90,7 @@ function NhapHuyForm() {
   }, [brandSearch, lookups]);
 
   useEffect(() => {
-    if (!lookups) return;
+    if (!lookups || lookups.error || !lookups.cps) return;
     const c = lookups.cps.find((x: any) => x.name.trim() === cpSearch.trim());
     setSelectedCp(c || null);
   }, [cpSearch, lookups]);
@@ -349,6 +349,8 @@ function NhapHuyForm() {
         .filter((c: any) => c.name.toLowerCase().includes(cpSearch.trim().toLowerCase()))
         .slice(0, 15)
     : [];
+
+  if (lookups?.error) return <div className="p-8 text-center text-error-600" style={{ color: 'red' }}>Lỗi tải dữ liệu danh mục: {lookups.error}. Vui lòng kiểm tra lại cấu hình Supabase.</div>;
 
   return (
     <div className="animate-fade-in" style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>

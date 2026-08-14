@@ -158,6 +158,7 @@ export default function BaoCaoPage() {
   };
 
   if (loading) return <div className="p-8 text-center text-gray">Đang tải dữ liệu báo cáo...</div>;
+  
 
   const allSelected = selectedProviders.length === providers.length && providers.length > 0;
   const noneSelected = selectedProviders.length === 0;
