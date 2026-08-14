@@ -187,31 +187,55 @@ export default function SaleForm() {
   };
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', minHeight: '100vh', padding: '40px 20px', position: 'relative' }}>
-      
-      {/* Modal Thành công đã được di chuyển xuống dưới form */}
-      <div style={{ width: '100%', maxWidth: '800px', background: '#fff', borderRadius: '16px', boxShadow: '0 8px 30px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+    <div className="animate-fade-in" style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: 'var(--space-8) var(--space-4)', position: 'relative' }}>
+      <div className="card-container" style={{ width: '100%', maxWidth: '800px', padding: '0', overflow: 'hidden' }}>
         
-        <div style={{ padding: '32px 32px 0 32px', textAlign: 'center' }}>
-          <h1 style={{ fontSize: '26px', fontWeight: 700, marginBottom: '24px', color: '#1d1d1f', letterSpacing: '-0.5px' }}>TẠO PHIẾU YÊU CẦU DỊCH VỤ</h1>
+        <div style={{ padding: 'var(--space-8) var(--space-8) 0 var(--space-8)', textAlign: 'center' }}>
+          <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 800, marginBottom: 'var(--space-6)', color: 'var(--neutral-900)' }}>
+            TẠO PHIẾU YÊU CẦU DỊCH VỤ
+          </h1>
           
-          <div style={{ marginBottom: '32px' }}>
-            <p style={{ fontSize: '15px', fontWeight: 600, color: '#555', marginBottom: '12px' }}>Chọn Loại Khách Hàng <span style={{color: 'red'}}>*</span></p>
-            <div style={{ display: 'inline-flex', background: '#f5f5f7', padding: '4px', borderRadius: '12px' }}>
-              <button type="button" onClick={() => setCustomerType('Subscription')} style={{ ...toggleBtnStyle, background: formData.loaiYeuCau === 'Subscription' ? '#fff' : 'transparent', color: formData.loaiYeuCau === 'Subscription' ? 'var(--primary-700)' : '#6e6e73', boxShadow: formData.loaiYeuCau === 'Subscription' ? '0 2px 8px rgba(0,0,0,0.1)' : 'none' }}>
+          <div style={{ marginBottom: 'var(--space-8)' }}>
+            <p style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--neutral-600)', marginBottom: 'var(--space-3)' }}>
+              Chọn Loại Khách Hàng <span className="text-error-600">*</span>
+            </p>
+            <div style={{ display: 'inline-flex', background: 'var(--neutral-100)', padding: '4px', borderRadius: 'var(--radius-lg)' }}>
+              <button 
+                type="button" 
+                onClick={() => setCustomerType('Subscription')} 
+                style={{ 
+                  ...toggleBtnStyle, 
+                  background: formData.loaiYeuCau === 'Subscription' ? '#fff' : 'transparent', 
+                  color: formData.loaiYeuCau === 'Subscription' ? 'var(--primary-700)' : 'var(--neutral-600)', 
+                  boxShadow: formData.loaiYeuCau === 'Subscription' ? 'var(--shadow-sm)' : 'none' 
+                }}
+              >
                 Subscription (Phần mềm)
               </button>
-              <button type="button" onClick={() => setCustomerType('Campaign')} style={{ ...toggleBtnStyle, background: formData.loaiYeuCau === 'Campaign' ? '#fff' : 'transparent', color: formData.loaiYeuCau === 'Campaign' ? 'var(--primary-700)' : '#6e6e73', boxShadow: formData.loaiYeuCau === 'Campaign' ? '0 2px 8px rgba(0,0,0,0.1)' : 'none' }}>
+              <button 
+                type="button" 
+                onClick={() => setCustomerType('Campaign')} 
+                style={{ 
+                  ...toggleBtnStyle, 
+                  background: formData.loaiYeuCau === 'Campaign' ? '#fff' : 'transparent', 
+                  color: formData.loaiYeuCau === 'Campaign' ? 'var(--primary-700)' : 'var(--neutral-600)', 
+                  boxShadow: formData.loaiYeuCau === 'Campaign' ? 'var(--shadow-sm)' : 'none' 
+                }}
+              >
                 Campaign
               </button>
             </div>
           </div>
         </div>
 
-        <div style={{ padding: '0 32px 32px 32px' }}>
-          {submitError && <div style={{ padding: '14px', background: '#fee2e2', color: '#991b1b', borderRadius: '10px', marginBottom: '20px', fontWeight: 500 }}>{submitError}</div>}
+        <div style={{ padding: '0 var(--space-8) var(--space-8) var(--space-8)' }}>
+          {submitError && (
+            <div className="animate-fade-in-down" style={{ padding: '16px', background: 'var(--error-50)', color: 'var(--error-700)', borderLeft: '4px solid var(--error-500)', borderRadius: 'var(--radius-md)', marginBottom: '24px', fontWeight: 500 }}>
+              {submitError}
+            </div>
+          )}
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
             
             {/* Nhóm 1: Khách hàng & Thanh toán */}
             <fieldset style={fieldsetStyle}>
@@ -219,14 +243,14 @@ export default function SaleForm() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div style={gridStyle}>
                   <div>
-                    <label style={labelStyle}>Tên công ty <span style={{ color: 'red' }}>*</span></label>
-                    <input type="text" name="tenCongTy" value={formData.tenCongTy} onChange={handleChange} onBlur={handleBlur} required style={inputStyle} />
+                    <label className="label-custom">Tên công ty <span className="text-error-600">*</span></label>
+                    <input type="text" name="tenCongTy" value={formData.tenCongTy} onChange={handleChange} onBlur={handleBlur} required className="input-field w-full" style={{ background: '#fff' }} />
                   </div>
                   <div>
                     {formData.loaiYeuCau === 'Subscription' && (
                       <>
-                        <label style={labelStyle}>Email tạo TK <span style={{ color: 'red' }}>*</span></label>
-                        <input type="email" name="emailTaoTK" value={formData.emailTaoTK} onChange={handleChange} onBlur={handleBlur} required style={inputStyle} />
+                        <label className="label-custom">Email tạo TK <span className="text-error-600">*</span></label>
+                        <input type="email" name="emailTaoTK" value={formData.emailTaoTK} onChange={handleChange} onBlur={handleBlur} required className="input-field w-full" style={{ background: '#fff' }} />
                         {errors.emailTaoTK && <span style={errorTextStyle}>{errors.emailTaoTK}</span>}
                       </>
                     )}
@@ -235,13 +259,13 @@ export default function SaleForm() {
 
                 <div style={gridStyle}>
                   <div>
-                    <label style={labelStyle}>Số điện thoại <span style={{ color: 'red' }}>*</span></label>
-                    <input type="tel" name="soDienThoai" value={formData.soDienThoai} onChange={handleChange} onBlur={handleBlur} required style={inputStyle} />
+                    <label className="label-custom">Số điện thoại <span className="text-error-600">*</span></label>
+                    <input type="tel" name="soDienThoai" value={formData.soDienThoai} onChange={handleChange} onBlur={handleBlur} required className="input-field w-full" style={{ background: '#fff' }} />
                     {errors.soDienThoai && <span style={errorTextStyle}>{errors.soDienThoai}</span>}
                   </div>
                   <div>
-                    <label style={labelStyle}>Khu vực <span style={{ color: 'red' }}>*</span></label>
-                    <select name="khuVuc" value={formData.khuVuc} onChange={handleChange} onBlur={handleBlur} required style={inputStyle}>
+                    <label className="label-custom">Khu vực <span className="text-error-600">*</span></label>
+                    <select name="khuVuc" value={formData.khuVuc} onChange={handleChange} onBlur={handleBlur} required className="input-field w-full" style={{ background: '#fff' }}>
                       <option value="">-- Chọn --</option>
                       {dropdowns.khuVuc.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                     </select>
@@ -250,15 +274,15 @@ export default function SaleForm() {
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div>
-                    <label style={labelStyle}>Ngành nghề</label>
-                    <select name="nganhNghe" value={formData.nganhNghe} onChange={handleChange} onBlur={handleBlur} style={inputStyle}>
+                    <label className="label-custom">Ngành nghề</label>
+                    <select name="nganhNghe" value={formData.nganhNghe} onChange={handleChange} onBlur={handleBlur} className="input-field w-full" style={{ background: '#fff' }}>
                       <option value="">-- Chọn --</option>
                       {dropdowns.nganhNghe.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label style={labelStyle}>Phân khúc</label>
-                    <select name="phanKhuc" value={formData.phanKhuc} onChange={handleChange} onBlur={handleBlur} style={inputStyle}>
+                    <label className="label-custom">Phân khúc</label>
+                    <select name="phanKhuc" value={formData.phanKhuc} onChange={handleChange} onBlur={handleBlur} className="input-field w-full" style={{ background: '#fff' }}>
                       <option value="">-- Chọn --</option>
                       {dropdowns.phanKhuc.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                     </select>
@@ -267,27 +291,27 @@ export default function SaleForm() {
 
                 <div style={gridStyle}>
                   <div>
-                    <label style={labelStyle}>Hình thức thanh toán <span style={{ color: 'red' }}>*</span></label>
-                    <select name="hinhThucThanhToan" value={formData.hinhThucThanhToan} onChange={handleChange} onBlur={handleBlur} required style={inputStyle}>
+                    <label className="label-custom">Hình thức thanh toán <span className="text-error-600">*</span></label>
+                    <select name="hinhThucThanhToan" value={formData.hinhThucThanhToan} onChange={handleChange} onBlur={handleBlur} required className="input-field w-full" style={{ background: '#fff' }}>
                       <option value="">-- Chọn --</option>
                       {dropdowns.hinhThucThanhToan.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label style={labelStyle}>CPID</label>
-                    <input type="text" name="cpid" value={formData.cpid} onChange={handleChange} onBlur={handleBlur} style={inputStyle} />
+                    <label className="label-custom">CPID</label>
+                    <input type="text" name="cpid" value={formData.cpid} onChange={handleChange} onBlur={handleBlur} className="input-field w-full" style={{ background: '#fff' }} />
                   </div>
                 </div>
 
                 <div style={gridStyle}>
                   <div>
-                    <label style={labelStyle}>Ngày bắt đầu <span style={{ color: 'red' }}>*</span></label>
-                    <input type="date" onClick={(e) => (e.target as any).showPicker && (e.target as any).showPicker()} name="ngayBatDau" value={formData.ngayBatDau} onChange={handleChange} onBlur={handleBlur} required style={inputStyle} />
+                    <label className="label-custom">Ngày bắt đầu <span className="text-error-600">*</span></label>
+                    <input type="date" onClick={(e) => (e.target as any).showPicker && (e.target as any).showPicker()} name="ngayBatDau" value={formData.ngayBatDau} onChange={handleChange} onBlur={handleBlur} required className="input-field w-full" style={{ background: '#fff' }} />
                     {errors.ngayBatDau && <span style={errorTextStyle}>{errors.ngayBatDau}</span>}
                   </div>
                   <div>
-                    <label style={labelStyle}>Ngày kết thúc <span style={{ color: 'red' }}>*</span></label>
-                    <input type="date" onClick={(e) => (e.target as any).showPicker && (e.target as any).showPicker()} name="ngayKetThuc" value={formData.ngayKetThuc} onChange={handleChange} onBlur={handleBlur} required style={inputStyle} />
+                    <label className="label-custom">Ngày kết thúc <span className="text-error-600">*</span></label>
+                    <input type="date" onClick={(e) => (e.target as any).showPicker && (e.target as any).showPicker()} name="ngayKetThuc" value={formData.ngayKetThuc} onChange={handleChange} onBlur={handleBlur} required className="input-field w-full" style={{ background: '#fff' }} />
                   </div>
                 </div>
               </div>
@@ -296,10 +320,10 @@ export default function SaleForm() {
             {/* Nhóm 2: Thông tin dịch vụ */}
             <fieldset style={fieldsetStyle}>
               <legend style={legendStyle}>2. Thông tin dịch vụ</legend>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                 
                 <div>
-                  <label style={labelStyle}>Kênh gửi tin (Có thể chọn nhiều) <span style={{ color: 'red' }}>*</span></label>
+                  <label className="label-custom">Kênh gửi tin (Có thể chọn nhiều) <span className="text-error-600">*</span></label>
                   <div style={chipGridStyle}>
                     {dropdowns.kenhGuiTin.map(opt => (
                       <div 
@@ -307,9 +331,9 @@ export default function SaleForm() {
                         onClick={() => toggleChip('kenhGuiTin', opt)}
                         style={{
                           ...chipStyle,
-                          background: formData.kenhGuiTin.includes(opt) ? 'var(--primary-100)' : '#f5f5f7',
-                          color: formData.kenhGuiTin.includes(opt) ? 'var(--primary-900)' : '#333',
-                          border: formData.kenhGuiTin.includes(opt) ? '1px solid var(--primary-600)' : '1px solid transparent',
+                          background: formData.kenhGuiTin.includes(opt) ? 'var(--primary-100)' : '#fff',
+                          color: formData.kenhGuiTin.includes(opt) ? 'var(--primary-700)' : 'var(--neutral-700)',
+                          border: formData.kenhGuiTin.includes(opt) ? '1px solid var(--primary-400)' : '1px solid var(--neutral-200)',
                         }}
                       >
                         {opt}
@@ -319,7 +343,7 @@ export default function SaleForm() {
                 </div>
 
                 <div>
-                  <label style={labelStyle}>Dữ liệu đầu vào (Input) (Có thể chọn nhiều)</label>
+                  <label className="label-custom">Dữ liệu đầu vào (Input) (Có thể chọn nhiều)</label>
                   <div style={chipGridStyle}>
                     {dropdowns.duLieuInput.map(opt => (
                       <div 
@@ -327,9 +351,9 @@ export default function SaleForm() {
                         onClick={() => toggleChip('duLieuInput', opt)}
                         style={{
                           ...chipStyle,
-                          background: formData.duLieuInput.includes(opt) ? 'var(--primary-100)' : '#f5f5f7',
-                          color: formData.duLieuInput.includes(opt) ? 'var(--primary-900)' : '#333',
-                          border: formData.duLieuInput.includes(opt) ? '1px solid var(--primary-600)' : '1px solid transparent',
+                          background: formData.duLieuInput.includes(opt) ? 'var(--primary-100)' : '#fff',
+                          color: formData.duLieuInput.includes(opt) ? 'var(--primary-700)' : 'var(--neutral-700)',
+                          border: formData.duLieuInput.includes(opt) ? '1px solid var(--primary-400)' : '1px solid var(--neutral-200)',
                         }}
                       >
                         {opt}
@@ -340,15 +364,15 @@ export default function SaleForm() {
 
                 <div style={gridStyle}>
                   <div>
-                    <label style={labelStyle}>Loại gói cước <span style={{ color: 'red' }}>*</span></label>
-                    <select name="loaiGoiCuoc" value={formData.loaiGoiCuoc} onChange={handleChange} onBlur={handleBlur} required style={inputStyle}>
+                    <label className="label-custom">Loại gói cước <span className="text-error-600">*</span></label>
+                    <select name="loaiGoiCuoc" value={formData.loaiGoiCuoc} onChange={handleChange} onBlur={handleBlur} required className="input-field w-full" style={{ background: '#fff' }}>
                       <option value="">-- Chọn gói cước --</option>
                       {dropdowns.loaiGoiCuoc.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label style={labelStyle}>Hình thức sử dụng <span style={{ color: 'red' }}>*</span></label>
-                    <select name="hinhThucSD" value={formData.hinhThucSD} onChange={handleChange} onBlur={handleBlur} required style={inputStyle}>
+                    <label className="label-custom">Hình thức sử dụng <span className="text-error-600">*</span></label>
+                    <select name="hinhThucSD" value={formData.hinhThucSD} onChange={handleChange} onBlur={handleBlur} required className="input-field w-full" style={{ background: '#fff' }}>
                       <option value="">-- Chọn hình thức --</option>
                       {dropdowns.hinhThucSD.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                     </select>
@@ -356,8 +380,8 @@ export default function SaleForm() {
                 </div>
 
                 <div>
-                  <label style={labelStyle}>Mô tả nhu cầu <span style={{ color: 'red' }}>*</span></label>
-                  <textarea name="moTaNhuCau" value={formData.moTaNhuCau} onChange={handleChange} onBlur={handleBlur} required style={{ ...inputStyle, minHeight: '60px', resize: 'vertical' }} />
+                  <label className="label-custom">Mô tả nhu cầu <span className="text-error-600">*</span></label>
+                  <textarea name="moTaNhuCau" value={formData.moTaNhuCau} onChange={handleChange} onBlur={handleBlur} required className="input-field w-full" style={{ minHeight: '80px', resize: 'vertical', background: '#fff' }} />
                 </div>
               </div>
             </fieldset>
@@ -369,8 +393,8 @@ export default function SaleForm() {
                 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
                   <div>
-                    <label style={labelStyle}>Tên Sale phụ trách <span style={{ color: 'red' }}>*</span></label>
-                    <select name="tenSale" value={formData.tenSale} onChange={handleChange} onBlur={handleBlur} required style={inputStyle}>
+                    <label className="label-custom">Tên Sale phụ trách <span className="text-error-600">*</span></label>
+                    <select name="tenSale" value={formData.tenSale} onChange={handleChange} onBlur={handleBlur} required className="input-field w-full" style={{ background: '#fff' }}>
                       <option value="">-- Chọn Sale --</option>
                       {dropdowns.tenSale.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                     </select>
@@ -379,19 +403,19 @@ export default function SaleForm() {
 
                 <div style={gridStyle}>
                   <div>
-                    <label style={labelStyle}>Email phối hợp</label>
-                    <input type="email" name="emailPhoiHop" value={formData.emailPhoiHop} onChange={handleChange} onBlur={handleBlur} style={inputStyle} />
+                    <label className="label-custom">Email phối hợp</label>
+                    <input type="email" name="emailPhoiHop" value={formData.emailPhoiHop} onChange={handleChange} onBlur={handleBlur} className="input-field w-full" style={{ background: '#fff' }} />
                   </div>
                   <div>
-                    <label style={labelStyle}>Agent ID (nếu có)</label>
-                    <input type="text" name="agentId" value={formData.agentId} onChange={handleChange} onBlur={handleBlur} style={inputStyle} />
+                    <label className="label-custom">Agent ID (nếu có)</label>
+                    <input type="text" name="agentId" value={formData.agentId} onChange={handleChange} onBlur={handleBlur} className="input-field w-full" style={{ background: '#fff' }} />
                   </div>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
                   <div>
-                    <label style={labelStyle}>Số hợp đồng (nếu có sẵn)</label>
-                    <input type="text" name="soHopDong" value={formData.soHopDong} onChange={handleChange} onBlur={handleBlur} style={inputStyle} />
+                    <label className="label-custom">Số hợp đồng (nếu có sẵn)</label>
+                    <input type="text" name="soHopDong" value={formData.soHopDong} onChange={handleChange} onBlur={handleBlur} className="input-field w-full" style={{ background: '#fff' }} />
                   </div>
                 </div>
 
@@ -405,8 +429,7 @@ export default function SaleForm() {
               style={{ 
                 marginTop: '16px',
                 padding: '16px', 
-                borderRadius: '12px', 
-                fontSize: '17px', 
+                fontSize: '16px', 
                 fontWeight: 600,
                 width: '100%',
                 justifyContent: 'center',
@@ -418,19 +441,19 @@ export default function SaleForm() {
             </button>
             
             {successModalData && (
-              <div ref={successRef} style={{ marginTop: '24px', padding: '24px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '12px', textAlign: 'center', animation: 'fadeIn 0.5s' }}>
-                <div style={{ fontSize: '32px', marginBottom: '12px' }}>🎉</div>
-                <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#166534', marginBottom: '8px' }}>Tạo phiếu thành công!</h3>
-                <p style={{ color: '#15803d', fontSize: '14.5px', marginBottom: '16px' }}>Đã tạo thành công Hợp đồng, yêu cầu cập nhật thông tin hợp đồng và dịch vụ tương ứng.</p>
-                <p style={{ color: '#166534', marginBottom: '8px', fontWeight: 600 }}>Mã phiếu yêu cầu của bạn là:</p>
-                <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--primary-700)', marginBottom: '20px', letterSpacing: '1px' }}>{successModalData}</div>
+              <div ref={successRef} className="animate-fade-in-down" style={{ marginTop: '24px', padding: '32px', background: 'var(--success-50)', border: '1px solid var(--success-200)', borderRadius: 'var(--radius-lg)', textAlign: 'center' }}>
+                <div style={{ fontSize: '40px', marginBottom: '16px' }}>🎉</div>
+                <h3 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--success-700)', marginBottom: '8px' }}>Tạo phiếu thành công!</h3>
+                <p style={{ color: 'var(--success-600)', fontSize: '15px', marginBottom: '24px' }}>Đã tạo thành công Hợp đồng, yêu cầu cập nhật thông tin hợp đồng và dịch vụ tương ứng.</p>
+                <p style={{ color: 'var(--success-700)', marginBottom: '8px', fontWeight: 600 }}>Mã phiếu yêu cầu của bạn là:</p>
+                <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--primary-700)', marginBottom: '24px', letterSpacing: '1px' }}>{successModalData}</div>
                 
                 <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', position: 'relative' }}>
-                  <button type="button" onClick={handleCopy} style={{ padding: '10px 24px', background: 'var(--primary-700)', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <button type="button" onClick={handleCopy} className="btn btn-primary" style={{ padding: '12px 32px' }}>
                     Copy Mã Phiếu
                   </button>
                   {copyToast && (
-                    <div style={{ position: 'absolute', bottom: '-40px', left: '50%', transform: 'translateX(-50%)', background: '#333', color: '#fff', padding: '6px 12px', borderRadius: '20px', fontSize: '12px', whiteSpace: 'nowrap', animation: 'fadeIn 0.2s' }}>
+                    <div className="animate-fade-in" style={{ position: 'absolute', bottom: '-40px', left: '50%', transform: 'translateX(-50%)', background: 'var(--neutral-800)', color: '#fff', padding: '6px 16px', borderRadius: '20px', fontSize: '13px', whiteSpace: 'nowrap' }}>
                       Đã copy!
                     </div>
                   )}
@@ -448,53 +471,33 @@ export default function SaleForm() {
 // Reusable Styles
 const toggleBtnStyle = {
   padding: '10px 24px',
-  borderRadius: '10px',
-  fontSize: '15px',
+  borderRadius: 'var(--radius-md)',
+  fontSize: '14px',
   fontWeight: 600,
   border: 'none',
   cursor: 'pointer',
-  transition: 'all 0.2s ease',
+  transition: 'var(--transition-fast)',
   minWidth: '140px'
 };
 
 const fieldsetStyle = {
-  border: '1px solid #e5e5ea', 
-  borderRadius: '12px', 
+  border: '1px solid var(--neutral-200)', 
+  borderRadius: 'var(--radius-lg)', 
   padding: '24px', 
-  background: '#fafafa'
+  background: 'var(--neutral-50)'
 };
 
 const legendStyle = {
   fontWeight: 600, 
   padding: '0 12px', 
-  color: '#1d1d1f',
-  fontSize: '16px'
-};
-
-const labelStyle = {
-  display: 'block', 
-  fontSize: '14px', 
-  marginBottom: '8px', 
-  fontWeight: 500,
-  color: '#1d1d1f'
+  color: 'var(--primary-700)',
+  fontSize: '15px'
 };
 
 const gridStyle = {
   display: 'grid', 
-  gridTemplateColumns: '1fr 1fr', 
+  gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', 
   gap: '16px'
-};
-
-const inputStyle = {
-  width: '100%',
-  padding: '12px 14px',
-  borderRadius: '10px',
-  border: '1px solid #d2d2d7',
-  fontSize: '15px',
-  outline: 'none',
-  transition: 'border-color 0.2s, box-shadow 0.2s',
-  backgroundColor: '#fff',
-  color: '#1d1d1f'
 };
 
 const chipGridStyle = {
@@ -504,17 +507,18 @@ const chipGridStyle = {
 };
 
 const chipStyle = {
-  padding: '10px 14px',
-  borderRadius: '8px',
+  padding: '8px 12px',
+  borderRadius: '6px',
   fontSize: '13px',
   fontWeight: 500,
   cursor: 'pointer',
-  textAlign: 'left' as const,
-  transition: 'all 0.2s ease'
+  textAlign: 'center' as const,
+  transition: 'var(--transition-fast)',
+  boxShadow: 'var(--shadow-sm)'
 };
 
 const errorTextStyle = {
-  color: '#dc2626',
+  color: 'var(--error-600)',
   fontSize: '12px',
   marginTop: '4px',
   display: 'block',

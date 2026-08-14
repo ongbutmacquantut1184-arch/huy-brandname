@@ -166,6 +166,17 @@ export default function BaoCaoPage() {
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       
+      <div className="page-header">
+        <div>
+          <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 800, color: 'var(--neutral-900)', margin: '0 0 4px 0' }}>
+            Báo cáo hủy
+          </h1>
+          <p style={{ fontSize: 'var(--text-sm)', color: 'var(--neutral-500)', margin: 0 }}>
+            Tổng hợp và xuất báo cáo hủy dịch vụ theo tháng
+          </p>
+        </div>
+      </div>
+
       {/* Top Column: Filters (Collapsible) */}
       <div className="card-container p-0" style={{ overflow: 'hidden' }}>
         <div 

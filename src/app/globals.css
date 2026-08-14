@@ -1,72 +1,107 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
 :root {
   /* ========================================================
      1. DESIGN TOKENS
      ======================================================== */
   
-  /* Primary Brand: Supabase Emerald */
-  --primary-50: color-mix(in srgb, var(--primary-600) 10%, white);
-  --primary-100: color-mix(in srgb, var(--primary-600) 20%, white);
-  --primary-200: color-mix(in srgb, var(--primary-600) 30%, white);
-  --primary-300: color-mix(in srgb, var(--primary-600) 50%, white);
-  --primary-400: color-mix(in srgb, var(--primary-600) 70%, white);
-  --primary-500: color-mix(in srgb, var(--primary-600) 85%, white);
-  --primary-600: #24b47e; /* Supabase Brand - Tùy chỉnh qua JS */
-  --primary-700: color-mix(in srgb, var(--primary-600) 80%, black);
-  --primary-800: color-mix(in srgb, var(--primary-600) 60%, black);
-  --primary-900: color-mix(in srgb, var(--primary-600) 40%, black);
+  /* 7-Eleven Brand Colors */
+  --brand-green: #007341;
+  --brand-red: #E31837;
+  --brand-orange: #F47920;
 
-  /* Secondary Tones: Teal & Indigo */
-  --teal-50: #f0fdfa;
-  --teal-100: #ccfbf1;
-  --teal-500: #14b8a6;
-  --teal-600: #0d9488;
-  --teal-700: #0f766e;
+  /* Primary Brand: 7-Eleven Green */
+  --primary-base: var(--brand-green);
+  --accent-base: var(--brand-orange);
+  --alert-base: var(--brand-red);
   
-  --indigo-50: #eef2ff;
-  --indigo-100: #e0e7ff;
-  --indigo-500: #6366f1;
-  --indigo-600: #4f46e5;
-  --indigo-700: #4338ca;
+  --primary-50: color-mix(in srgb, var(--primary-base) 10%, white);
+  --primary-100: color-mix(in srgb, var(--primary-base) 20%, white);
+  --primary-200: color-mix(in srgb, var(--primary-base) 30%, white);
+  --primary-300: color-mix(in srgb, var(--primary-base) 50%, white);
+  --primary-400: color-mix(in srgb, var(--primary-base) 70%, white);
+  --primary-500: color-mix(in srgb, var(--primary-base) 85%, white);
+  --primary-600: var(--primary-base);
+  --primary-700: color-mix(in srgb, var(--primary-base) 80%, black);
+  --primary-800: color-mix(in srgb, var(--primary-base) 60%, black);
+  --primary-900: color-mix(in srgb, var(--primary-base) 40%, black);
 
-  /* Neutrals: Cool Slate */
-  --neutral-50: #fafafa;
-  --neutral-100: #ffffff;
-  --neutral-200: #eaeaea;
-  --neutral-300: #888888;
-  --neutral-500: #666666;
-  --neutral-600: #444444;
-  --neutral-700: #111111;
-  --neutral-800: #000000;
-  --neutral-900: #000000;
+  /* Extended Palette */
+  --emerald-50:  #ECFDF5; --emerald-500: #10B981; --emerald-600: #059669; --emerald-700: #047857;
+  --amber-50:    #FFFBEB; --amber-500: #F59E0B; --amber-600: #D97706; --amber-700: #B45309;
+  --rose-50:     #FFF1F2; --rose-500: #F43F5E; --rose-600: #E11D48; --rose-700: #BE123C;
+  --cyan-50:     #ECFEFF; --cyan-500: #06B6D4; --cyan-600: #0891B2; --cyan-700: #0E7490;
 
-  /* MÀU TRẠNG THÁI (Supabase Style) */
-  --success-50: #e8fcf1;
-  --success-600: #24b47e; /* Supabase Brand Green */
-  --warning-50: #fff9e6;
-  --warning-600: #f5a623;
-  --error-50: #ffeef0;
-  --error-600: #e30000;
-  --info-50: #ebf5ff;
-  --info-600: #0070f3;
+  /* Neutrals: Slate Navy (Chống mỏi mắt) */
+  --neutral-25:  #FAFAFC;
+  --neutral-50:  #F6F8FA;
+  --neutral-100: #EEF1F5;
+  --neutral-200: #D8DEE4;
+  --neutral-300: #B4BCC6;
+  --neutral-400: #8C95A0;
+  --neutral-500: #6B7280;
+  --neutral-600: #4B5563; /* Đọc dữ liệu dài */
+  --neutral-700: #374151; /* Heading phụ */
+  --neutral-800: #1F2937;
+  --neutral-900: #0F172A; /* Heading chính */
 
-  /* BÓNG ĐỔ (Supabase/Vercel Shadows) */
-  --shadow-xs: 0px 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-sm: 0px 2px 4px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0px 4px 14px 0 rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0px 8px 30px rgba(0, 0, 0, 0.12);
-  --shadow-xl: 0px 30px 60px rgba(0, 0, 0, 0.12);
+  /* Semantic Status Colors */
+  --success-50:  var(--emerald-50);
+  --success-500: var(--emerald-500);
+  --success-600: var(--emerald-600);
+  
+  --warning-50:  color-mix(in srgb, var(--brand-orange) 15%, white);
+  --warning-500: var(--brand-orange);
+  --warning-600: color-mix(in srgb, var(--brand-orange) 80%, black);
+  
+  --error-50:    color-mix(in srgb, var(--brand-red) 10%, white);
+  --error-500:   var(--brand-red);
+  --error-600:   color-mix(in srgb, var(--brand-red) 85%, black);
+  
+  --info-50:     var(--cyan-50);
+  --info-500:    var(--cyan-500);
+  --info-600:    var(--cyan-600);
 
-  /* ĐỘ BO GÓC (Vercel uses tight radius) */
+  /* Typography */
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'SF Mono', 'JetBrains Mono', 'Fira Code', monospace;
+  
+  --line-height-relaxed: 1.6;
+  --tracking-tight: -0.015em;
+  --tracking-normal: 0;
+
+  /* Spacing Scale (4px base) */
+  --space-0:  0;    --space-1:  4px;  --space-2:  8px;
+  --space-3:  12px; --space-4:  16px; --space-5:  20px;
+  --space-6:  24px; --space-7:  28px; --space-8:  32px;
+  --space-10: 40px; --space-12: 48px; --space-16: 64px;
+
+  /* Layout */
+  --sidebar-width-expanded: 260px;
+  --sidebar-width-collapsed: 72px;
+  --topbar-height: 56px;
+  --sidebar-width: var(--sidebar-width-expanded);
+
+  /* Border Radius */
   --radius-xs: 4px;
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
+  --radius-2xl: 20px;
   --radius-full: 9999px;
 
-  /* CHUYỂN ĐỘNG */
-  --transition-fast: all 0.15s ease;
-  --transition-normal: all 0.2s ease;
+  /* Shadows (Multi-layer Stripe style) */
+  --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.08), 0 1px 2px -1px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+  --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+
+  /* Transitions */
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* ========================================================
@@ -79,12 +114,18 @@
 }
 
 body {
-  font-family: var(--font-geist-sans), var(--font-primary), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  background-color: var(--neutral-50);
-  color: var(--neutral-700);
-  line-height: 1.5;
+  font-family: var(--font-sans);
+  background-color: var(--neutral-25);
+  color: var(--neutral-600); /* Đọc dịu mắt */
+  line-height: var(--line-height-relaxed);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--neutral-900);
+  font-weight: 600;
+  letter-spacing: var(--tracking-tight);
 }
 
 a {
@@ -101,15 +142,25 @@ input[type="checkbox"] {
 
 /* Animations */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 .animate-fade-in {
-  animation: fadeIn 0.4s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+  animation: fadeIn 0.3s var(--ease-out) forwards;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.2); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
 /* ========================================================
-   3. UI COMPONENTS
+   3. BASE UI COMPONENTS (Legacy Support)
    ======================================================== */
 
 /* Button */
@@ -117,13 +168,13 @@ input[type="checkbox"] {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 16px;
+  padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-sm);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: var(--transition-fast);
-  gap: 8px;
+  transition: all var(--duration-fast) var(--ease-out);
+  gap: var(--space-2);
   white-space: nowrap;
 }
 
@@ -137,24 +188,25 @@ input[type="checkbox"] {
 .btn-primary:hover {
   background-color: var(--primary-700);
   border-color: var(--primary-700);
-  color: #ffffff;
   box-shadow: var(--shadow-md);
+  color: #ffffff;
 }
 
 .btn-secondary {
-  background-color: var(--neutral-100);
+  background-color: #ffffff;
   color: var(--neutral-700);
   border: 1px solid var(--neutral-200);
+  box-shadow: var(--shadow-xs);
 }
 
 .btn-secondary:hover {
   background-color: var(--neutral-50);
-  color: var(--neutral-900);
   border-color: var(--neutral-300);
+  color: var(--neutral-900);
 }
 
 .btn-danger {
-  background-color: white;
+  background-color: #ffffff;
   color: var(--error-600);
   border: 1px solid var(--neutral-200);
 }
@@ -166,11 +218,11 @@ input[type="checkbox"] {
 
 /* Card */
 .card-container {
-  background: var(--neutral-100);
+  background: #ffffff;
   border: 1px solid var(--neutral-200);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
-  transition: var(--transition-normal);
+  transition: all var(--duration-normal) var(--ease-out);
 }
 
 .card-container:hover {
@@ -181,67 +233,51 @@ input[type="checkbox"] {
 /* Input Field */
 .input-field {
   width: 100%;
-  padding: 11px 16px;
-  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--neutral-300);
   font-size: 14px;
   color: var(--neutral-900);
-  background-color: #FFFFFF;
-  transition: var(--transition-fast);
+  background-color: #ffffff;
+  transition: all var(--duration-fast) var(--ease-out);
   outline: none;
   box-shadow: var(--shadow-xs);
-  font-family: inherit;
+  font-family: var(--font-sans);
 }
 .input-field:focus {
   border-color: var(--primary-500);
-  box-shadow: 0 0 0 4px var(--primary-100);
+  box-shadow: 0 0 0 3px var(--primary-100);
 }
 .input-field::placeholder {
-  color: var(--neutral-500);
-}
-input[type="month"]::-webkit-calendar-picker-indicator,
-input[type="date"]::-webkit-calendar-picker-indicator {
-  cursor: pointer;
+  color: var(--neutral-400);
 }
 
-/* Card Container */
-.card-container {
-  background: #FFFFFF;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--neutral-200);
-  overflow: hidden;
-  transition: var(--transition-normal);
-}
-.card-container:hover {
-  box-shadow: var(--shadow-md);
-  border-color: var(--neutral-300);
-}
-
-/* Custom Table */
+/* Custom Table (Legacy style) */
 .custom-table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
+  font-size: 13px;
 }
 .custom-table th {
-  background-color: var(--neutral-100);
-  color: var(--neutral-600);
+  background-color: var(--neutral-50);
+  color: var(--neutral-500);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
-  padding: 14px 16px;
-  border-bottom: 1.5px solid var(--neutral-200);
+  letter-spacing: 0.05em;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--neutral-200);
   text-align: left;
 }
 .custom-table td {
-  padding: 14px 16px;
-  font-size: 14px;
+  padding: var(--space-3) var(--space-4);
   color: var(--neutral-700);
-  border-bottom: 1px solid var(--neutral-200);
+  border-bottom: 1px solid var(--neutral-100);
+  vertical-align: middle;
 }
 .custom-table tbody tr {
-  transition: background-color 0.2s ease;
+  transition: background-color var(--duration-fast) ease;
 }
 .custom-table tbody tr:hover td {
   background-color: var(--primary-50);
@@ -250,16 +286,16 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 /* Custom Checkbox */
 .custom-checkbox {
   appearance: none;
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border: 1px solid var(--neutral-300);
   border-radius: var(--radius-xs);
   outline: none;
   cursor: pointer;
   display: inline-grid;
   place-content: center;
-  background-color: #FFFFFF;
-  transition: var(--transition-fast);
+  background-color: #ffffff;
+  transition: all var(--duration-fast);
 }
 .custom-checkbox:checked {
   background-color: var(--primary-600);
@@ -270,18 +306,18 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   width: 10px;
   height: 10px;
   clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
-  background-color: #FFFFFF;
+  background-color: #ffffff;
   transform: scale(1.1);
 }
 
-/* Badges - Supabase Style */
+/* Badges */
 .badge-custom {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 4px 12px 4px 8px; /* Asymmetric padding to visually center text next to the dot */
-  border-radius: 999px;
+  padding: 4px 10px 4px 6px;
+  border-radius: var(--radius-full);
   font-size: 12px;
   font-weight: 500;
   white-space: nowrap;
@@ -298,52 +334,78 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .badge-success {
   background-color: var(--success-50);
   color: var(--success-600);
-  border: 1px solid rgba(36, 180, 126, 0.2);
+  border: 1px solid color-mix(in srgb, var(--success-600) 20%, transparent);
 }
-.badge-success::before { background-color: var(--success-600); }
+.badge-success::before { background-color: var(--success-500); }
 
 .badge-warning {
   background-color: var(--warning-50);
   color: var(--warning-600);
-  border: 1px solid rgba(245, 166, 35, 0.2);
+  border: 1px solid color-mix(in srgb, var(--warning-600) 20%, transparent);
 }
-.badge-warning::before { background-color: var(--warning-600); }
+.badge-warning::before { background-color: var(--warning-500); }
 
 .badge-error {
   background-color: var(--error-50);
   color: var(--error-600);
-  border: 1px solid rgba(227, 0, 0, 0.2);
+  border: 1px solid color-mix(in srgb, var(--error-600) 20%, transparent);
 }
-.badge-error::before { background-color: var(--error-600); }
+.badge-error::before { background-color: var(--error-500); }
 
 .badge-info {
   background-color: var(--info-50);
   color: var(--info-600);
-  border: 1px solid rgba(0, 112, 243, 0.2);
+  border: 1px solid color-mix(in srgb, var(--info-600) 20%, transparent);
 }
-.badge-info::before { background-color: var(--info-600); }
+.badge-info::before { background-color: var(--info-500); }
 
-/* Table Reset for Accordion */
+.badge-default {
+  background-color: var(--neutral-100);
+  color: var(--neutral-600);
+  border: 1px solid var(--neutral-200);
+}
+.badge-default::before { background-color: var(--neutral-400); }
+
+/* Accordion Row */
 .accordion-row {
-  animation: fadeIn 0.3s ease;
+  animation: fadeIn 0.2s ease;
 }
 .accordion-row > td {
   padding: 0 !important;
-  border-bottom: 1px solid var(--neutral-200);
-}
-.badge-default {
   background-color: var(--neutral-50);
-  color: var(--neutral-600);
+}
+
+/* Modal Overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(15, 23, 42, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease;
+}
+.modal-content {
+  background: #ffffff;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  padding: var(--space-6);
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 /* ========================================================
    4. UTILITIES
    ======================================================== */
+.text-xs { font-size: 12px; }
 .text-sm { font-size: 13px; }
 .text-base { font-size: 14px; }
 .text-lg { font-size: 16px; }
 .text-xl { font-size: 20px; }
-.text-2xl { font-size: 28px; }
+.text-2xl { font-size: 24px; }
+.text-3xl { font-size: 30px; }
 
 .font-medium { font-weight: 500; }
 .font-semibold { font-weight: 600; }
@@ -363,11 +425,13 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .flex-1 { flex: 1 1 0%; }
 .flex-wrap { flex-wrap: wrap; }
 
+.gap-1 { gap: 4px; }
 .gap-2 { gap: 8px; }
 .gap-3 { gap: 12px; }
 .gap-4 { gap: 16px; }
 .gap-6 { gap: 24px; }
 
+.p-2 { padding: 8px; }
 .p-4 { padding: 16px; }
 .p-6 { padding: 24px; }
 .p-8 { padding: 32px; }
@@ -376,23 +440,33 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .mb-4 { margin-bottom: 16px; }
 .mb-6 { margin-bottom: 24px; }
 
-/* Modal Overlay & Box styling can reuse shadow-xl and radius-xl */
-.modal-overlay {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(16, 24, 40, 0.4);
+/* Main App Layout Classes */
+.app-layout {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-  backdrop-filter: blur(4px);
-}
-.modal-content {
-  background: var(--neutral-100);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-xl);
-  padding: 32px;
-  max-height: 90vh;
-  overflow-y: auto;
+  min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden;
 }
 
+.main-content {
+  flex: 1;
+  margin-left: var(--sidebar-width);
+  transition: margin-left var(--duration-normal) var(--ease-out);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.page-container {
+  padding: var(--space-6) var(--space-8);
+  max-width: 1440px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-6);
+}

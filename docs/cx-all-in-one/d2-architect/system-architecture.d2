@@ -1,0 +1,111 @@
+direction: right
+
+users: {
+  shape: person
+  label: "Nguoi dung noi bo"
+}
+
+browser: {
+  label: "Browser"
+  sale: "Sale form"
+  cs: "CS activation"
+  cx: "CX management"
+  cancel: "Cancellation entry"
+  report: "Provider report"
+}
+
+next_app: {
+  label: "Next.js app"
+
+  pages: {
+    label: "App pages"
+    dashboard: "cx/dashboard"
+    customers: "cx/customers"
+    requests: "cx/requests"
+    contracts: "cx/contracts"
+    services: "cx/services"
+    settings: "cx/settings"
+    history: "cx/history"
+    nhap_huy: "nhap-huy"
+    tra_cuu: "tra-cuu"
+    bao_cao: "bao-cao"
+  }
+
+  actions: {
+    label: "Server actions"
+    cx_actions: "src/lib/cx-actions.ts"
+    create_request: "createPendingRequest"
+    activate: "activateRequest"
+    contracts: "create update renew contract"
+    services: "create update renew service"
+    customer360: "Customer 360 and overview"
+  }
+
+  api: {
+    label: "API routes"
+    lookup: "api/lookup"
+    cancellation: "api/cancellations"
+    overlap: "api/cancellations/overlap"
+    reports: "api/reports"
+    master: "api/master-data"
+    providers: "api/providers"
+    cron: "api/cron/auto-renew"
+  }
+}
+
+supabase: {
+  shape: cylinder
+  label: "Supabase"
+
+  cx: {
+    label: "CX tables"
+    requests: "cx_requests"
+    customers: "cx_customers"
+    contracts: "cx_contracts"
+    services: "cx_services"
+    logs: "cx_activity_logs"
+    config: "cx_config"
+    services_view: "vw_cx_services_details"
+  }
+
+  cancellation: {
+    label: "Cancellation tables"
+    users: "users"
+    owners: "owners"
+    cps: "cps"
+    brands: "brands"
+    operators: "operators"
+    providers: "providers"
+    mapping: "operator_provider_map"
+    cancellations: "cancellations"
+    details: "cancellation_details"
+  }
+
+  rpc: {
+    label: "RPC and indexes"
+    monthly_id: "generate_monthly_id"
+    sequence_id: "generate_sequence_id"
+    search: "search_customers_fast"
+    create_contract_services: "create_contract_with_services"
+  }
+}
+
+external: {
+  label: "External systems"
+  sheets: "Google Sheets Apps Script"
+  scheduler: "Cron scheduler"
+}
+
+users -> browser: "Use internal workflows"
+browser -> next_app.pages: "Navigate pages"
+next_app.pages -> next_app.actions: "Call server actions"
+next_app.pages -> next_app.api: "Call API routes"
+next_app.actions -> supabase.cx: "Read and write CX data"
+next_app.actions -> supabase.rpc: "Generate IDs and search"
+next_app.api -> supabase.cancellation: "Read and write cancellation data"
+next_app.api -> supabase.cx.services: "Cancel matching services"
+next_app.api -> supabase.cx.logs: "Write activity logs"
+next_app.api.cron -> next_app.actions.cx_actions: "Process auto renew"
+external.scheduler -> next_app.api.cron: "Scheduled GET"
+next_app.api.cancellation -> external.sheets: "Async sync when configured"
+next_app.api.reports -> supabase.cancellation: "Aggregate by provider and operator"

@@ -127,16 +127,26 @@ CREATE TABLE cx_customers (
     mo_ta_nhu_cau_tu_sale TEXT,
     ngay_bat_dau_sd DATE,
     ngay_het_han_hien_tai DATE,
-    email_tao_tk TEXT,
     so_dien_thoai TEXT,
     contact_phoi_hop TEXT,
-    ten_tai_khoan TEXT,
-    mat_khau TEXT,
     customer_success TEXT,
-    customer_support TEXT,
     sale_phu_trach TEXT,
     note TEXT,
     lock_nguyen_nhan TEXT,
+    created_by TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+    updated_by TEXT,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+
+CREATE TABLE cx_accounts (
+    account_id TEXT PRIMARY KEY,
+    customer_id TEXT REFERENCES cx_customers(customer_id) ON DELETE CASCADE,
+    ten_tai_khoan TEXT,
+    mat_khau TEXT,
+    email_tao_tk TEXT,
+    trang_thai TEXT,
+    ngay_het_han DATE,
     created_by TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
     updated_by TEXT,
@@ -167,6 +177,7 @@ CREATE TABLE cx_contracts (
 CREATE TABLE cx_services (
     service_id TEXT PRIMARY KEY,
     customer_id TEXT REFERENCES cx_customers(customer_id) ON DELETE CASCADE,
+    account_id TEXT REFERENCES cx_accounts(account_id) ON DELETE SET NULL,
     contract_id TEXT REFERENCES cx_contracts(contract_id) ON DELETE SET NULL,
     brand_id TEXT REFERENCES brands(id) ON DELETE SET NULL,
     cp_id TEXT REFERENCES cps(id) ON DELETE SET NULL,
@@ -193,7 +204,7 @@ CREATE TABLE cx_services (
     trang_thai TEXT,
     ngay_bat_dau DATE,
     ngay_het_han DATE,
-    sup_phu_trach TEXT,
+    customer_support TEXT,
     ghi_chu TEXT,
     created_by TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
@@ -219,10 +230,11 @@ CREATE TABLE cx_config (
     description TEXT
 );
 
-ALTER PUBLICATION supabase_realtime ADD TABLE cx_requests, cx_customers, cx_contracts, cx_services;
+ALTER PUBLICATION supabase_realtime ADD TABLE cx_requests, cx_customers, cx_accounts, cx_contracts, cx_services;
 
 ALTER TABLE cx_requests DISABLE ROW LEVEL SECURITY;
 ALTER TABLE cx_customers DISABLE ROW LEVEL SECURITY;
+ALTER TABLE cx_accounts DISABLE ROW LEVEL SECURITY;
 ALTER TABLE cx_contracts DISABLE ROW LEVEL SECURITY;
 ALTER TABLE cx_services DISABLE ROW LEVEL SECURITY;
 ALTER TABLE cx_activity_logs DISABLE ROW LEVEL SECURITY;

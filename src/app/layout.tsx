@@ -22,7 +22,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi" className={plusJakartaSans.variable}>
-      <body style={{ display: 'flex', minHeight: '100vh', margin: 0 }}>
+      <body>
         <ClientLayout>
           {children}
         </ClientLayout>

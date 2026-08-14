@@ -108,11 +108,17 @@ export async function getPendingRequests() {
   return { success: true, data };
 }
 
-export async function getContracts() {
-  const { data: contracts, error } = await supabase
-    .from('cx_contracts')
-    .select('*')
-    .order('created_at', { ascending: false });
+export async function getContracts(page: number = 1, limit: number = 50, search: string = '') {
+  let query = supabase.from('cx_contracts').select('*, cx_customers!inner(org_id)', { count: 'exact' });
+  if (search) {
+    query = query.or(`contract_id.ilike.%${search}%,so_hop_dong.ilike.%${search}%`);
+  }
+  const from = (page - 1) * limit;
+  const to = from + limit - 1;
+
+  const { data: contracts, count, error } = await query
+    .order('org_id', { referencedTable: 'cx_customers', ascending: true, nullsFirst: false })
+    .range(from, to);
 
   if (error) return { success: false, error: error.message };
   
@@ -147,20 +153,38 @@ export async function getContracts() {
       total_services: srvMap[c.contract_id] || 0
     }));
 
-    return { success: true, data: mapped };
+    return { 
+      success: true, 
+      data: mapped, 
+      totalRecords: count || 0,
+      totalPages: count ? Math.ceil(count / limit) : 0,
+      currentPage: page
+    };
   }
 
-  return { success: true, data: [] };
+  return { success: true, data: [], totalRecords: 0, totalPages: 0, currentPage: page };
 }
 
-export async function getServices() {
-  const { data, error } = await supabase
-    .from('cx_services')
-    .select('*, cx_customers(ten_cong_ty, org_id, customer_support)')
-    .order('created_at', { ascending: false });
+export async function getServices(page: number = 1, limit: number = 50, search: string = '') {
+  let query = supabase.from('cx_services').select('*, cx_customers!inner(ten_cong_ty, org_id)', { count: 'exact' });
+  if (search) {
+    query = query.or(`service_id.ilike.%${search}%,channel.ilike.%${search}%,brand_name_oa.ilike.%${search}%`);
+  }
+  const from = (page - 1) * limit;
+  const to = from + limit - 1;
+
+  const { data, count, error } = await query
+    .order('org_id', { referencedTable: 'cx_customers', ascending: true, nullsFirst: false })
+    .range(from, to);
 
   if (error) return { success: false, error: error.message };
-  return { success: true, data };
+  return { 
+    success: true, 
+    data,
+    totalRecords: count || 0,
+    totalPages: count ? Math.ceil(count / limit) : 0,
+    currentPage: page
+  };
 }
 
 export async function getBrands() {
@@ -241,19 +265,30 @@ export async function activateRequest(data: any) {
       mo_ta_nhu_cau_tu_sale: req.mo_ta_nhu_cau,
       ngay_bat_dau_sd: req.ngay_bat_dau,
       ngay_het_han_hien_tai: req.ngay_ket_thuc,
-      email_tao_tk: req.email_tao_tk,
       so_dien_thoai: data.soDienThoai || req.so_dien_thoai,
       contact_phoi_hop: req.email_phoi_hop,
-      ten_tai_khoan: data.tenTaiKhoan,
-      mat_khau: data.matKhau,
       customer_success: data.customerSuccess,
-      customer_support: data.customerSupport,
       sale_phu_trach: data.tenSale || data.salePhuTrach || req.ten_sale,
       created_by: data.actorEmail || req.sale_email,
     };
 
     const { error: err1 } = await supabase.from('cx_customers').insert([custData]);
     if (err1) throw err1;
+
+    // 4.5 Insert Account
+    const accountId = `ACC-${customerId}`;
+    const accData = {
+      account_id: accountId,
+      customer_id: customerId,
+      ten_tai_khoan: data.tenTaiKhoan,
+      mat_khau: data.matKhau,
+      email_tao_tk: req.email_tao_tk,
+      trang_thai: 'Active',
+      ngay_het_han: req.ngay_ket_thuc,
+      created_by: data.actorEmail || req.sale_email,
+    };
+    const { error: errAcc } = await supabase.from('cx_accounts').insert([accData]);
+    if (errAcc) throw errAcc;
 
     // 5. Insert Contract
     const contractData = {
@@ -297,6 +332,7 @@ export async function activateRequest(data: any) {
         for (const channel of channels) {
           const svcData = {
             customerId: customerId,
+            accountId: accountId,
             contractId: contractId,
             channel: channel,
             loaiDichVu: req.loai_yeu_cau,
@@ -307,6 +343,7 @@ export async function activateRequest(data: any) {
             cpNameCode: data.cpid || req.cpid,
             actorEmail: data.actorEmail || req.sale_email,
             trangThai: 'Pending',
+            customerSupport: data.customerSupport,
           };
           await createService(svcData);
           createdServicesCount++;
@@ -348,7 +385,7 @@ export async function createContractWithServices(data: any) {
       brand_name_oa: svc.brandNameOA,
       ngay_bat_dau: svc.ngayBatDau,
       ngay_het_han: svc.ngayHetHan,
-      sup_phu_trach: svc.supPhuTrach,
+      customer_support: svc.customerSupport || svc.supPhuTrach,
       trang_thai: 'Active'
     }));
 
@@ -488,6 +525,7 @@ export async function createService(data: any) {
     const svcData = {
       service_id: serviceId,
       customer_id: data.customerId,
+      account_id: data.accountId || null,
       contract_id: data.contractId || null,
       brand_id: brandId,
       cp_id: cpId,
@@ -514,7 +552,7 @@ export async function createService(data: any) {
       trang_thai: data.trangThai || 'Active',
       ngay_bat_dau: data.ngayBatDau,
       ngay_het_han: data.ngayHetHan,
-      sup_phu_trach: data.supPhuTrach,
+      customer_support: data.customerSupport || data.supPhuTrach,
       ghi_chu: data.ghiChu || '',
       created_by: data.actorEmail || 'system',
     };
@@ -640,7 +678,7 @@ export async function updateServiceInfo(data: any) {
       trang_thai: data.trangThai || 'Active',
       ngay_bat_dau: data.ngayBatDau,
       ngay_het_han: data.ngayHetHan,
-      sup_phu_trach: data.supPhuTrach,
+      customer_support: data.customerSupport || data.supPhuTrach,
       ghi_chu: data.ghiChu || '',
       updated_by: data.actorEmail || 'system',
       updated_at: new Date().toISOString()
@@ -690,13 +728,9 @@ export async function updateCustomerInfo(data: any) {
       mo_ta_nhu_cau_tu_sale: data.moTaNhuCauTuSale || '',
       ngay_bat_dau_sd: data.ngayBatDauSD || null,
       ngay_het_han_hien_tai: data.ngayHetHanHienTai || null,
-      email_tao_tk: data.emailTaoTK || '',
       so_dien_thoai: data.soDienThoai || '',
       contact_phoi_hop: data.contactPhoiHop || '',
-      ten_tai_khoan: data.tenTaiKhoan || '',
-      mat_khau: data.matKhau || '',
       customer_success: data.customerSuccess || '',
-      customer_support: data.customerSupport || '',
       sale_phu_trach: data.salePhuTrach || '',
       note: data.note || '',
       lock_nguyen_nhan: data.lockNguyenNhan || '',
@@ -944,12 +978,19 @@ export async function getCustomer360(customerId: string) {
   }
 }
 
-export async function getCustomersOverview() {
+export async function getCustomersOverview(page: number = 1, limit: number = 50, search: string = '') {
   try {
-    const { data: customers, error } = await supabase
-      .from('cx_customers')
-      .select('*')
-      .order('created_at', { ascending: false });
+    let query = supabase.from('cx_customers').select('*', { count: 'exact' });
+    if (search) {
+      query = query.or(`ten_cong_ty.ilike.%${search}%,org_id.ilike.%${search}%,customer_id.ilike.%${search}%`);
+    }
+    
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    const { data: customers, count, error } = await query
+      .order('org_id', { ascending: true, nullsFirst: false })
+      .range(from, to);
 
     if (error) throw error;
     
@@ -996,14 +1037,20 @@ export async function getCustomersOverview() {
         total_services: cServices.length,
         active_services: cServices.filter(s => s.trang_thai === 'Active').length,
         service_types: Array.from(new Set(cServices.map(s => s.loai_dich_vu).filter(Boolean))),
-        sup_phu_trach_list: Array.from(new Set(cServices.map(s => s.sup_phu_trach).filter(Boolean))),
+        sup_phu_trach_list: Array.from(new Set(cServices.map(s => s.customer_support).filter(Boolean))),
         service_expiries: cServices.map(s => s.effective_service_end || s.ngay_het_han).filter(Boolean),
         trang_thai: cServices.some(s => s.trang_thai === 'Active') ? 'Active' : 'Inactive',
         searchText
       };
     });
     
-    return { success: true, data: mapped };
+    return { 
+      success: true, 
+      data: mapped, 
+      totalRecords: count || 0,
+      totalPages: count ? Math.ceil(count / limit) : 0,
+      currentPage: page
+    };
   } catch (error: any) {
     console.error('getCustomersOverview error:', error);
     return { success: false, error: error.message };

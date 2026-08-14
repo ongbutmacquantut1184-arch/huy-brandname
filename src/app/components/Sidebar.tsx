@@ -5,19 +5,27 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
   FilePlus, Search, BarChart3, ChevronLeft, ChevronRight, 
-  Users, LayoutDashboard, UserPlus, FileText, Server, LogOut, UserCircle, History
+  Users, LayoutDashboard, UserPlus, FileText, Server, LogOut, UserCircle, History, X, Settings
 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/lib/supabase";
 
-export default function Sidebar() {
+interface SidebarProps {
+  mobileOpen?: boolean;
+  onCloseMobile?: () => void;
+}
+
+export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { userEmail, logout } = useAuth();
   const [pendingCount, setPendingCount] = useState(0);
 
   useEffect(() => {
-    document.documentElement.style.setProperty('--sidebar-width', isCollapsed ? '72px' : '240px');
+    document.documentElement.style.setProperty(
+      '--sidebar-width', 
+      isCollapsed ? 'var(--sidebar-width-collapsed)' : 'var(--sidebar-width-expanded)'
+    );
   }, [isCollapsed]);
 
   useEffect(() => {
@@ -27,7 +35,7 @@ export default function Sidebar() {
     }
     fetchPending();
     
-    // Đăng ký realtime lắng nghe thay đổi
+    // Realtime subscription
     const channel = supabase.channel('pending_services_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'cx_services' }, () => {
         fetchPending();
@@ -42,12 +50,12 @@ export default function Sidebar() {
       title: "Quản lý khách hàng",
       items: [
         { name: "Tổng quan", path: "/cx/dashboard", icon: LayoutDashboard },
-        { name: "Tra cứu Khách hàng", path: "/cx/customers", icon: Search },
-        { name: "Yêu cầu dịch vụ (Sale)", path: "/cx/tao-phieu-sale", icon: FilePlus },
-        { name: "Tạo tài khoản", path: "/cx/requests", icon: UserPlus },
+        { name: "Khách hàng", path: "/cx/customers", icon: Users },
+        { name: "Yêu cầu dịch vụ", path: "/cx/tao-phieu-sale", icon: FilePlus },
+        { name: "Duyệt TK", path: "/cx/requests", icon: UserPlus },
         { name: "Hợp đồng", path: "/cx/contracts", icon: FileText },
         { name: "Dịch vụ", path: "/cx/services", icon: Server, badge: pendingCount > 0 ? pendingCount : null },
-        { name: "Cấu hình hệ thống", path: "/cx/settings", icon: Server },
+        { name: "Cấu hình", path: "/cx/settings", icon: Settings },
       ]
     },
     {
@@ -61,173 +69,205 @@ export default function Sidebar() {
     {
       title: "Hệ thống",
       items: [
-        { name: "Lịch sử hoạt động", path: "/cx/history", icon: History }
+        { name: "Lịch sử", path: "/cx/history", icon: History }
       ]
     }
   ];
 
   return (
-    <aside style={{ 
-      width: isCollapsed ? '72px' : '240px', 
-      backgroundColor: 'var(--neutral-100)', 
-      borderRight: '1px solid var(--neutral-200)', 
-      padding: isCollapsed ? '24px 8px' : '24px 16px', 
-      display: 'flex', 
-      flexDirection: 'column',
-      height: '100vh',
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      transition: 'var(--transition-normal)',
-      zIndex: 100,
-      overflowY: 'auto'
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: isCollapsed ? 'center' : 'space-between', marginBottom: '32px', padding: isCollapsed ? '0' : '0 12px' }}>
-        {!isCollapsed && (
-          <div>
-            <h1 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--neutral-900)', margin: 0 }}>CX System</h1>
-            <p style={{ fontSize: '13px', color: 'var(--neutral-500)', margin: '4px 0 0 0' }}>All-in-one</p>
-          </div>
-        )}
-        <button 
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--neutral-500)', padding: '6px', borderRadius: '6px' }}
-          className="hover-bg-gray"
-        >
-          {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
-        </button>
-      </div>
-      
-      <nav style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-        {menuGroups.map((group, gIdx) => (
-          <div key={gIdx} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {!isCollapsed && (
-              <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--neutral-500)', textTransform: 'uppercase', padding: '0 12px', letterSpacing: '0.5px' }}>
-                {group.title}
-              </div>
-            )}
-            {isCollapsed && <div style={{ height: '1px', background: 'var(--neutral-200)', margin: '4px 12px' }} />}
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              {group.items.map(item => {
-                const isActive = pathname === item.path || (pathname === '/' && item.path === '/cx/dashboard');
-                const Icon = item.icon;
-                return (
-                  <Link 
-                    key={item.path}
-                    href={item.path} 
-                    className={`sidebar-link ${isActive ? 'active' : ''}`}
-                    title={isCollapsed ? item.name : undefined}
-                    style={{ position: 'relative' }}
-                  >
-                    <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
-                    {!isCollapsed && (
-                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</span>
-                        {(item as any).badge && (
-                          <span style={{ background: 'var(--error-500)', color: '#fff', fontSize: '11px', fontWeight: 700, padding: '2px 6px', borderRadius: '100px' }}>
-                            {(item as any).badge}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                    {isCollapsed && (item as any).badge && (
-                      <span style={{ position: 'absolute', top: '6px', right: '6px', width: '8px', height: '8px', background: 'var(--error-500)', borderRadius: '50%' }} />
-                    )}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        ))}
-      </nav>
+    <>
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div 
+          className="modal-overlay"
+          onClick={onCloseMobile} 
+          style={{ zIndex: 45 }}
+        />
+      )}
 
-      <div style={{ marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid var(--neutral-200)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        {/* THEME PICKER */}
-        {!isCollapsed && (
-          <div style={{ padding: '0 12px', marginBottom: '8px' }}>
-            <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--neutral-500)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>
-              Màu Giao Diện
+      <aside className={`sidebar ${mobileOpen ? 'mobile-open' : ''} ${isCollapsed ? 'collapsed' : ''}`} style={{ 
+        width: isCollapsed ? 'var(--sidebar-width-collapsed)' : 'var(--sidebar-width-expanded)', 
+        backgroundColor: 'var(--neutral-50)', 
+        borderRight: '1px solid var(--neutral-200)', 
+        padding: isCollapsed ? 'var(--space-6) var(--space-2)' : 'var(--space-6) var(--space-4)', 
+        display: 'flex', 
+        flexDirection: 'column',
+        height: '100vh',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        transition: 'width var(--duration-normal) var(--ease-out), transform var(--duration-normal)',
+        zIndex: 50,
+        overflowY: 'auto',
+      }}>
+        <div style={{ 
+          display: 'flex', alignItems: 'center', 
+          justifyContent: isCollapsed ? 'center' : 'space-between', 
+          marginBottom: 'var(--space-8)', 
+          padding: isCollapsed ? '0' : '0 var(--space-3)' 
+        }}>
+          {!isCollapsed && (
+            <div>
+              <h1 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--neutral-900)', margin: 0, letterSpacing: 'var(--tracking-tight)' }}>
+                CX System
+              </h1>
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--primary-600)', margin: '2px 0 0 0', fontWeight: 600 }}>All-in-one</p>
             </div>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              {['#24b47e', '#0070f3', '#f5a623', '#e30000', '#6366f1'].map(color => (
-                <button
-                  key={color}
-                  onClick={() => {
-                    document.documentElement.style.setProperty('--primary-600', color);
-                    document.documentElement.style.setProperty('--primary-700', color);
-                    localStorage.setItem('theme-color', color);
-                  }}
-                  style={{ width: '20px', height: '20px', borderRadius: '50%', backgroundColor: color, border: 'none', cursor: 'pointer', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.1)' }}
-                  title="Đổi màu"
-                />
-              ))}
-              <input 
-                type="color" 
-                onChange={(e) => {
-                    const color = e.target.value;
-                    document.documentElement.style.setProperty('--primary-600', color);
-                    document.documentElement.style.setProperty('--primary-700', color);
-                    localStorage.setItem('theme-color', color);
-                }}
-                style={{ width: '24px', height: '24px', padding: 0, border: 'none', background: 'transparent', cursor: 'pointer' }}
-                title="Màu tùy chỉnh"
-              />
-            </div>
-          </div>
-        )}
-        {!isCollapsed ? (
-          <div style={{ padding: '12px', background: 'var(--neutral-50)', borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <UserCircle size={20} style={{ color: 'var(--neutral-500)' }} />
-              <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--neutral-700)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={userEmail || 'Chưa đăng nhập'}>
-                {userEmail || 'Đang chờ...'}
-              </span>
-            </div>
-            <button onClick={logout} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--error-600)', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 0' }}>
-              <LogOut size={14} /> Đổi Email
-            </button>
-          </div>
-        ) : (
-          <button onClick={logout} title="Đổi Email" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '12px', color: 'var(--error-600)', background: 'var(--neutral-50)', border: 'none', borderRadius: 'var(--radius-md)', cursor: 'pointer' }}>
-            <LogOut size={20} />
+          )}
+          
+          <button 
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="collapse-btn hidden-mobile"
+            style={{ 
+              background: 'none', border: '1px solid var(--neutral-200)', 
+              cursor: 'pointer', color: 'var(--neutral-500)', 
+              padding: '4px', borderRadius: 'var(--radius-sm)' 
+            }}
+          >
+            {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
           </button>
-        )}
-      </div>
+          
+          {mobileOpen && (
+            <button onClick={onCloseMobile} style={{ background: 'none', border: 'none', padding: 4 }}>
+               <X size={20} />
+            </button>
+          )}
+        </div>
+        
+        <nav style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
+          {menuGroups.map((group, gIdx) => (
+            <div key={gIdx} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+              {!isCollapsed && (
+                <div style={{ 
+                  fontSize: '11px', fontWeight: 600, color: 'var(--neutral-500)', 
+                  textTransform: 'uppercase', padding: '0 var(--space-3)', letterSpacing: '0.05em' 
+                }}>
+                  {group.title}
+                </div>
+              )}
+              {isCollapsed && <div style={{ height: '1px', background: 'var(--neutral-200)', margin: 'var(--space-1) var(--space-3)' }} />}
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                {group.items.map(item => {
+                  const isActive = pathname === item.path || (pathname === '/' && item.path === '/cx/dashboard');
+                  const Icon = item.icon;
+                  return (
+                    <Link 
+                      key={item.path}
+                      href={item.path} 
+                      onClick={onCloseMobile}
+                      className={`sidebar-link ${isActive ? 'active' : ''}`}
+                      title={isCollapsed ? item.name : undefined}
+                      style={{ position: 'relative' }}
+                    >
+                      <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+                      {!isCollapsed && (
+                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</span>
+                          {(item as any).badge && (
+                            <span className="badge-count">
+                              {(item as any).badge}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      {isCollapsed && (item as any).badge && (
+                        <span className="badge-dot" />
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </nav>
 
-      <style dangerouslySetInnerHTML={{__html: `
-        .sidebar-link {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 10px 12px;
-          border-radius: var(--radius-sm);
-          color: var(--neutral-600);
-          font-size: 14px;
-          font-weight: 500;
-          transition: var(--transition-fast);
-          text-decoration: none;
-        }
-        .sidebar-link:hover {
-          background-color: var(--neutral-50);
-          color: var(--neutral-900);
-        }
-        .sidebar-link.active {
-          background-color: color-mix(in srgb, var(--primary-600) 10%, transparent);
-          color: var(--primary-600);
-          font-weight: 600;
-        }
-        .hover-bg-gray:hover {
-          background-color: var(--neutral-50);
-        }
-        aside::-webkit-scrollbar {
-          width: 4px;
-        }
-        aside::-webkit-scrollbar-thumb {
-          background: var(--neutral-300);
-          border-radius: 4px;
-        }
-      `}} />
-    </aside>
+        <div style={{ marginTop: 'auto', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--neutral-200)', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+          {/* THEME PICKER REMOVED */}
+          
+          {!isCollapsed ? (
+            <div style={{ padding: 'var(--space-3)', background: 'var(--neutral-100)', borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                <UserCircle size={20} style={{ color: 'var(--neutral-500)' }} />
+                <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--neutral-700)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={userEmail || 'Chưa đăng nhập'}>
+                  {userEmail || 'Đang chờ...'}
+                </span>
+              </div>
+              <button onClick={logout} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--error-600)', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 0' }}>
+                <LogOut size={14} /> Đổi Email
+              </button>
+            </div>
+          ) : (
+            <button onClick={logout} title="Đổi Email" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '12px', color: 'var(--error-600)', background: 'var(--neutral-100)', border: 'none', borderRadius: 'var(--radius-md)', cursor: 'pointer' }}>
+              <LogOut size={20} />
+            </button>
+          )}
+        </div>
+
+        <style dangerouslySetInnerHTML={{__html: `
+          .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            padding: 10px 12px;
+            border-radius: var(--radius-sm);
+            color: var(--neutral-600);
+            font-size: var(--text-sm);
+            font-weight: 500;
+            transition: var(--duration-fast);
+            position: relative;
+          }
+          .sidebar-link:hover {
+            background-color: var(--neutral-100);
+            color: var(--neutral-900);
+          }
+          .sidebar-link.active {
+            background-color: var(--primary-50);
+            color: var(--primary-700);
+            font-weight: 600;
+          }
+          .sidebar-link.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 6px;
+            bottom: 6px;
+            width: 4px;
+            background: linear-gradient(to bottom, var(--brand-orange), var(--brand-red), var(--brand-green));
+            border-radius: 4px;
+          }
+          .badge-count {
+            background: var(--error-500);
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 100px;
+          }
+          .badge-dot {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 8px;
+            height: 8px;
+            background: var(--error-500);
+            border-radius: 50%;
+          }
+          
+          /* Responsive adjustments */
+          @media (max-width: 768px) {
+            .sidebar {
+              transform: translateX(-100%);
+            }
+            .sidebar.mobile-open {
+              transform: translateX(0);
+            }
+            .hidden-mobile {
+              display: none !important;
+            }
+          }
+        `}} />
+      </aside>
+    </>
   );
 }

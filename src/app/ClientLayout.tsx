@@ -1,20 +1,18 @@
 "use client";
 
-import React, { ReactNode, useEffect } from "react";
+import React, { ReactNode, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Sidebar from "./components/Sidebar";
+import TopBar from "@/components/ui/TopBar";
+import CommandPalette from "@/components/ui/CommandPalette";
 import { AuthProvider } from "@/lib/AuthContext";
 
 export default function ClientLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [isSidebarOpenMobile, setIsSidebarOpenMobile] = useState(false);
   
-  useEffect(() => {
-    const savedColor = localStorage.getItem('theme-color');
-    if (savedColor) {
-      document.documentElement.style.setProperty('--primary-600', savedColor);
-      document.documentElement.style.setProperty('--primary-700', savedColor);
-    }
-  }, []);
+  // Theme color is now fixed to 7-Eleven branding via globals.css
   
   // Các trang không hiển thị sidebar (VD: Sale form dành cho user ngoài)
   const isNoSidebarPage = pathname === '/cx/sale';
@@ -25,17 +23,27 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
 
   return (
     <AuthProvider>
-      <Sidebar />
-      <main className="main-content" style={{ 
-        flex: 1, 
-        marginLeft: 'var(--sidebar-width, 240px)', 
-        backgroundColor: 'var(--neutral-50)', 
-        minHeight: '100vh',
-        padding: '32px 48px',
-        transition: 'margin-left 0.3s ease'
-      }}>
-        {children}
-      </main>
+      <div className="app-layout">
+        <Sidebar 
+          mobileOpen={isSidebarOpenMobile} 
+          onCloseMobile={() => setIsSidebarOpenMobile(false)} 
+        />
+        <main className="main-content">
+          <TopBar 
+            onMenuClick={() => setIsSidebarOpenMobile(true)}
+            onSearchClick={() => setIsCommandPaletteOpen(true)}
+          />
+          <div className="page-container">
+            {children}
+          </div>
+        </main>
+        
+        <CommandPalette 
+          isOpen={isCommandPaletteOpen} 
+          onClose={() => setIsCommandPaletteOpen(false)} 
+        />
+      </div>
     </AuthProvider>
   );
 }
+

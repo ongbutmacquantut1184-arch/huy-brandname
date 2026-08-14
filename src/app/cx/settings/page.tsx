@@ -71,62 +71,84 @@ export default function SettingsPage() {
   const activeConfig = CONFIG_KEYS.find(k => k.key === activeTab);
 
   return (
-    <div className="flex-col gap-6" style={{ maxWidth: '1000px', margin: '40px auto', padding: '0 24px' }}>
-      <h1 className="text-2xl font-bold text-neutral m-0">Cấu hình Hệ thống</h1>
-      <p className="text-muted mt-2 mb-6 text-sm">Quản lý các danh sách tuỳ chọn (Dropdowns) cho phiếu yêu cầu Sale.</p>
+    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <div className="page-header">
+        <div>
+          <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 800, color: 'var(--neutral-900)', margin: '0 0 4px 0' }}>
+            Cấu hình Hệ thống
+          </h1>
+          <p style={{ fontSize: 'var(--text-sm)', color: 'var(--neutral-500)', margin: 0 }}>
+            Quản lý các danh sách tuỳ chọn (Dropdowns) cho phiếu yêu cầu Sale.
+          </p>
+        </div>
+      </div>
 
-      <div className="flex gap-6 items-start">
+      <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
         {/* Menu Tabs */}
-        <div className="card-container flex-col gap-2 p-3" style={{ width: '280px', display: 'flex' }}>
+        <div className="card-container" style={{ width: '280px', display: 'flex', flexDirection: 'column', gap: '8px', padding: '16px' }}>
           {CONFIG_KEYS.map(config => (
             <button
               key={config.key}
               onClick={() => setActiveTab(config.key)}
               style={{
                 background: activeTab === config.key ? 'var(--primary-50)' : 'transparent',
-                color: activeTab === config.key ? 'var(--primary-600)' : 'var(--neutral-700)',
+                color: activeTab === config.key ? 'var(--primary-700)' : 'var(--neutral-700)',
                 fontWeight: activeTab === config.key ? 600 : 500,
                 border: 'none',
                 padding: '12px 16px',
-                borderRadius: 'var(--radius-sm)',
+                borderRadius: 'var(--radius-md)',
                 textAlign: 'left',
                 cursor: 'pointer',
                 transition: 'var(--transition-fast)',
-                fontSize: '14px'
+                fontSize: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
               }}
             >
               {config.label}
+              {activeTab === config.key && (
+                <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary-600)' }}></div>
+              )}
             </button>
           ))}
         </div>
 
         {/* Editor */}
-        <div className="card-container flex-1 p-6">
-          <h2 className="text-xl font-bold mb-4">Chỉnh sửa: {activeConfig?.label}</h2>
-          <p className="text-muted text-sm mb-4">
+        <div className="card-container animate-fade-in-down" style={{ flex: 1, padding: '32px' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--primary-700)', marginBottom: '8px' }}>
+            Chỉnh sửa: {activeConfig?.label}
+          </h2>
+          <p style={{ fontSize: '14px', color: 'var(--neutral-500)', marginBottom: '24px' }}>
             Nhập mỗi giá trị trên một dòng mới. Những giá trị này sẽ hiển thị ở Form tạo phiếu của Sale.
           </p>
 
           <textarea
             value={currentValues.join('\n')}
             onChange={handleValuesChange}
-            className="input-field mb-6"
+            className="input-field w-full"
             style={{
-              minHeight: '300px',
+              minHeight: '400px',
               fontFamily: 'monospace',
               lineHeight: '1.6',
               resize: 'vertical',
+              marginBottom: '24px',
+              padding: '16px',
+              fontSize: '14px',
+              background: 'var(--neutral-50)'
             }}
           />
 
-          <button 
-            onClick={handleSave} 
-            disabled={saving}
-            className="btn btn-primary"
-            style={{ padding: '12px 24px' }}
-          >
-            {saving ? 'Đang lưu...' : 'LƯU THAY ĐỔI'}
-          </button>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid var(--neutral-200)', paddingTop: '24px' }}>
+            <button 
+              onClick={handleSave} 
+              disabled={saving}
+              className="btn btn-primary"
+              style={{ padding: '12px 32px', fontSize: '15px' }}
+            >
+              {saving ? 'Đang lưu...' : 'Lưu Thay Đổi'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -1,0 +1,918 @@
+{
+  "Acc GapOne": {
+    "columns": [
+      "Khu vực\n(PL theo Sale)",
+      "Status",
+      "Tên công ty",
+      "Tên tài khoản",
+      "Mật khẩu",
+      "ORG ID",
+      "CPID",
+      "Loại gói cước",
+      "Dữ liệu input",
+      "Ngành nghề",
+      "Ngày bắt đầu",
+      "Năm bắt đầu",
+      "Ngày hết hạn",
+      "Năm hết hạn",
+      "Ngày sử dụng",
+      "Năm sử dụng",
+      "Gia hạn",
+      "Note thông tin gia hạn",
+      "HĐ có điều khoản tự động gia hạn (Có/Không)",
+      "Hình thức sử dụng",
+      "Kênh gửi tin",
+      "Ghi chú hình thức thanh toán (trả trước, trả sau)",
+      "Email tạo tài khoản",
+      "Email khách hàng nhận thông báo về sự cố, bảo trì, nghỉ lễ",
+      "Nhu cầu: mô tả chi tiết các nhu cầu sẽ triển khai trên SP/DV mà Sale đã trao đổi với khách hàng",
+      "Customer Success",
+      "Customer Support",
+      "Sales",
+      "Phân khúc KH",
+      "Mã phân loại",
+      "Unnamed: 30"
+    ],
+    "sample_data": [
+      {
+        "Khu vực\n(PL theo Sale)": "Hà Nội",
+        "Status": "Locked",
+        "Tên công ty": "CÔNG TY TNHH BẢO HIỂM NHÂN THỌ MB AGEAS",
+        "Tên tài khoản": "mbageas_api",
+        "Mật khẩu": "Mbageas@123",
+        "ORG ID": 350,
+        "CPID": null,
+        "Loại gói cước": "Trial API",
+        "Dữ liệu input": "API",
+        "Ngành nghề": "Tài chính & Ngân hàng",
+        "Ngày bắt đầu": "2023-03-22T00:00:00.000",
+        "Năm bắt đầu": 2023,
+        "Ngày hết hạn": "2023-12-31T00:00:00.000",
+        "Năm hết hạn": 2023,
+        "Ngày sử dụng": 284,
+        "Năm sử dụng": 0,
+        "Gia hạn": "Trial",
+        "Note thông tin gia hạn": null,
+        "HĐ có điều khoản tự động gia hạn (Có/Không)": null,
+        "Hình thức sử dụng": null,
+        "Kênh gửi tin": null,
+        "Ghi chú hình thức thanh toán (trả trước, trả sau)": null,
+        "Email tạo tài khoản": "linh.lh@mbageas.life",
+        "Email khách hàng nhận thông báo về sự cố, bảo trì, nghỉ lễ": null,
+        "Nhu cầu: mô tả chi tiết các nhu cầu sẽ triển khai trên SP/DV mà Sale đã trao đổi với khách hàng": null,
+        "Customer Success": null,
+        "Customer Support": null,
+        "Sales": null,
+        "Phân khúc KH": null,
+        "Mã phân loại": null,
+        "Unnamed: 30": null
+      },
+      {
+        "Khu vực\n(PL theo Sale)": "Hà Nội",
+        "Status": "Locked",
+        "Tên công ty": "WELOVESUPERMOM PTE LTD",
+        "Tên tài khoản": "welovesupermom_api",
+        "Mật khẩu": "Welovesupermom@123",
+        "ORG ID": 351,
+        "CPID": null,
+        "Loại gói cước": "ENTERPRISE",
+        "Dữ liệu input": null,
+        "Ngành nghề": null,
+        "Ngày bắt đầu": "2023-03-22T00:00:00.000",
+        "Năm bắt đầu": 2023,
+        "Ngày hết hạn": "2023-12-31T00:00:00.000",
+        "Năm hết hạn": 2023,
+        "Ngày sử dụng": 284,
+        "Năm sử dụng": 0,
+        "Gia hạn": "Lần đầu",
+        "Note thông tin gia hạn": null,
+        "HĐ có điều khoản tự động gia hạn (Có/Không)": null,
+        "Hình thức sử dụng": null,
+        "Kênh gửi tin": null,
+        "Ghi chú hình thức thanh toán (trả trước, trả sau)": "Nâng cấp gói ngày 6/4/2023, đã hủy từ T5.2023",
+        "Email tạo tài khoản": "linh.nguyen@welovesupermom.com",
+        "Email khách hàng nhận thông báo về sự cố, bảo trì, nghỉ lễ": null,
+        "Nhu cầu: mô tả chi tiết các nhu cầu sẽ triển khai trên SP/DV mà Sale đã trao đổi với khách hàng": null,
+        "Customer Success": null,
+        "Customer Support": null,
+        "Sales": "đã khóa tài khoản",
+        "Phân khúc KH": "HangNT",
+        "Mã phân loại": null,
+        "Unnamed: 30": "HangNT"
+      },
+      {
+        "Khu vực\n(PL theo Sale)": "Hà Nội",
+        "Status": "Locked",
+        "Tên công ty": "Công ty TNHH Colgate-Palmolive (Việt Nam)",
+        "Tên tài khoản": "colgate_api",
+        "Mật khẩu": "Colgate@123",
+        "ORG ID": 352,
+        "CPID": null,
+        "Loại gói cước": "API",
+        "Dữ liệu input": "API",
+        "Ngành nghề": null,
+        "Ngày bắt đầu": "2023-03-23T00:00:00.000",
+        "Năm bắt đầu": 2023,
+        "Ngày hết hạn": "2023-12-31T00:00:00.000",
+        "Năm hết hạn": 2023,
+        "Ngày sử dụng": 283,
+        "Năm sử dụng": 0,
+        "Gia hạn": "Lần đầu",
+        "Note thông tin gia hạn": null,
+        "HĐ có điều khoản tự động gia hạn (Có/Không)": null,
+        "Hình thức sử dụng": null,
+        "Kênh gửi tin": null,
+        "Ghi chú hình thức thanh toán (trả trước, trả sau)": null,
+        "Email tạo tài khoản": "thu_duong@colpal.com",
+        "Email khách hàng nhận thông báo về sự cố, bảo trì, nghỉ lễ": null,
+        "Nhu cầu: mô tả chi tiết các nhu cầu sẽ triển khai trên SP/DV mà Sale đã trao đổi với khách hàng": null,
+        "Customer Success": null,
+        "Customer Support": null,
+        "Sales": null,
+        "Phân khúc KH": null,
+        "Mã phân loại": null,
+        "Unnamed: 30": null
+      }
+    ]
+  },
+  "Link Form nhập liệu": {
+    "columns": [
+      "Unnamed: 0",
+      "Unnamed: 1"
+    ],
+    "sample_data": [
+      {
+        "Unnamed: 0": null,
+        "Unnamed: 1": null
+      },
+      {
+        "Unnamed: 0": null,
+        "Unnamed: 1": "Link Form nhập thông tin tài khoản GapOne"
+      }
+    ]
+  },
+  "Acc GapOne ver2": {
+    "columns": [
+      "Khu vực (theo Sale)",
+      "Status",
+      "ORG ID",
+      "CPID",
+      "Tên công ty",
+      "Tên tài khoản",
+      "Mật khẩu",
+      "Loại gói cước",
+      "Hình thức thanh toán",
+      "Hình thức sử dụng",
+      "Dữ liệu input",
+      "Kênh gửi tin",
+      "Ngày bắt đầu",
+      "Năm bắt đầu",
+      "Ngày hết hạn",
+      "Năm hết hạn",
+      "Ngày sử dụng",
+      "Năm sử dụng",
+      "Mô tả nhu cầu KH (từ sale)",
+      "HĐ có tự động gia hạn?",
+      "Lần Gia hạn",
+      "Note/Thông tin gia hạn",
+      "Email tạo tài khoản",
+      "Email khách hàng nhận thông báo về sự cố, bảo trì, nghỉ lễ",
+      "Ngành nghề",
+      "Customer Success",
+      "Customer Support",
+      "Sales",
+      "Phân khúc KH",
+      "Mã phân loại",
+      "Locked vì nguyên nhân khách quan"
+    ],
+    "sample_data": [
+      {
+        "Khu vực (theo Sale)": "Hà Nội",
+        "Status": "Active",
+        "ORG ID": 29,
+        "CPID": 600256,
+        "Tên công ty": "CÔNG TY CỔ PHẦN MOBITRIP",
+        "Tên tài khoản": "mobihome",
+        "Mật khẩu": "none",
+        "Loại gói cước": "Enterprise",
+        "Hình thức thanh toán": "Trả sau",
+        "Hình thức sử dụng": "API",
+        "Dữ liệu input": "API",
+        "Kênh gửi tin": "SMS CSKH, Zalo ZNS",
+        "Ngày bắt đầu": "2020-09-29T00:00:00.000",
+        "Năm bắt đầu": 2020,
+        "Ngày hết hạn": "2027-05-01T00:00:00.000",
+        "Năm hết hạn": 2027,
+        "Ngày sử dụng": 2405,
+        "Năm sử dụng": 7,
+        "Mô tả nhu cầu KH (từ sale)": null,
+        "HĐ có tự động gia hạn?": "Không",
+        "Lần Gia hạn": 4,
+        "Note/Thông tin gia hạn": "gia hạn API + platform\nKhách đã đổi pass",
+        "Email tạo tài khoản": "hungtran@mobitrip.vn",
+        "Email khách hàng nhận thông báo về sự cố, bảo trì, nghỉ lễ": "hungtran@mobitrip.vn",
+        "Ngành nghề": "Vận tải & logistics",
+        "Customer Success": "TùngLD",
+        "Customer Support": "LinhNTT1",
+        "Sales": "NhungPTH",
+        "Phân khúc KH": "Gold",
+        "Mã phân loại": null,
+        "Locked vì nguyên nhân khách quan": null
+      },
+      {
+        "Khu vực (theo Sale)": "Hà Nội",
+        "Status": "Active",
+        "ORG ID": 75,
+        "CPID": 600410,
+        "Tên công ty": "Công Ty TNHH Bảo Hiểm Nhân Thọ FWD Việt Nam",
+        "Tên tài khoản": "FWDTEST1",
+        "Mật khẩu": "123456aA@",
+        "Loại gói cước": "Enterprise",
+        "Hình thức thanh toán": "Trả sau",
+        "Hình thức sử dụng": "API & Portal",
+        "Dữ liệu input": "File Excel, API",
+        "Kênh gửi tin": "SMS CSKH, Zalo ZNS",
+        "Ngày bắt đầu": "2021-05-31T00:00:00.000",
+        "Năm bắt đầu": 2021,
+        "Ngày hết hạn": "2027-06-01T00:00:00.000",
+        "Năm hết hạn": 2027,
+        "Ngày sử dụng": 2192,
+        "Năm sử dụng": 7,
+        "Mô tả nhu cầu KH (từ sale)": null,
+        "HĐ có tự động gia hạn?": "Không",
+        "Lần Gia hạn": 2,
+        "Note/Thông tin gia hạn": "- HĐ  01/06/2021 - 01/06/2023.\n- Gia hạn 1: 01/06/2023 - 01/06/2025.\n- Gia hạn 2: 01/06/2025 - 01/06/2027",
+        "Email tạo tài khoản": "TEST1@TEST.COM",
+        "Email khách hàng nhận thông báo về sự cố, bảo trì, nghỉ lễ": "Thach.Binh@fwd.com; Nguyen.AnhThu@fwd.com; Tran.NgocHuy@fwd.com; Huynh.NamAnh@fwd.com; Nguyen.HoangNguyetNguyen@fwd.com; Huynh.NamAnh@fwd.com; vu.thithuhang@fwd.com; ThuyTrang.Tran@fwd.com; Truong.BuiThuyNgoc@fwd.com; Nguyen.NgocThienNgan@fwd.com; Nguyen.NgocThienNgan@fwd.com; DangQuy.Huynh@fwd.com; Lam.QuangHung@fwd.com; Le.NguyenThuyTien@fwd.com; HoaiHuong.Nguyen@fwd.com; Pham.AnhTuyet@fwd.com; DuongThanh.Luu@fwd.com",
+        "Ngành nghề": "Sale chưa cung cấp",
+        "Customer Success": "TùngLD",
+        "Customer Support": "DungPL",
+        "Sales": "NhungPTH",
+        "Phân khúc KH": "Diamond",
+        "Mã phân loại": null,
+        "Locked vì nguyên nhân khách quan": null
+      },
+      {
+        "Khu vực (theo Sale)": "Sài Gòn",
+        "Status": "Locked",
+        "ORG ID": 119,
+        "CPID": 600684,
+        "Tên công ty": "Công ty CP Chuyển đổi số Vietants - Chi nhánh Vioedu",
+        "Tên tài khoản": "vietantsgapone",
+        "Mật khẩu": "(Không recheck)",
+        "Loại gói cước": "Standard",
+        "Hình thức thanh toán": "Trial",
+        "Hình thức sử dụng": "API & Portal",
+        "Dữ liệu input": "File Excel, API",
+        "Kênh gửi tin": "Zalo ZNS",
+        "Ngày bắt đầu": "2021-07-20T00:00:00.000",
+        "Năm bắt đầu": 2021,
+        "Ngày hết hạn": "2025-09-22T00:00:00.000",
+        "Năm hết hạn": 2025,
+        "Ngày sử dụng": 1525,
+        "Năm sử dụng": 4,
+        "Mô tả nhu cầu KH (từ sale)": null,
+        "HĐ có tự động gia hạn?": null,
+        "Lần Gia hạn": 0,
+        "Note/Thông tin gia hạn": "Trial",
+        "Email tạo tài khoản": "minh.doan@vietants.vn",
+        "Email khách hàng nhận thông báo về sự cố, bảo trì, nghỉ lễ": null,
+        "Ngành nghề": "Giáo dục & Đào tạo",
+        "Customer Success": "TúPHN",
+        "Customer Support": "Không phân công",
+        "Sales": "ThanhNT",
+        "Phân khúc KH": "Sale chưa cung cấp",
+        "Mã phân loại": null,
+        "Locked vì nguyên nhân khách quan": "Yes"
+      }
+    ]
+  },
+  "List KH Cảnh báo SMS": {
+    "columns": [
+      "Tên Support",
+      "Mã Phân loại",
+      "Trạng thái",
+      "ORG ID",
+      "CPID",
+      "CpName/CpCode",
+      "Tên Công ty",
+      "Loại dịch vụ",
+      "Kết nối",
+      "Kênh sử dụng",
+      "Phát sinh sản lượng SMS CSKH"
+    ],
+    "sample_data": [
+      {
+        "Tên Support": "DungPL",
+        "Mã Phân loại": "XICHVIET",
+        "Trạng thái": "Active",
+        "ORG ID": "-",
+        "CPID": 10678,
+        "CpName/CpCode": "XICHVIET2",
+        "Tên Công ty": "XICHVIET",
+        "Loại dịch vụ": "A2P",
+        "Kết nối": "API Gateway",
+        "Kênh sử dụng": "SMS CSKH",
+        "Phát sinh sản lượng SMS CSKH": "Lâu ko phát sinh SMS CSKH"
+      },
+      {
+        "Tên Support": "DungPL",
+        "Mã Phân loại": "XICHVIET",
+        "Trạng thái": "Active",
+        "ORG ID": "-",
+        "CPID": 10441,
+        "CpName/CpCode": "XICHVIET",
+        "Tên Công ty": "XICHVIET",
+        "Loại dịch vụ": "A2P",
+        "Kết nối": "API Gateway",
+        "Kênh sử dụng": "SMS CSKH",
+        "Phát sinh sản lượng SMS CSKH": "Sản lượng chính (SMS CSKH)"
+      },
+      {
+        "Tên Support": "DungVT",
+        "Mã Phân loại": "Wincommerce",
+        "Trạng thái": "Active",
+        "ORG ID": 674,
+        "CPID": 600448,
+        "CpName/CpCode": "G1_ZALO_MOBICAST",
+        "Tên Công ty": "Công ty cổ phần Mobicast",
+        "Loại dịch vụ": "GapOne",
+        "Kết nối": "API GapOne",
+        "Kênh sử dụng": "SMS CSKH",
+        "Phát sinh sản lượng SMS CSKH": "Có sản lượng (SMS CSKH)"
+      }
+    ]
+  },
+  "Acc GapOne (old)": {
+    "columns": [
+      "STT",
+      "Tên tài khoản",
+      "Mật khẩu",
+      "Link"
+    ],
+    "sample_data": [
+      {
+        "STT": 1,
+        "Tên tài khoản": "1080zns",
+        "Mật khẩu": "1080Zns@123",
+        "Link": null
+      },
+      {
+        "STT": 2,
+        "Tên tài khoản": "3t_gapone",
+        "Mật khẩu": "Gapone@123",
+        "Link": null
+      },
+      {
+        "STT": 3,
+        "Tên tài khoản": "86colors_gapone",
+        "Mật khẩu": "86Colors@123",
+        "Link": null
+      }
+    ]
+  },
+  "ZMA + Campaign": {
+    "columns": [
+      "STT",
+      "Quý",
+      "Phân loại khu vực (Theo Sale)",
+      "Tên Công ty",
+      "ID",
+      "Ngày bắt đầu",
+      "Ngày hết hạn",
+      "Gói",
+      "Ghi chú",
+      "Email",
+      "Sale",
+      "CS",
+      "Tình trạng"
+    ],
+    "sample_data": [
+      {
+        "STT": 1,
+        "Quý": "Q3.2025",
+        "Phân loại khu vực (Theo Sale)": "Đà Nẵng",
+        "Tên Công ty": "CÔNG TY CỔ PHẦN ĐẦU TƯ TOÀN CẦU EHERBAL WELLESS",
+        "ID": 818,
+        "Ngày bắt đầu": "2025-08-06T00:00:00.000",
+        "Ngày hết hạn": "2026-05-19T00:00:00.000",
+        "Gói": "Miniapp",
+        "Ghi chú": "Tính năng hỗ trợ: Tin nhắn chat OA và hotline\nTính năng mua hàng: Danh mục sản phẩm, Chi tiết sản phẩm, Sản phẩm bán chạy, Giỏ hàng\nTính năng tra cứu lịch sử mua hàng, thông tin đơn hàng\nTính năng đổi thưởng: tích điểm, tra cứu điểm và lịch sử tích điểm, đổi điểm\nTính năng thanh toán tiền mặt",
+        "Email": "Marketing@eherbalwellness.com",
+        "Sale": "HaNTT",
+        "CS": "TuPHN",
+        "Tình trạng": "Done"
+      },
+      {
+        "STT": 2,
+        "Quý": "Q3.2025",
+        "Phân loại khu vực (Theo Sale)": "Sài Gòn",
+        "Tên Công ty": "CÔNG TY CỔ PHẦN TẬP ĐOÀN DƯỢC PHẨM STARMED",
+        "ID": 849,
+        "Ngày bắt đầu": "2025-11-30T00:00:00.000",
+        "Ngày hết hạn": "2026-11-30T00:00:00.000",
+        "Gói": "Miniapp",
+        "Ghi chú": "Tính năng mua hàng: Danh mục sản phẩm, Chi tiết sản phẩm, Sản phẩm nổi bật, Đề xuất sản phẩm liên quan, Giỏ hàng        \nTính năng tra cứu lịch sử mua hàng, thông tin đơn hàng        \nTính năng tra cứu lịch sử tích điểm, điểm thưởng.   \nTính năng Quan Tâm OA     \nTính năng hỗ trợ (gọi hotline và chat OA 1:1)        \nTính năng thanh toán tiền mặt hoặc qua ví điện tử Zalo Pay.        \nTính năng tra cứu thời gian bảo hành của đơn hàng, sản phẩm .  \nTính năng tích điểm số quy đổi voucher, mã giảm giá/ Áp dụng mã giảm giá",
+        "Email": "contest@starmed.com.vn",
+        "Sale": "Ngocnt",
+        "CS": "Phuongdtb",
+        "Tình trạng": "Processing"
+      },
+      {
+        "STT": 3,
+        "Quý": null,
+        "Phân loại khu vực (Theo Sale)": "Sài Gòn",
+        "Tên Công ty": "CÔNG TY TNHH Ô TÔ THẬP NHẤT PHONG",
+        "ID": 462,
+        "Ngày bắt đầu": "2023-09-08T00:00:00.000",
+        "Ngày hết hạn": "2024-03-11T00:00:00.000",
+        "Gói": "Miniapp",
+        "Ghi chú": "Tính năng mua hàng: Danh mục sản phẩm, Chi tiết sản phẩm, Sản phẩm nổi bật, Đề xuất sản phẩm liên quan, Giỏ hàng        \nTính năng tra cứu lịch sử mua hàng, thông tin đơn hàng        \nTính năng tra cứu lịch sử tích điểm, điểm thưởng.        \nTính năng hỗ trợ (gọi hotline và chat OA 1:1)        \nTính năng thanh toán tiền mặt hoặc qua ví điện tử Zalo Pay.        \nTính năng tra cứu thời gian bảo hành của đơn hàng, sản phẩm .\nTính năng đánh giá sao và cmt (Đã bổ sung PO sau)     ",
+        "Email": "trungthanh.email@vicedirector.ltd",
+        "Sale": "Tuanla",
+        "CS": null,
+        "Tình trạng": "Processing"
+      }
+    ]
+  },
+  "sale theo kv": {
+    "columns": [
+      "Tên sale",
+      "Khu vực"
+    ],
+    "sample_data": [
+      {
+        "Tên sale": "SơnLX",
+        "Khu vực": "Hà Nội"
+      },
+      {
+        "Tên sale": "HườngĐM",
+        "Khu vực": "Hà Nội"
+      },
+      {
+        "Tên sale": "NhungPTH",
+        "Khu vực": "Hà Nội"
+      }
+    ]
+  },
+  "Data_list": {
+    "columns": [
+      "Loại gói cước",
+      "Dữ liệu input",
+      "Ngành nghề",
+      "Hình thức sử dụng",
+      "Kênh gửi tin",
+      "Hình thức thanh toán",
+      "Customer Support",
+      "Customer Success",
+      "Phân Khúc KH",
+      "Mã Phân loại",
+      "Unnamed: 10",
+      "Link API"
+    ],
+    "sample_data": [
+      {
+        "Loại gói cước": "Starter",
+        "Dữ liệu input": "File Excel",
+        "Ngành nghề": "Bảo hiểm",
+        "Hình thức sử dụng": "API",
+        "Kênh gửi tin": "Tất cả",
+        "Hình thức thanh toán": "Trả trước",
+        "Customer Support": "AnhNM",
+        "Customer Success": "AnhNM",
+        "Phân Khúc KH": "Bronze",
+        "Mã Phân loại": "Campaign",
+        "Unnamed: 10": null,
+        "Link API": "https://docs.gapone.vn/vi/api-docs#section/Lich-su-thay-djoi"
+      },
+      {
+        "Loại gói cước": "Standard",
+        "Dữ liệu input": "API",
+        "Ngành nghề": "Bất động sản",
+        "Hình thức sử dụng": "Portal",
+        "Kênh gửi tin": "SMS CSKH",
+        "Hình thức thanh toán": "Trả sau",
+        "Customer Support": "DungPL",
+        "Customer Success": "HoaNTM",
+        "Phân Khúc KH": "Silver",
+        "Mã Phân loại": "Partner_Bizfly",
+        "Unnamed: 10": null,
+        "Link API": null
+      },
+      {
+        "Loại gói cước": "Premium",
+        "Dữ liệu input": "Bizfly CRM",
+        "Ngành nghề": "Công nghệ & Phần mềm",
+        "Hình thức sử dụng": "API & Portal",
+        "Kênh gửi tin": "SMS QC",
+        "Hình thức thanh toán": "Trial",
+        "Customer Support": "DungVT",
+        "Customer Success": "PhươngDTB",
+        "Phân Khúc KH": "Gold",
+        "Mã Phân loại": "Partner_Capillary",
+        "Unnamed: 10": null,
+        "Link API": null
+      }
+    ]
+  },
+  "audit log": {
+    "columns": [
+      "Timestamp",
+      "User",
+      "Hành động",
+      "OrgID",
+      "Row Index",
+      "Details"
+    ],
+    "sample_data": [
+      {
+        "Timestamp": "2025-12-23T08:55:26.000",
+        "User": "tùngld",
+        "Hành động": "Update",
+        "OrgID": 716,
+        "Row Index": 227,
+        "Details": "{\"tenCongTy\":\"Công ty Cổ phần Công nghệ BLUEFIN\",\"goiCuoc\":\"Starter\",\"status\":\"Active\",\"ngayHetHan\":\"2026-10-21\",\"sale\":\"NhungPTH\",\"cs\":\"TùngLD\"}"
+      },
+      {
+        "Timestamp": "2025-12-23T09:14:00.000",
+        "User": "tùngld",
+        "Hành động": "Update",
+        "OrgID": 758,
+        "Row Index": 244,
+        "Details": "{\"status\":\"Locked\",\"loaiGoiCuoc\":\"Premium\",\"tuDongGiaHan\":\"Không\",\"customerSupport\":\"\"}"
+      },
+      {
+        "Timestamp": "2025-12-23T09:32:00.000",
+        "User": "tùngld",
+        "Hành động": "Update",
+        "OrgID": "None 6",
+        "Row Index": 313,
+        "Details": "{\"tenTaiKhoan\":\"None1\",\"loaiGoiCuoc\":\"Starter\",\"ngayHetHan\":\"10/12/2026\",\"namHetHan\":\"2026\",\"ngaySuDung\":\"730\",\"namSuDung\":\"2\",\"tuDongGiaHan\":\"Có\",\"giaHan\":\"1\",\"emailTaoTaiKhoan\":\"None@email.com\",\"emailNhanThongBao\":\"quanha@irismedia.vn; cskh@irismedia.vn\"}"
+      }
+    ]
+  },
+  "link_faq": {
+    "columns": [
+      "Loại gói cước",
+      "Link"
+    ],
+    "sample_data": [
+      {
+        "Loại gói cước": "Starter",
+        "Link": "https://docs.google.com/spreadsheets/d/1P3ey7Vtx7G_zcUTdpLGriFQcA7CWP7sA8hu384Xr2KI/edit?gid=350331654#gid=350331654"
+      },
+      {
+        "Loại gói cước": "Standard",
+        "Link": "https://docs.google.com/spreadsheets/d/1euOBAm3ImqyCkonlgb5aZfS--N3E5FARU2Nd5i5dr3k/edit?gid=350331654#gid=350331654"
+      },
+      {
+        "Loại gói cước": "Premium",
+        "Link": "https://docs.google.com/spreadsheets/d/1L1_jCpKjR0TxmDaObk8K_d_ffKVTMftioRwwhUR9b20/edit?gid=350331654#gid=350331654"
+      }
+    ]
+  },
+  "service_log": {
+    "columns": [
+      "log_id",
+      "customer_id",
+      "customer_name",
+      "service_type",
+      "period_number",
+      "payment_date",
+      "start_date",
+      "end_date",
+      "contracted_days",
+      "gap_days",
+      "transaction_type",
+      "cs_owner",
+      "sup_owner",
+      "note",
+      "logged_by",
+      "logged_at"
+    ],
+    "sample_data": [
+      {
+        "log_id": 1,
+        "customer_id": 29,
+        "customer_name": "CÔNG TY CỔ PHẦN MOBITRIP",
+        "service_type": "subscription",
+        "period_number": 1,
+        "payment_date": null,
+        "start_date": "2020-09-29T00:00:00.000",
+        "end_date": "2026-05-01T00:00:00.000",
+        "contracted_days": 2040,
+        "gap_days": null,
+        "transaction_type": "migrated",
+        "cs_owner": "TùngLD",
+        "sup_owner": "LinhNTT1",
+        "note": "Migration từ hệ thống cũ. Số lần GH cũ: 3",
+        "logged_by": "System",
+        "logged_at": "2026-03-25T14:18:44.675"
+      },
+      {
+        "log_id": 2,
+        "customer_id": 75,
+        "customer_name": "Công Ty TNHH Bảo Hiểm Nhân Thọ FWD Việt Nam",
+        "service_type": "subscription",
+        "period_number": 1,
+        "payment_date": null,
+        "start_date": "2021-05-31T00:00:00.000",
+        "end_date": "2027-06-01T00:00:00.000",
+        "contracted_days": 2192,
+        "gap_days": null,
+        "transaction_type": "migrated",
+        "cs_owner": "TùngLD",
+        "sup_owner": "DungPL",
+        "note": "Migration từ hệ thống cũ. Số lần GH cũ: 2",
+        "logged_by": "System",
+        "logged_at": "2026-03-25T14:18:44.675"
+      },
+      {
+        "log_id": 3,
+        "customer_id": 119,
+        "customer_name": "Công ty CP Chuyển đổi số Vietants - Chi nhánh Vioedu",
+        "service_type": "subscription",
+        "period_number": 1,
+        "payment_date": null,
+        "start_date": "2021-07-20T00:00:00.000",
+        "end_date": "2025-09-22T00:00:00.000",
+        "contracted_days": 1525,
+        "gap_days": null,
+        "transaction_type": "migrated",
+        "cs_owner": "TúPHN",
+        "sup_owner": "Không phân công",
+        "note": "Migration từ hệ thống cũ. Số lần GH cũ: 0",
+        "logged_by": "System",
+        "logged_at": "2026-03-25T14:18:44.675"
+      }
+    ]
+  },
+  "tách kênh": {
+    "columns": [
+      "ORG ID",
+      "Khu vực",
+      "Status",
+      "Ngành nghề",
+      "CS",
+      "Phân khúc",
+      "Loại gói cước",
+      "Hình thức thanh toán",
+      "Hình thức sử dụng",
+      "Kênh gửi tin chi tiết"
+    ],
+    "sample_data": [
+      {
+        "ORG ID": 29,
+        "Khu vực": "Hà Nội",
+        "Status": "Active",
+        "Ngành nghề": "Vận tải & logistics",
+        "CS": "TùngLD",
+        "Phân khúc": "Gold",
+        "Loại gói cước": "Enterprise",
+        "Hình thức thanh toán": "Trả sau",
+        "Hình thức sử dụng": "API",
+        "Kênh gửi tin chi tiết": "SMS CSKH"
+      },
+      {
+        "ORG ID": 29,
+        "Khu vực": "Hà Nội",
+        "Status": "Active",
+        "Ngành nghề": "Vận tải & logistics",
+        "CS": "TùngLD",
+        "Phân khúc": "Gold",
+        "Loại gói cước": "Enterprise",
+        "Hình thức thanh toán": "Trả sau",
+        "Hình thức sử dụng": "API",
+        "Kênh gửi tin chi tiết": "Zalo ZNS"
+      },
+      {
+        "ORG ID": 75,
+        "Khu vực": "Hà Nội",
+        "Status": "Active",
+        "Ngành nghề": "Sale chưa cung cấp",
+        "CS": "TùngLD",
+        "Phân khúc": "Diamond",
+        "Loại gói cước": "Enterprise",
+        "Hình thức thanh toán": "Trả sau",
+        "Hình thức sử dụng": "API & Portal",
+        "Kênh gửi tin chi tiết": "SMS CSKH"
+      }
+    ]
+  },
+  "tungld_tách kênh": {
+    "columns": [
+      "ORG ID",
+      "Khu vực",
+      "Status",
+      "Ngành nghề",
+      "CS",
+      "Phân khúc",
+      "Loại gói cước",
+      "Hình thức thanh toán",
+      "Hình thức sử dụng",
+      "Kênh gửi tin chi tiết",
+      "SUP"
+    ],
+    "sample_data": [
+      {
+        "ORG ID": 29,
+        "Khu vực": "Hà Nội",
+        "Status": "Active",
+        "Ngành nghề": "Vận tải & logistics",
+        "CS": "TùngLD",
+        "Phân khúc": "Gold",
+        "Loại gói cước": "Enterprise",
+        "Hình thức thanh toán": "Trả sau",
+        "Hình thức sử dụng": "API",
+        "Kênh gửi tin chi tiết": "SMS CSKH",
+        "SUP": "LinhNTT1"
+      },
+      {
+        "ORG ID": 29,
+        "Khu vực": "Hà Nội",
+        "Status": "Active",
+        "Ngành nghề": "Vận tải & logistics",
+        "CS": "TùngLD",
+        "Phân khúc": "Gold",
+        "Loại gói cước": "Enterprise",
+        "Hình thức thanh toán": "Trả sau",
+        "Hình thức sử dụng": "API",
+        "Kênh gửi tin chi tiết": "Zalo ZNS",
+        "SUP": "LinhNTT1"
+      },
+      {
+        "ORG ID": 75,
+        "Khu vực": "Hà Nội",
+        "Status": "Active",
+        "Ngành nghề": "Sale chưa cung cấp",
+        "CS": "TùngLD",
+        "Phân khúc": "Diamond",
+        "Loại gói cước": "Enterprise",
+        "Hình thức thanh toán": "Trả sau",
+        "Hình thức sử dụng": "API & Portal",
+        "Kênh gửi tin chi tiết": "SMS CSKH",
+        "SUP": "DungPL"
+      }
+    ]
+  },
+  "namdt_tách dữ liệu input": {
+    "columns": [
+      "ORG ID",
+      "Khu vực",
+      "Status",
+      "Ngành nghề",
+      "CS",
+      "Phân khúc",
+      "Loại gói cước",
+      "Hình thức thanh toán",
+      "Hình thức sử dụng",
+      "Input chi tiết",
+      "SUP"
+    ],
+    "sample_data": [
+      {
+        "ORG ID": 29,
+        "Khu vực": "Hà Nội",
+        "Status": "Active",
+        "Ngành nghề": "Vận tải & logistics",
+        "CS": "TùngLD",
+        "Phân khúc": "Gold",
+        "Loại gói cước": "Enterprise",
+        "Hình thức thanh toán": "Trả sau",
+        "Hình thức sử dụng": "API",
+        "Input chi tiết": "API",
+        "SUP": "LinhNTT1"
+      },
+      {
+        "ORG ID": 75,
+        "Khu vực": "Hà Nội",
+        "Status": "Active",
+        "Ngành nghề": "Sale chưa cung cấp",
+        "CS": "TùngLD",
+        "Phân khúc": "Diamond",
+        "Loại gói cước": "Enterprise",
+        "Hình thức thanh toán": "Trả sau",
+        "Hình thức sử dụng": "API & Portal",
+        "Input chi tiết": "File Excel",
+        "SUP": "DungPL"
+      },
+      {
+        "ORG ID": 75,
+        "Khu vực": "Hà Nội",
+        "Status": "Active",
+        "Ngành nghề": "Sale chưa cung cấp",
+        "CS": "TùngLD",
+        "Phân khúc": "Diamond",
+        "Loại gói cước": "Enterprise",
+        "Hình thức thanh toán": "Trả sau",
+        "Hình thức sử dụng": "API & Portal",
+        "Input chi tiết": "API",
+        "SUP": "DungPL"
+      }
+    ]
+  },
+  "tungld_tách SUP": {
+    "columns": [
+      "ORG ID",
+      "Khu vực",
+      "Status",
+      "Ngành nghề",
+      "Customer Success (Lead)",
+      "Phân khúc",
+      "Loại gói cước",
+      "Hình thức TT",
+      "Hình thức SD",
+      "Customer Support"
+    ],
+    "sample_data": [
+      {
+        "ORG ID": 29,
+        "Khu vực": "Hà Nội",
+        "Status": "Active",
+        "Ngành nghề": "Vận tải & logistics",
+        "Customer Success (Lead)": "TùngLD",
+        "Phân khúc": "Gold",
+        "Loại gói cước": "Enterprise",
+        "Hình thức TT": "Trả sau",
+        "Hình thức SD": "API",
+        "Customer Support": "LinhNTT1"
+      },
+      {
+        "ORG ID": 75,
+        "Khu vực": "Hà Nội",
+        "Status": "Active",
+        "Ngành nghề": "Sale chưa cung cấp",
+        "Customer Success (Lead)": "TùngLD",
+        "Phân khúc": "Diamond",
+        "Loại gói cước": "Enterprise",
+        "Hình thức TT": "Trả sau",
+        "Hình thức SD": "API & Portal",
+        "Customer Support": "DungPL"
+      },
+      {
+        "ORG ID": 119,
+        "Khu vực": "Sài Gòn",
+        "Status": "Locked",
+        "Ngành nghề": "Giáo dục & Đào tạo",
+        "Customer Success (Lead)": "TúPHN",
+        "Phân khúc": "Sale chưa cung cấp",
+        "Loại gói cước": "Standard",
+        "Hình thức TT": "Trial",
+        "Hình thức SD": "API & Portal",
+        "Customer Support": "Không phân công"
+      }
+    ]
+  },
+  "tách dữ liệu input": {
+    "columns": [
+      "ORG ID",
+      "Khu vực",
+      "Status",
+      "Ngành nghề",
+      "CS",
+      "Phân khúc",
+      "Loại gói cước",
+      "Hình thức thanh toán",
+      "Hình thức sử dụng",
+      "Input chi tiết"
+    ],
+    "sample_data": [
+      {
+        "ORG ID": 29,
+        "Khu vực": "Hà Nội",
+        "Status": "Active",
+        "Ngành nghề": "Vận tải & logistics",
+        "CS": "TùngLD",
+        "Phân khúc": "Gold",
+        "Loại gói cước": "Enterprise",
+        "Hình thức thanh toán": "Trả sau",
+        "Hình thức sử dụng": "API",
+        "Input chi tiết": "API"
+      },
+      {
+        "ORG ID": 75,
+        "Khu vực": "Hà Nội",
+        "Status": "Active",
+        "Ngành nghề": "Sale chưa cung cấp",
+        "CS": "TùngLD",
+        "Phân khúc": "Diamond",
+        "Loại gói cước": "Enterprise",
+        "Hình thức thanh toán": "Trả sau",
+        "Hình thức sử dụng": "API & Portal",
+        "Input chi tiết": "File Excel"
+      },
+      {
+        "ORG ID": 75,
+        "Khu vực": "Hà Nội",
+        "Status": "Active",
+        "Ngành nghề": "Sale chưa cung cấp",
+        "CS": "TùngLD",
+        "Phân khúc": "Diamond",
+        "Loại gói cước": "Enterprise",
+        "Hình thức thanh toán": "Trả sau",
+        "Hình thức sử dụng": "API & Portal",
+        "Input chi tiết": "API"
+      }
+    ]
+  }
+}

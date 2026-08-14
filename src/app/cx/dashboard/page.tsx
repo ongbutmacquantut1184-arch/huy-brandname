@@ -4,20 +4,26 @@ import React, { useState, useEffect } from 'react';
 import { getCustomersOverview } from '@/lib/cx-actions';
 import { 
   Users, Server, FileText, AlertTriangle, LayoutDashboard, 
-  UserCheck, Wrench, ChevronRight, X, AlertOctagon, Database
+  UserCheck, Wrench, AlertOctagon, Database, ChevronRight
 } from 'lucide-react';
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, 
   CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 
+import KPICard from '@/components/ui/KPICard';
+import Drawer from '@/components/ui/Drawer';
+import DataTable from '@/components/ui/DataTable';
+import StatusBadge from '@/components/ui/StatusBadge';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
+
 const COLORS = ['#24b47e', '#0070f3', '#f5a623', '#e30000', '#14b8a6', '#6366f1', '#8b5cf6'];
 const STATUS_COLORS: Record<string, string> = {
-  'Active': '#24b47e',
-  'Pending': '#f5a623',
-  'Expired': '#e30000',
-  'Cancelled': '#64748b',
-  'Inactive': '#94a3b8'
+  'Active': '#10B981', // emerald-500
+  'Pending': '#F59E0B', // amber-500
+  'Expired': '#EF4444', // red-500
+  'Cancelled': '#6B7280', // gray-500
+  'Inactive': '#9CA3AF' // gray-400
 };
 
 export default function DashboardPage() {
@@ -51,7 +57,6 @@ export default function DashboardPage() {
   const allContracts = data.flatMap(c => c.contracts || []);
   const now = new Date();
   
-  // Helper for buckets
   const getDaysDiff = (dateStr: string) => {
     if (!dateStr) return null;
     const d = new Date(dateStr);
@@ -70,12 +75,10 @@ export default function DashboardPage() {
 
   const bucketOrder = ['Quá hạn (< 0)', '0-7 ngày', '8-15 ngày', '16-30 ngày', '31-60 ngày', '> 60 ngày'];
 
-  // 1. Overview Basics
   const totalActiveCustomers = data.filter(c => c.trang_thai === 'Active').length;
   const totalActiveServices = allServices.filter(s => s.trang_thai === 'Active').length;
   const totalActiveContracts = allContracts.filter(c => c.trang_thai === 'Active').length;
 
-  // 2. Status Charts
   const contractStatusMap: Record<string, number> = {};
   allContracts.forEach(c => {
     const st = c.trang_thai || 'Unknown';
@@ -90,7 +93,6 @@ export default function DashboardPage() {
   });
   const chartServiceStatus = Object.keys(serviceStatusMap).map(k => ({ name: k, value: serviceStatusMap[k] }));
 
-  // 3. Expiration Buckets (Active only)
   const contractBuckets: Record<string, number> = { 'Quá hạn (< 0)': 0, '0-7 ngày': 0, '8-15 ngày': 0, '16-30 ngày': 0, '31-60 ngày': 0, '> 60 ngày': 0 };
   allContracts.filter(c => c.trang_thai === 'Active' && c.ngay_ket_thuc_hd).forEach(c => {
     const days = getDaysDiff(c.ngay_ket_thuc_hd);
@@ -105,7 +107,6 @@ export default function DashboardPage() {
   });
   const chartServiceBuckets = bucketOrder.map(b => ({ name: b, count: serviceBuckets[b] }));
 
-  // 4. CS Workload
   const csMap = new Map<string, any[]>();
   data.forEach(c => {
     const cs = c.customer_success || c.cs_in_charge || 'Chưa gán';
@@ -114,27 +115,22 @@ export default function DashboardPage() {
   });
   const csLeaderboard = Array.from(csMap.entries()).map(([csName, customers]) => {
     const active = customers.filter(c => c.trang_thai === 'Active').length;
-    // Calculate risk
     let riskCount = 0;
     customers.forEach(c => {
       const cServices = c.services || [];
       const hasRisk = cServices.some((s: any) => {
         if (s.trang_thai !== 'Active') return false;
         const days = getDaysDiff(s.ngay_het_han);
-        return days !== null && days <= 30; // Quá hạn hoặc hết hạn trong 30 ngày
+        return days !== null && days <= 30; 
       });
       if (hasRisk) riskCount++;
     });
-
-    return {
-      csName, customers, total: customers.length, active, riskCount
-    };
+    return { csName, customers, total: customers.length, active, riskCount };
   }).sort((a, b) => b.total - a.total);
 
-  // 5. SUP Workload
   const supMap = new Map<string, any[]>();
   allServices.forEach(s => {
-    const sup = s.sup_phu_trach || 'Chưa gán';
+    const sup = s.customer_support || 'Chưa gán';
     if (!supMap.has(sup)) supMap.set(sup, []);
     supMap.get(sup)!.push(s);
   });
@@ -142,60 +138,85 @@ export default function DashboardPage() {
     const active = services.filter(s => s.trang_thai === 'Active').length;
     const pending = services.filter(s => s.trang_thai === 'Pending').length;
     const riskCount = services.filter(s => s.trang_thai === 'Active' && getDaysDiff(s.ngay_het_han) !== null && getDaysDiff(s.ngay_het_han)! <= 30).length;
-
-    return {
-      supName, services, total: services.length, active, pending, riskCount
-    };
+    return { supName, services, total: services.length, active, pending, riskCount };
   }).sort((a, b) => b.total - a.total);
 
-  // 6. Data Quality
-  const dqMissingSup = allServices.filter(s => !s.sup_phu_trach);
+  const dqMissingSup = allServices.filter(s => !s.customer_support);
   const dqMissingExp = allServices.filter(s => !s.ngay_het_han);
   const dqMissingContract = allServices.filter(s => !s.contract_id);
   const contractIdsInServices = new Set(allServices.map(s => s.contract_id));
   const dqOrphanContracts = allContracts.filter(c => !contractIdsInServices.has(c.contract_id));
 
+  // Columns for DataTables
+  const csColumns = [
+    { header: 'CS Phụ trách', accessor: (row: any) => <strong style={{ color: 'var(--neutral-900)' }}>{row.csName}</strong> },
+    { header: 'Tổng KH', accessor: 'total' },
+    { header: 'KH Active', accessor: (row: any) => <span style={{ color: 'var(--primary-600)', fontWeight: 600 }}>{row.active}</span> },
+    { header: 'Có rủi ro', accessor: (row: any) => row.riskCount > 0 ? <StatusBadge status={`${row.riskCount} KH`} variant="warning" /> : <span style={{ color: 'var(--neutral-400)' }}>0</span> },
+    { header: 'Chi tiết', align: 'center' as const, accessor: (row: any) => (
+      <button className="btn btn-secondary" onClick={() => openDrawer(`Khách hàng của ${row.csName}`, 'cs', row.customers)}>
+        Chi tiết <ChevronRight size={14} />
+      </button>
+    )}
+  ];
+
+  const supColumns = [
+    { header: 'SUP Phụ trách', accessor: (row: any) => <strong style={{ color: 'var(--neutral-900)' }}>{row.supName}</strong> },
+    { header: 'Tổng DV', accessor: 'total' },
+    { header: 'Đang chạy', accessor: (row: any) => <span style={{ color: 'var(--info-600)', fontWeight: 600 }}>{row.active}</span> },
+    { header: 'Chờ duyệt', accessor: (row: any) => <span style={{ color: 'var(--warning-600)', fontWeight: 600 }}>{row.pending}</span> },
+    { header: 'Có rủi ro', accessor: (row: any) => row.riskCount > 0 ? <StatusBadge status={`${row.riskCount} DV`} variant="warning" /> : <span style={{ color: 'var(--neutral-400)' }}>0</span> },
+    { header: 'Chi tiết', align: 'center' as const, accessor: (row: any) => (
+      <button className="btn btn-secondary" onClick={() => openDrawer(`Dịch vụ của ${row.supName}`, 'sup', row.services)}>
+        Chi tiết <ChevronRight size={14} />
+      </button>
+    )}
+  ];
+
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+      <div style={{ padding: 'var(--space-8)' }}>
+        <h1 className="text-2xl font-bold mb-6 text-neutral">Tổng quan Số liệu</h1>
+        <SkeletonLoader rows={8} />
       </div>
     );
   }
 
   return (
-    <div style={{ maxWidth: '1400px', margin: '40px auto', padding: '0 24px', position: 'relative' }}>
-      <h1 className="text-2xl font-bold text-neutral m-0 mb-6 flex items-center gap-3">
-        <LayoutDashboard /> Tổng quan Số liệu
-      </h1>
+    <div>
+      <div className="page-header">
+        <h1 className="text-2xl font-bold text-neutral m-0 flex items-center gap-3">
+          <LayoutDashboard color="var(--primary-600)" /> Tổng quan Hệ thống
+        </h1>
+      </div>
 
       {/* Tabs */}
       <div className="flex gap-4 mb-8" style={{ borderBottom: '1px solid var(--neutral-200)', paddingBottom: '8px' }}>
         <button 
-          className={`btn ${activeTab === 'overview' ? 'btn-primary' : 'btn-secondary'}`}
+          className={`btn ${activeTab === 'overview' ? 'active-tab' : 'btn-secondary'}`}
           onClick={() => setActiveTab('overview')}
-          style={{ background: activeTab === 'overview' ? 'var(--primary-600)' : 'transparent', color: activeTab === 'overview' ? '#fff' : 'var(--neutral-700)', border: 'none', boxShadow: 'none', fontWeight: 600 }}
+          style={activeTab === 'overview' ? { background: 'var(--primary-50)', color: 'var(--primary-700)', borderColor: 'var(--primary-200)' } : { border: 'none', background: 'transparent' }}
         >
           Toàn cảnh & Cảnh báo
         </button>
         <button 
-          className={`btn ${activeTab === 'cs' ? 'btn-primary' : 'btn-secondary'}`}
+          className={`btn ${activeTab === 'cs' ? 'active-tab' : 'btn-secondary'}`}
           onClick={() => setActiveTab('cs')}
-          style={{ background: activeTab === 'cs' ? 'var(--primary-600)' : 'transparent', color: activeTab === 'cs' ? '#fff' : 'var(--neutral-700)', border: 'none', boxShadow: 'none', fontWeight: 600 }}
+          style={activeTab === 'cs' ? { background: 'var(--primary-50)', color: 'var(--primary-700)', borderColor: 'var(--primary-200)' } : { border: 'none', background: 'transparent' }}
         >
           Customer Success
         </button>
         <button 
-          className={`btn ${activeTab === 'sup' ? 'btn-primary' : 'btn-secondary'}`}
+          className={`btn ${activeTab === 'sup' ? 'active-tab' : 'btn-secondary'}`}
           onClick={() => setActiveTab('sup')}
-          style={{ background: activeTab === 'sup' ? 'var(--primary-600)' : 'transparent', color: activeTab === 'sup' ? '#fff' : 'var(--neutral-700)', border: 'none', boxShadow: 'none', fontWeight: 600 }}
+          style={activeTab === 'sup' ? { background: 'var(--primary-50)', color: 'var(--primary-700)', borderColor: 'var(--primary-200)' } : { border: 'none', background: 'transparent' }}
         >
           Customer Support
         </button>
         <button 
-          className={`btn ${activeTab === 'dq' ? 'btn-primary' : 'btn-secondary'}`}
+          className={`btn ${activeTab === 'dq' ? 'active-tab' : 'btn-secondary'}`}
           onClick={() => setActiveTab('dq')}
-          style={{ background: activeTab === 'dq' ? 'var(--primary-600)' : 'transparent', color: activeTab === 'dq' ? '#fff' : 'var(--neutral-700)', border: 'none', boxShadow: 'none', fontWeight: 600 }}
+          style={activeTab === 'dq' ? { background: 'var(--primary-50)', color: 'var(--primary-700)', borderColor: 'var(--primary-200)' } : { border: 'none', background: 'transparent' }}
         >
           Chất lượng Dữ liệu
         </button>
@@ -203,95 +224,65 @@ export default function DashboardPage() {
 
       {/* TAB: OVERVIEW */}
       {activeTab === 'overview' && (
-        <div className="animate-fade-in-up">
-          {/* Scorecards */}
+        <div className="animate-fade-in">
           <div className="grid gap-6 mb-8" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
-            <div className="card-container p-6" style={{ background: 'var(--primary-50)', border: '1px solid var(--primary-200)' }}>
-              <div className="flex justify-between items-center mb-4">
-                <span style={{ color: 'var(--primary-700)', fontWeight: 600 }}>Khách hàng Đang hoạt động</span>
-                <Users color="var(--primary-600)" size={24} />
-              </div>
-              <div style={{ fontSize: '36px', fontWeight: 800, color: 'var(--primary-800)' }}>
-                {totalActiveCustomers}
-              </div>
-              <div className="text-sm mt-2" style={{ color: 'var(--primary-600)' }}>Trên tổng {data.length} KH</div>
-            </div>
-
-            <div className="card-container p-6" style={{ background: 'var(--info-50)', border: '1px solid var(--info-200)' }}>
-              <div className="flex justify-between items-center mb-4">
-                <span style={{ color: 'var(--info-700)', fontWeight: 600 }}>Dịch vụ Đang chạy</span>
-                <Server color="var(--info-600)" size={24} />
-              </div>
-              <div style={{ fontSize: '36px', fontWeight: 800, color: 'var(--info-800)' }}>
-                {totalActiveServices}
-              </div>
-              <div className="text-sm mt-2" style={{ color: 'var(--info-600)' }}>Trên tổng {allServices.length} DV</div>
-            </div>
-
-            <div className="card-container p-6" style={{ background: '#f5f3ff', border: '1px solid #ddd6fe' }}>
-              <div className="flex justify-between items-center mb-4">
-                <span style={{ color: '#6d28d9', fontWeight: 600 }}>Hợp đồng Đang chạy</span>
-                <FileText color="#7c3aed" size={24} />
-              </div>
-              <div style={{ fontSize: '36px', fontWeight: 800, color: '#5b21b6' }}>
-                {totalActiveContracts}
-              </div>
-              <div className="text-sm mt-2" style={{ color: '#7c3aed' }}>Trên tổng {allContracts.length} HĐ</div>
-            </div>
+            <KPICard title="Khách hàng Đang hoạt động" value={totalActiveCustomers} icon={Users} color="var(--primary-600)" />
+            <KPICard title="Dịch vụ Đang chạy" value={totalActiveServices} icon={Server} color="var(--info-600)" />
+            <KPICard title="Hợp đồng Đang chạy" value={totalActiveContracts} icon={FileText} color="#8b5cf6" />
           </div>
 
-          {/* Charts: Status */}
           <div className="grid gap-6 mb-8" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))' }}>
             <div className="card-container p-6">
-              <h3 className="text-lg font-bold mb-6 text-neutral">Cơ cấu Trạng thái Hợp đồng</h3>
-              <div style={{ height: '250px' }}>
+              <h3 className="text-base font-semibold mb-6 text-neutral">Cơ cấu Trạng thái Hợp đồng</h3>
+              <div style={{ height: '280px' }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie data={chartContractStatus} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={90} label>
+                    <Pie data={chartContractStatus} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={70} outerRadius={100} paddingAngle={2}>
                       {chartContractStatus.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={STATUS_COLORS[entry.name] || COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip />
-                    <Legend />
+                    <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: 'var(--shadow-md)' }} />
+                    <Legend iconType="circle" />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
             <div className="card-container p-6">
-              <h3 className="text-lg font-bold mb-6 text-neutral">Cơ cấu Trạng thái Dịch vụ</h3>
-              <div style={{ height: '250px' }}>
+              <h3 className="text-base font-semibold mb-6 text-neutral">Cơ cấu Trạng thái Dịch vụ</h3>
+              <div style={{ height: '280px' }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie data={chartServiceStatus} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={90} label>
+                    <Pie data={chartServiceStatus} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={70} outerRadius={100} paddingAngle={2}>
                       {chartServiceStatus.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={STATUS_COLORS[entry.name] || COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip />
-                    <Legend />
+                    <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: 'var(--shadow-md)' }} />
+                    <Legend iconType="circle" />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
             </div>
           </div>
 
-          {/* Charts: Expiration Risk */}
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2" style={{ color: 'var(--warning-700)' }}><AlertTriangle /> Cảnh báo rủi ro hết hạn (Active)</h2>
+          <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-warning-700">
+            <AlertTriangle /> Cảnh báo rủi ro hết hạn (Active)
+          </h2>
           <div className="grid gap-6" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))' }}>
             <div className="card-container p-6">
-              <h3 className="text-lg font-bold mb-6 text-neutral">Hợp đồng theo mốc hết hạn</h3>
+              <h3 className="text-base font-semibold mb-6 text-neutral">Hợp đồng theo mốc hết hạn</h3>
               <div style={{ height: '300px' }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={chartContractBuckets} layout="vertical" margin={{ left: 50, right: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--neutral-200)" />
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--neutral-100)" />
                     <XAxis type="number" allowDecimals={false} />
-                    <YAxis dataKey="name" type="category" tick={{ fontSize: 13 }} width={100} />
-                    <Tooltip cursor={{ fill: 'var(--neutral-100)' }} />
-                    <Bar dataKey="count" fill="var(--warning-500)" radius={[0, 4, 4, 0]}>
+                    <YAxis dataKey="name" type="category" tick={{ fontSize: 12 }} width={90} axisLine={false} tickLine={false} />
+                    <Tooltip cursor={{ fill: 'var(--neutral-50)' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: 'var(--shadow-md)' }} />
+                    <Bar dataKey="count" fill="var(--warning-500)" radius={[0, 4, 4, 0]} barSize={24}>
                       {chartContractBuckets.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.name === 'Quá hạn (< 0)' ? 'var(--danger-500)' : 'var(--warning-500)'} />
+                        <Cell key={`cell-${index}`} fill={entry.name === 'Quá hạn (< 0)' ? 'var(--error-500)' : 'var(--warning-500)'} />
                       ))}
                     </Bar>
                   </BarChart>
@@ -300,17 +291,17 @@ export default function DashboardPage() {
             </div>
 
             <div className="card-container p-6">
-              <h3 className="text-lg font-bold mb-6 text-neutral">Dịch vụ theo mốc hết hạn</h3>
+              <h3 className="text-base font-semibold mb-6 text-neutral">Dịch vụ theo mốc hết hạn</h3>
               <div style={{ height: '300px' }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={chartServiceBuckets} layout="vertical" margin={{ left: 50, right: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--neutral-200)" />
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--neutral-100)" />
                     <XAxis type="number" allowDecimals={false} />
-                    <YAxis dataKey="name" type="category" tick={{ fontSize: 13 }} width={100} />
-                    <Tooltip cursor={{ fill: 'var(--neutral-100)' }} />
-                    <Bar dataKey="count" fill="var(--info-500)" radius={[0, 4, 4, 0]}>
+                    <YAxis dataKey="name" type="category" tick={{ fontSize: 12 }} width={90} axisLine={false} tickLine={false} />
+                    <Tooltip cursor={{ fill: 'var(--neutral-50)' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: 'var(--shadow-md)' }} />
+                    <Bar dataKey="count" fill="var(--info-500)" radius={[0, 4, 4, 0]} barSize={24}>
                       {chartServiceBuckets.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.name === 'Quá hạn (< 0)' ? 'var(--danger-500)' : 'var(--info-500)'} />
+                        <Cell key={`cell-${index}`} fill={entry.name === 'Quá hạn (< 0)' ? 'var(--error-500)' : 'var(--info-500)'} />
                       ))}
                     </Bar>
                   </BarChart>
@@ -323,198 +314,70 @@ export default function DashboardPage() {
 
       {/* TAB: CS */}
       {activeTab === 'cs' && (
-        <div className="animate-fade-in-up card-container p-6">
-          <h3 className="text-lg font-bold mb-6 flex items-center gap-2"><UserCheck /> Tải việc Customer Success theo Rủi ro</h3>
-          <table className="custom-table">
-            <thead>
-              <tr>
-                <th>CS Phụ trách</th>
-                <th>Tổng Khách hàng</th>
-                <th>KH Active</th>
-                <th><span style={{ color: 'var(--warning-700)' }}>KH Có rủi ro (Hết hạn ≤ 30 ngày)</span></th>
-                <th style={{ textAlign: 'center' }}>Chi tiết</th>
-              </tr>
-            </thead>
-            <tbody>
-              {csLeaderboard.map((item, idx) => (
-                <tr key={idx} className="row-hover">
-                  <td style={{ fontWeight: 600, color: 'var(--neutral-900)' }}>{item.csName}</td>
-                  <td>{item.total}</td>
-                  <td style={{ color: 'var(--primary-600)', fontWeight: 600 }}>{item.active}</td>
-                  <td>
-                    {item.riskCount > 0 ? (
-                      <span className="badge-custom" style={{ background: 'var(--warning-50)', color: 'var(--warning-700)', fontWeight: 700 }}>
-                        {item.riskCount} KH
-                      </span>
-                    ) : (
-                      <span style={{ color: 'var(--neutral-400)' }}>0</span>
-                    )}
-                  </td>
-                  <td style={{ textAlign: 'center' }}>
-                    <button 
-                      className="btn btn-secondary" 
-                      onClick={() => openDrawer(`Khách hàng của ${item.csName}`, 'cs', item.customers)}
-                      style={{ padding: '6px 12px', fontSize: '13px' }}
-                    >
-                      Xem chi tiết <ChevronRight size={14} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="animate-fade-in">
+          <h3 className="text-lg font-bold mb-4 flex items-center gap-2"><UserCheck color="var(--primary-600)"/> Tải việc Customer Success theo Rủi ro</h3>
+          <DataTable data={csLeaderboard} columns={csColumns} keyExtractor={(item) => item.csName} />
         </div>
       )}
 
       {/* TAB: SUP */}
       {activeTab === 'sup' && (
-        <div className="animate-fade-in-up card-container p-6">
-          <h3 className="text-lg font-bold mb-6 flex items-center gap-2"><Wrench /> Tải việc Support theo Rủi ro</h3>
-          <table className="custom-table">
-            <thead>
-              <tr>
-                <th>Support Phụ trách</th>
-                <th>Tổng Dịch vụ</th>
-                <th>DV Đang chạy (Active)</th>
-                <th>DV Chờ (Pending)</th>
-                <th><span style={{ color: 'var(--warning-700)' }}>DV Có rủi ro (Hết hạn ≤ 30 ngày)</span></th>
-                <th style={{ textAlign: 'center' }}>Chi tiết</th>
-              </tr>
-            </thead>
-            <tbody>
-              {supWorkload.map((item, idx) => (
-                <tr key={idx} className="row-hover">
-                  <td style={{ fontWeight: 600, color: 'var(--neutral-900)' }}>{item.supName}</td>
-                  <td>{item.total}</td>
-                  <td style={{ color: 'var(--info-600)', fontWeight: 600 }}>{item.active}</td>
-                  <td style={{ color: 'var(--warning-600)', fontWeight: 600 }}>{item.pending}</td>
-                  <td>
-                    {item.riskCount > 0 ? (
-                      <span className="badge-custom" style={{ background: 'var(--warning-50)', color: 'var(--warning-700)', fontWeight: 700 }}>
-                        {item.riskCount} DV
-                      </span>
-                    ) : (
-                      <span style={{ color: 'var(--neutral-400)' }}>0</span>
-                    )}
-                  </td>
-                  <td style={{ textAlign: 'center' }}>
-                    <button 
-                      className="btn btn-secondary" 
-                      onClick={() => openDrawer(`Dịch vụ của ${item.supName}`, 'sup', item.services)}
-                      style={{ padding: '6px 12px', fontSize: '13px' }}
-                    >
-                      Xem chi tiết <ChevronRight size={14} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="animate-fade-in">
+          <h3 className="text-lg font-bold mb-4 flex items-center gap-2"><Wrench color="var(--info-600)"/> Tải việc Support theo Rủi ro</h3>
+          <DataTable data={supWorkload} columns={supColumns} keyExtractor={(item) => item.supName} />
         </div>
       )}
 
       {/* TAB: DATA QUALITY */}
       {activeTab === 'dq' && (
-        <div className="animate-fade-in-up">
-          <h3 className="text-lg font-bold mb-6 flex items-center gap-2"><Database /> Cảnh báo Chất lượng Dữ liệu</h3>
-          
+        <div className="animate-fade-in">
+          <h3 className="text-lg font-bold mb-6 flex items-center gap-2"><Database color="var(--neutral-600)"/> Cảnh báo Chất lượng Dữ liệu</h3>
           <div className="grid gap-6 mb-6" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))' }}>
-            <div className="card-container p-6" style={{ background: 'var(--danger-50)', border: '1px solid var(--danger-200)' }}>
-              <div className="flex justify-between items-start mb-2">
-                <span style={{ color: 'var(--danger-700)', fontWeight: 600, fontSize: '15px' }}>DV Thiếu SUP</span>
-                <AlertOctagon color="var(--danger-600)" size={20} />
-              </div>
-              <div style={{ fontSize: '32px', fontWeight: 800, color: 'var(--danger-800)' }}>{dqMissingSup.length}</div>
-            </div>
-
-            <div className="card-container p-6" style={{ background: 'var(--danger-50)', border: '1px solid var(--danger-200)' }}>
-              <div className="flex justify-between items-start mb-2">
-                <span style={{ color: 'var(--danger-700)', fontWeight: 600, fontSize: '15px' }}>DV Thiếu Ngày hết hạn</span>
-                <AlertOctagon color="var(--danger-600)" size={20} />
-              </div>
-              <div style={{ fontSize: '32px', fontWeight: 800, color: 'var(--danger-800)' }}>{dqMissingExp.length}</div>
-            </div>
-
-            <div className="card-container p-6" style={{ background: 'var(--warning-50)', border: '1px solid var(--warning-200)' }}>
-              <div className="flex justify-between items-start mb-2">
-                <span style={{ color: 'var(--warning-700)', fontWeight: 600, fontSize: '15px' }}>DV Thiếu Hợp đồng</span>
-                <AlertTriangle color="var(--warning-600)" size={20} />
-              </div>
-              <div style={{ fontSize: '32px', fontWeight: 800, color: 'var(--warning-800)' }}>{dqMissingContract.length}</div>
-            </div>
-
-            <div className="card-container p-6" style={{ background: 'var(--warning-50)', border: '1px solid var(--warning-200)' }}>
-              <div className="flex justify-between items-start mb-2">
-                <span style={{ color: 'var(--warning-700)', fontWeight: 600, fontSize: '15px' }}>HĐ Mồ côi (Không DV)</span>
-                <AlertTriangle color="var(--warning-600)" size={20} />
-              </div>
-              <div style={{ fontSize: '32px', fontWeight: 800, color: 'var(--warning-800)' }}>{dqOrphanContracts.length}</div>
-            </div>
+            <KPICard title="DV Thiếu SUP" value={dqMissingSup.length} icon={AlertOctagon} color="var(--error-600)" />
+            <KPICard title="DV Thiếu Ngày hết hạn" value={dqMissingExp.length} icon={AlertOctagon} color="var(--error-600)" />
+            <KPICard title="DV Thiếu Hợp đồng" value={dqMissingContract.length} icon={AlertTriangle} color="var(--warning-600)" />
+            <KPICard title="HĐ Mồ côi (Không DV)" value={dqOrphanContracts.length} icon={AlertTriangle} color="var(--warning-600)" />
           </div>
         </div>
       )}
 
       {/* DRILL-DOWN DRAWER */}
-      {isDrawerOpen && (
-        <>
-          <div 
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 99998, backdropFilter: 'blur(2px)' }} 
-            onClick={() => setIsDrawerOpen(false)} 
-          />
-          <div 
-            className="animate-slide-in-right"
-            style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: '600px', maxWidth: '100vw', background: '#fff', zIndex: 99999, boxShadow: 'var(--shadow-xl)', display: 'flex', flexDirection: 'column' }}
-          >
-            <div style={{ padding: '24px', borderBottom: '1px solid var(--neutral-200)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 className="text-xl font-bold m-0">{drawerData.title}</h2>
-              <button onClick={() => setIsDrawerOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--neutral-500)' }}>
-                <X size={24} />
-              </button>
-            </div>
-            
-            <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
-              {drawerData.type === 'cs' && (
-                <div className="flex-col gap-4">
-                  {drawerData.list.map((c, i) => (
-                    <div key={i} className="card-container p-4" style={{ border: '1px solid var(--neutral-200)' }}>
-                      <div className="flex justify-between items-start mb-2">
-                        <div style={{ fontWeight: 600, color: 'var(--primary-700)' }}>{c.ten_cong_ty || 'Chưa có tên'}</div>
-                        <span className="badge-custom" style={{ background: c.trang_thai === 'Active' ? 'var(--primary-50)' : 'var(--neutral-100)', color: c.trang_thai === 'Active' ? 'var(--primary-700)' : 'var(--neutral-600)' }}>
-                          {c.trang_thai === 'Active' ? 'Hoạt động' : 'Tạm ngưng'}
-                        </span>
-                      </div>
-                      <div className="text-sm text-muted">Mã KH: {c.customer_id}</div>
-                      <div className="text-sm text-muted mt-2">Đang sử dụng <strong>{c.active_services || 0}</strong> dịch vụ</div>
-                    </div>
-                  ))}
+      <Drawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} title={drawerData.title} width="600px">
+        {drawerData.type === 'cs' && (
+          <div className="flex-col gap-4">
+            {drawerData.list.map((c, i) => (
+              <div key={i} className="card-container p-4" style={{ border: '1px solid var(--neutral-200)', marginBottom: '12px' }}>
+                <div className="flex justify-between items-start mb-2">
+                  <div style={{ fontWeight: 600, color: 'var(--primary-700)' }}>{c.ten_cong_ty || 'Chưa có tên'}</div>
+                  <StatusBadge status={c.trang_thai === 'Active' ? 'Hoạt động' : 'Tạm ngưng'} variant={c.trang_thai === 'Active' ? 'success' : 'default'} />
                 </div>
-              )}
-              
-              {drawerData.type === 'sup' && (
-                <div className="flex-col gap-4">
-                  {drawerData.list.map((s, i) => (
-                    <div key={i} className="card-container p-4" style={{ border: '1px solid var(--neutral-200)' }}>
-                      <div className="flex justify-between items-start mb-2">
-                        <div style={{ fontWeight: 600, color: 'var(--info-700)' }}>{s.loai_dich_vu || 'Không rõ'}</div>
-                        <span className="badge-custom" style={{ background: s.trang_thai === 'Active' ? 'var(--info-50)' : 'var(--neutral-100)', color: s.trang_thai === 'Active' ? 'var(--info-700)' : 'var(--neutral-600)' }}>
-                          {s.trang_thai}
-                        </span>
-                      </div>
-                      <div className="text-sm text-muted">Mã DV: {s.service_id}</div>
-                      <div className="text-sm text-muted">Mã KH: {s.customer_id}</div>
-                      {s.ngay_het_han && (
-                        <div className="text-sm mt-2 font-semibold" style={{ color: getDaysDiff(s.ngay_het_han) !== null && getDaysDiff(s.ngay_het_han)! <= 30 ? 'var(--warning-700)' : 'var(--neutral-600)' }}>
-                          Hết hạn: {new Date(s.ngay_het_han).toLocaleDateString('vi-VN')}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                <div className="text-sm text-muted">Mã KH: {c.customer_id}</div>
+                <div className="text-sm text-muted mt-2">Đang sử dụng <strong>{c.active_services || 0}</strong> dịch vụ</div>
+              </div>
+            ))}
           </div>
-        </>
-      )}
+        )}
+        
+        {drawerData.type === 'sup' && (
+          <div className="flex-col gap-4">
+            {drawerData.list.map((s, i) => (
+              <div key={i} className="card-container p-4" style={{ border: '1px solid var(--neutral-200)', marginBottom: '12px' }}>
+                <div className="flex justify-between items-start mb-2">
+                  <div style={{ fontWeight: 600, color: 'var(--info-700)' }}>{s.loai_dich_vu || 'Không rõ'}</div>
+                  <StatusBadge status={s.trang_thai} />
+                </div>
+                <div className="text-sm text-muted">Mã DV: {s.service_id}</div>
+                <div className="text-sm text-muted">Mã KH: {s.customer_id}</div>
+                {s.ngay_het_han && (
+                  <div className="text-sm mt-2 font-semibold" style={{ color: getDaysDiff(s.ngay_het_han) !== null && getDaysDiff(s.ngay_het_han)! <= 30 ? 'var(--warning-700)' : 'var(--neutral-600)' }}>
+                    Hết hạn: {new Date(s.ngay_het_han).toLocaleDateString('vi-VN')}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </Drawer>
     </div>
   );
 }
