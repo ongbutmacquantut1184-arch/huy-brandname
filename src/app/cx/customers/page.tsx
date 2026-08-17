@@ -61,6 +61,8 @@ export default function CustomersPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const didMountSearch = useRef(false);
+  const didMountFilters = useRef(false);
 
   const [filterCustomerId, setFilterCustomerId] = useState<string | null>(null);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
@@ -76,37 +78,30 @@ export default function CustomersPage() {
   const [filterKenhGuiTin, setFilterKenhGuiTin] = useState<string[]>([]);
   const [filterDuLieuInput, setFilterDuLieuInput] = useState<string[]>([]);
 
-  useEffect(() => {
-    fetchData(1, searchQuery);
-    const handleClickOutside = (event: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
-        setShowSearchDropdown(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  useEffect(() => {
-    const delayDebounceFn = setTimeout(() => {
-      if (searchQuery.trim().length >= 2) {
-        performSearch(searchQuery);
-      } else {
-        setSearchResults([]);
-        setShowSearchDropdown(false);
-      }
-    }, 400);
-    return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery]);
+  const getCurrentFilters = () => ({
+    customerId: filterCustomerId,
+    statuses: filterStatus,
+    createdFrom: filterDateRange.start,
+    createdTo: filterDateRange.end,
+    expiry: filterExpiry,
+    customerSuccess: filterCustomerSuccess,
+    sale: filterSale,
+    customerSupport: filterCustomerSupport,
+    phanKhuc: filterPhanKhuc,
+    khuVuc: filterKhuVuc,
+    kenhGuiTin: filterKenhGuiTin,
+    duLieuInput: filterDuLieuInput,
+  });
 
   const fetchData = async (page = 1, query = '') => {
     setLoading(true);
     const [custRes, confRes] = await Promise.all([
-      getCustomersOverview(page, 20, query),
+      getCustomersOverview(page, 20, query, getCurrentFilters()),
       getDropdownConfigs()
     ]);
     if (custRes.success && custRes.data) {
       setCustomers(custRes.data);
+      if (page === 1 && query.trim().length >= 2) setSearchResults(custRes.data);
       setTotalPages(custRes.totalPages || 1);
       setTotalRecords(custRes.totalRecords || 0);
       setCurrentPage(custRes.currentPage || 1);
@@ -122,6 +117,55 @@ export default function CustomersPage() {
     setShowSearchDropdown(false);
     setHasSearched(true);
   };
+
+  useEffect(() => {
+    fetchData(1, searchQuery);
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSearchDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (!didMountSearch.current) {
+      didMountSearch.current = true;
+      return;
+    }
+
+    const delayDebounceFn = setTimeout(() => {
+      if (searchQuery.trim().length >= 2) {
+        performSearch(searchQuery);
+      } else {
+        setSearchResults([]);
+        setShowSearchDropdown(false);
+        fetchData(1, '');
+      }
+    }, 400);
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    if (!didMountFilters.current) {
+      didMountFilters.current = true;
+      return;
+    }
+    fetchData(1, searchQuery.trim().length >= 2 ? searchQuery : '');
+  }, [
+    filterCustomerId,
+    filterStatus,
+    filterDateRange,
+    filterExpiry,
+    filterCustomerSuccess,
+    filterSale,
+    filterCustomerSupport,
+    filterPhanKhuc,
+    filterKhuVuc,
+    filterKenhGuiTin,
+    filterDuLieuInput
+  ]);
 
   const toggleFilter = (list: string[], setList: any, value: string) => {
     if (list.includes(value)) setList(list.filter(v => v !== value));
@@ -142,55 +186,22 @@ export default function CustomersPage() {
     setFilterDuLieuInput([]);
   };
 
-  const filteredCustomers = customers.filter(c => {
-    if (filterCustomerId && c.customer_id !== filterCustomerId) return false;
-    if (filterStatus.length && !filterStatus.includes(c.trang_thai)) return false;
-    
-    const cs = c.customer_success || c.cs_in_charge;
-    const sale = c.sale_phu_trach || c.sale_in_charge;
+  const filteredCustomers = customers;
 
-    if (filterCustomerSuccess.length && !filterCustomerSuccess.includes(cs)) return false;
-    if (filterSale.length && !filterSale.includes(sale)) return false;
-    if (filterPhanKhuc.length && !filterPhanKhuc.includes(c.phan_khuc)) return false;
-    if (filterKhuVuc.length && !filterKhuVuc.includes(c.khu_vuc)) return false;
-    if (filterKenhGuiTin.length && !filterKenhGuiTin.includes(c.kenh_gui_tin)) return false;
-    if (filterDuLieuInput.length && !filterDuLieuInput.includes(c.du_lieu_input)) return false;
-
-    if (filterCustomerSupport.length) {
-      const hasMatchedSup = filterCustomerSupport.some(sup => c.sup_phu_trach_list?.includes(sup));
-      if (!hasMatchedSup) return false;
-    }
-
-    if (filterDateRange.start) {
-      if (new Date(c.created_at) < new Date(filterDateRange.start)) return false;
-    }
-    if (filterDateRange.end) {
-      const endD = new Date(filterDateRange.end);
-      endD.setHours(23, 59, 59);
-      if (new Date(c.created_at) > endD) return false;
-    }
-
-    if (filterExpiry.length > 0) {
-      const today = new Date();
-      let matched = false;
-      const expiries = c.service_expiries || [];
-      for (const filter of filterExpiry) {
-        if (filter === 'Đã hết hạn' && expiries.some((ds: string) => new Date(ds) < today)) matched = true;
-        if (filter === 'Còn < 15 ngày' && expiries.some((ds: string) => {
-          const d = new Date(ds);
-          const diff = (d.getTime() - today.getTime()) / 86400000;
-          return diff >= 0 && diff <= 15;
-        })) matched = true;
-        if (filter === 'Còn < 45 ngày' && expiries.some((ds: string) => {
-          const d = new Date(ds);
-          const diff = (d.getTime() - today.getTime()) / 86400000;
-          return diff > 15 && diff <= 45;
-        })) matched = true;
+  const getServiceSupportPairs = (services: any[] = []) => {
+    const seen = new Set<string>();
+    const pairs: { serviceType: string; support: string }[] = [];
+    services.forEach((s: any) => {
+      const serviceType = s.loai_dich_vu || 'Không rõ dịch vụ';
+      const support = s.customer_support || 'Chưa gán SUP';
+      const key = `${serviceType}|${support}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        pairs.push({ serviceType, support });
       }
-      if (!matched) return false;
-    }
-    return true;
-  });
+    });
+    return pairs;
+  };
 
   const handleExportExcel = async () => {
     try {
@@ -236,7 +247,20 @@ export default function CustomersPage() {
     }
   };
 
-  const isAnyFilterActive = filterCustomerId || filterStatus.length || filterDateRange.start || filterDateRange.end || filterExpiry.length || filterCustomerSuccess.length || filterSale.length || filterCustomerSupport.length || filterPhanKhuc || filterKhuVuc || filterKenhGuiTin || filterDuLieuInput;
+  const isAnyFilterActive = !!(
+    filterCustomerId ||
+    filterStatus.length ||
+    filterDateRange.start ||
+    filterDateRange.end ||
+    filterExpiry.length ||
+    filterCustomerSuccess.length ||
+    filterSale.length ||
+    filterCustomerSupport.length ||
+    filterPhanKhuc.length ||
+    filterKhuVuc.length ||
+    filterKenhGuiTin.length ||
+    filterDuLieuInput.length
+  );
 
   return (
     <>
@@ -251,9 +275,9 @@ export default function CustomersPage() {
         </div>
 
         {/* Search & Actions Block */}
-        <div className="card-container" style={{ padding: 'var(--space-6)', marginBottom: 'var(--space-6)' }}>
-          <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <div ref={searchRef} style={{ position: 'relative', flex: 1, minWidth: '300px' }}>
+        <div className="card-container customer-toolbar-card" style={{ padding: 'var(--space-6)', marginBottom: 'var(--space-6)' }}>
+          <div className="customer-toolbar" style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div ref={searchRef} className="customer-search-box" style={{ position: 'relative', flex: 1, minWidth: '300px' }}>
               <div style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--neutral-400)' }}>
                 <Search size={20} />
               </div>
@@ -314,7 +338,7 @@ export default function CustomersPage() {
             </div>
 
             <button 
-              className={`btn ${showAdvancedFilters ? 'btn-primary' : 'btn-secondary'}`} 
+              className={`btn customer-action-btn ${showAdvancedFilters ? 'btn-primary' : 'btn-secondary'}`} 
               onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
               style={{ height: '44px' }}
             >
@@ -323,12 +347,12 @@ export default function CustomersPage() {
               <ChevronDown size={16} style={{ transition: 'transform 0.2s', transform: showAdvancedFilters ? 'rotate(180deg)' : 'none' }} />
             </button>
             
-            <button className="btn btn-secondary" onClick={handleExportExcel} style={{ height: '44px' }}>
+            <button className="btn btn-secondary customer-action-btn" onClick={handleExportExcel} style={{ height: '44px' }}>
               <Download size={18} /> Xuất Excel
             </button>
 
             {isAnyFilterActive && (
-              <button className="btn btn-danger" onClick={clearAllFilters} style={{ height: '44px', background: 'transparent', border: 'none' }}>
+              <button className="btn btn-danger customer-action-btn" onClick={clearAllFilters} style={{ height: '44px', background: 'transparent', border: 'none' }}>
                 <FilterX size={18} /> Xóa lọc
               </button>
             )}
@@ -337,7 +361,7 @@ export default function CustomersPage() {
           {/* Advanced Filters Panel */}
           {showAdvancedFilters && (
             <div className="animate-fade-in-up" style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid var(--neutral-200)', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
+              <div className="customer-filter-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
                 <MultiSelectFilter label="Trạng thái" options={['Active', 'Inactive']} selected={filterStatus} toggle={(v) => toggleFilter(filterStatus, setFilterStatus, v)} />
                 <MultiSelectFilter label="Thời gian hết hạn" options={['Còn < 15 ngày', 'Còn < 45 ngày', 'Đã hết hạn']} selected={filterExpiry} toggle={(v) => toggleFilter(filterExpiry, setFilterExpiry, v)} />
                 <div>
@@ -352,7 +376,7 @@ export default function CustomersPage() {
 
               <div style={{ height: '1px', background: 'var(--neutral-100)' }} />
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
+              <div className="customer-filter-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
                 <MultiSelectFilter label="Customer Success (CS)" options={configs.customerSuccess || []} selected={filterCustomerSuccess} toggle={(v) => toggleFilter(filterCustomerSuccess, setFilterCustomerSuccess, v)} />
                 <MultiSelectFilter label="Sale phụ trách" options={configs.tenSale || []} selected={filterSale} toggle={(v) => toggleFilter(filterSale, setFilterSale, v)} />
                 <MultiSelectFilter label="Customer Support (SUP)" options={configs.customerSupport || []} selected={filterCustomerSupport} toggle={(v) => toggleFilter(filterCustomerSupport, setFilterCustomerSupport, v)} />
@@ -360,7 +384,7 @@ export default function CustomersPage() {
 
               <div style={{ height: '1px', background: 'var(--neutral-100)' }} />
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
+              <div className="customer-filter-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
                 <MultiSelectFilter label="Phân khúc" options={configs.phanKhuc || []} selected={filterPhanKhuc} toggle={(v) => toggleFilter(filterPhanKhuc, setFilterPhanKhuc, v)} />
                 <MultiSelectFilter label="Khu vực" options={configs.khuVuc || []} selected={filterKhuVuc} toggle={(v) => toggleFilter(filterKhuVuc, setFilterKhuVuc, v)} />
                 <MultiSelectFilter label="Kênh gửi tin" options={configs.kenhGuiTin || []} selected={filterKenhGuiTin} toggle={(v) => toggleFilter(filterKenhGuiTin, setFilterKenhGuiTin, v)} />
@@ -372,7 +396,7 @@ export default function CustomersPage() {
 
         {/* Data Table Block */}
         <div className="card-container" style={{ padding: 0, overflow: 'hidden' }}>
-          <div style={{ overflowX: 'auto' }}>
+          <div className="customers-table-view" style={{ overflowX: 'auto' }}>
             <table className="custom-table" style={{ margin: 0, minWidth: '1100px' }}>
               <thead>
                 <tr>
@@ -431,35 +455,21 @@ export default function CustomersPage() {
                         </td>
                         <td>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            <div style={{ fontSize: '13px' }}><span style={{ color: 'var(--neutral-500)' }}>CS:</span> <span style={{ fontWeight: 500, color: 'var(--neutral-800)' }}>{c.customer_success || c.cs_in_charge || '--'}</span></div>
+                            <div style={{ fontSize: '13px' }}><span style={{ color: 'var(--neutral-500)' }}>CS:</span> <span className="person-name-highlight">{c.customer_success || c.cs_in_charge || '--'}</span></div>
                             <div style={{ fontSize: '13px' }}><span style={{ color: 'var(--neutral-500)' }}>Sale:</span> <span style={{ fontWeight: 500, color: 'var(--neutral-800)' }}>{c.sale_phu_trach || c.sale_in_charge || '--'}</span></div>
                           </div>
                         </td>
                         <td>
-                          <div style={{ fontSize: '13px' }}>
-                            {(() => {
-                              if (!c.services || c.services.length === 0) return '--';
-                              const seen = new Set();
-                              const pairs: { loai: string, sup: string }[] = [];
-                              c.services.forEach((s: any) => {
-                                if (s.loai_dich_vu || s.customer_support) {
-                                  const key = `${s.loai_dich_vu}|${s.customer_support}`;
-                                  if (!seen.has(key)) {
-                                    seen.add(key);
-                                    pairs.push({ loai: s.loai_dich_vu || 'Không rõ', sup: s.customer_support || 'Chưa gán' });
-                                  }
-                                }
-                              });
-                              if (pairs.length === 0) return '--';
-                              return pairs.map((p, idx) => (
-                                <div key={idx} style={{ marginBottom: idx < pairs.length - 1 ? '4px' : 0 }}>
-                                  <span style={{ color: 'var(--primary-700)', fontWeight: 500 }}>{p.loai}</span>
-                                  <span style={{ color: 'var(--neutral-300)', margin: '0 6px' }}>|</span>
-                                  <strong style={{ color: 'var(--neutral-800)' }}>{p.sup}</strong>
+                          {getServiceSupportPairs(c.services).length ? (
+                            <div className="service-pair-grid compact">
+                              {getServiceSupportPairs(c.services).slice(0, 6).map((p, idx) => (
+                                <div className="service-pair-card" key={`${p.serviceType}-${p.support}-${idx}`}>
+                                  <span className="service-name-highlight">{p.serviceType}</span>
+                                  <strong className="person-name-highlight">{p.support}</strong>
                                 </div>
-                              ));
-                            })()}
-                          </div>
+                              ))}
+                            </div>
+                          ) : '--'}
                         </td>
                         <td>
                           <StatusBadge status={c.trang_thai === 'Active' ? 'Hoạt động' : 'Tạm ngưng'} />
@@ -485,31 +495,24 @@ export default function CustomersPage() {
                               </h4>
                           
                           {c.services && c.services.length > 0 ? (
-                            <div style={{ overflowX: 'auto', background: '#fff', borderRadius: 'var(--radius-md)', border: '1px solid var(--neutral-200)' }}>
-                              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
-                                <thead>
-                                  <tr style={{ background: 'var(--neutral-50)', borderBottom: '1px solid var(--neutral-200)' }}>
-                                    <th style={{ padding: '10px 16px', fontWeight: 600, color: 'var(--neutral-600)' }}>Loại dịch vụ</th>
-                                    <th style={{ padding: '10px 16px', fontWeight: 600, color: 'var(--neutral-600)' }}>Brandname/OA</th>
-                                    <th style={{ padding: '10px 16px', fontWeight: 600, color: 'var(--neutral-600)' }}>CP Name</th>
-                                    <th style={{ padding: '10px 16px', fontWeight: 600, color: 'var(--neutral-600)' }}>Support (SUP)</th>
-                                    <th style={{ padding: '10px 16px', fontWeight: 600, color: 'var(--neutral-600)' }}>Trạng thái</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {c.services.map((s: any) => (
-                                    <tr key={s.service_id} style={{ borderBottom: '1px solid var(--neutral-100)' }}>
-                                      <td style={{ padding: '10px 16px', fontWeight: 600, color: 'var(--neutral-900)' }}>{s.loai_dich_vu}</td>
-                                      <td style={{ padding: '10px 16px', color: 'var(--neutral-700)' }}>{s.brand_name_oa || '--'}</td>
-                                      <td style={{ padding: '10px 16px', color: 'var(--neutral-700)' }}>{s.cp_name_code || '--'}</td>
-                                      <td style={{ padding: '10px 16px', fontWeight: 600, color: 'var(--amber-600)' }}>{s.customer_support || '--'}</td>
-                                      <td style={{ padding: '10px 16px' }}>
-                                        <StatusBadge status={s.trang_thai} />
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
+                            <div className="group-detail-grid">
+                              {c.services.map((s: any) => (
+                                <div key={s.service_id} className="group-detail-card">
+                                  <div className="group-detail-card-header">
+                                    <div>
+                                      <div className="service-name-highlight">{s.loai_dich_vu || 'Dịch vụ'}</div>
+                                      <div className="group-count-note">{s.service_id || s.contract_id || '--'}</div>
+                                    </div>
+                                    <StatusBadge status={s.trang_thai} />
+                                  </div>
+                                  <div className="group-summary-grid">
+                                    <div><span>CS</span><strong>{c.customer_success || c.cs_in_charge || '--'}</strong></div>
+                                    <div><span>SUP</span><strong className="person-name-highlight">{s.customer_support || '--'}</strong></div>
+                                    <div><span>Brand/OA</span><strong>{s.brand_name_oa || '--'}</strong></div>
+                                    <div><span>CP Name</span><strong>{s.cp_name_code || '--'}</strong></div>
+                                  </div>
+                                </div>
+                              ))}
                             </div>
                           ) : (
                             <div style={{ padding: '16px', textAlign: 'center', color: 'var(--neutral-500)', background: '#fff', borderRadius: 'var(--radius-md)', border: '1px dashed var(--neutral-300)' }}>
@@ -525,6 +528,101 @@ export default function CustomersPage() {
             )}
             </tbody>
           </table>
+          </div>
+
+          <div className="customers-mobile-list">
+            {loading ? (
+              <div style={{ padding: '32px', textAlign: 'center', color: 'var(--neutral-500)' }}>
+                <div style={{ display: 'inline-block', width: '28px', height: '28px', border: '3px solid var(--neutral-200)', borderTopColor: 'var(--primary-600)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+              </div>
+            ) : filteredCustomers.length === 0 ? (
+              <div style={{ padding: '32px 20px', textAlign: 'center', color: 'var(--neutral-500)' }}>
+                Không có khách hàng nào phù hợp với bộ lọc.
+              </div>
+            ) : (
+              filteredCustomers.map((c) => {
+                const isExpanded = expandedCustomer === c.customer_id;
+                return (
+                  <article key={c.customer_id} className="customer-mobile-item">
+                    <button
+                      type="button"
+                      className="customer-mobile-summary"
+                      onClick={() => setExpandedCustomer(isExpanded ? null : c.customer_id)}
+                    >
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontWeight: 700, color: 'var(--neutral-900)', lineHeight: 1.35 }}>{c.ten_cong_ty || '--'}</div>
+                        <div style={{ fontSize: '12px', color: 'var(--neutral-500)', marginTop: '4px' }}>
+                          {c.customer_id} {c.org_id ? `- Org ${c.org_id}` : ''}
+                        </div>
+                      </div>
+                      <ChevronRight size={18} style={{ flexShrink: 0, color: 'var(--neutral-500)', transform: isExpanded ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }} />
+                    </button>
+
+                    <div className="customer-mobile-meta">
+                      <div><span>CS</span><strong>{c.customer_success || c.cs_in_charge || '--'}</strong></div>
+                      <div><span>Sale</span><strong>{c.sale_phu_trach || c.sale_in_charge || '--'}</strong></div>
+                      <div><span>Dịch vụ</span><strong>{c.total_services || 0}</strong></div>
+                    </div>
+
+                    {getServiceSupportPairs(c.services).length > 0 && (
+                      <div className="customer-mobile-services" style={{ borderTop: '1px dashed var(--neutral-200)' }}>
+                        <div className="service-pair-grid">
+                          {getServiceSupportPairs(c.services).map((p, idx) => (
+                            <div className="service-pair-card" key={`${p.serviceType}-${p.support}-${idx}`}>
+                              <span className="service-name-highlight">{p.serviceType}</span>
+                              <strong className="person-name-highlight">{p.support}</strong>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="customer-mobile-footer">
+                      <StatusBadge status={c.trang_thai === 'Active' ? 'Hoạt động' : 'Tạm ngưng'} />
+                      <button
+                        className="btn btn-secondary"
+                        style={{ padding: '7px 12px', fontSize: '13px' }}
+                        onClick={() => setActiveCustomer(c.customer_id)}
+                      >
+                        Xem 360
+                      </button>
+                    </div>
+
+                    {isExpanded && (
+                      <div className="customer-mobile-services">
+                        <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--primary-700)', marginBottom: '10px' }}>
+                          Dịch vụ của khách hàng
+                        </div>
+                        {c.services && c.services.length > 0 ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            {c.services.map((s: any) => (
+                              <div key={s.service_id} className="customer-mobile-service-row">
+                                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', alignItems: 'flex-start' }}>
+                                  <div style={{ minWidth: 0 }}>
+                                    <div className="service-name-highlight">{s.loai_dich_vu || 'Dịch vụ'}</div>
+                                    <div style={{ fontSize: '12px', color: 'var(--neutral-500)', marginTop: '3px', overflowWrap: 'anywhere' }}>
+                                      {s.brand_name_oa || s.cp_name_code || s.service_id || '--'}
+                                    </div>
+                                  </div>
+                                  <StatusBadge status={s.trang_thai} />
+                                </div>
+                                <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--neutral-600)' }}>
+                                  SUP: <strong className="person-name-highlight">{s.customer_support || '--'}</strong> · CS: <strong className="person-name-highlight">{c.customer_success || c.cs_in_charge || '--'}</strong>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div style={{ padding: '12px', color: 'var(--neutral-500)', border: '1px dashed var(--neutral-300)', borderRadius: 'var(--radius-sm)' }}>
+                            Khách hàng chưa có dịch vụ nào
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </article>
+                );
+              })
+            )}
           </div>
 
           <Pagination 

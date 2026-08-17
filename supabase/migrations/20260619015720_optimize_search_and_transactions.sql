@@ -72,7 +72,7 @@ as $$
     m.score as rank_score
   from matched m
   join cx_customers c on c.customer_id = m.customer_id
-  left join cx_contracts ct on ct.contract_id = c.customer_id
+  left join cx_contracts ct on ct.customer_id = c.customer_id
   left join cx_services s on s.customer_id = c.customer_id
   group by c.customer_id, m.score
   order by m.score desc, c.ten_cong_ty asc

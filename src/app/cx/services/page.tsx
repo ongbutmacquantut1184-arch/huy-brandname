@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { getServices, createService, updateServiceInfo, getDropdownConfigs, getCustomers, getContractsByCustomerId, getBrands, getCps } from '@/lib/cx-actions';
-import { Search as SearchIcon, Filter, CheckSquare, Square, ChevronDown, Plus, Pencil, RefreshCw, X } from 'lucide-react';
+import { Search as SearchIcon, Filter, CheckSquare, Square, ChevronDown, Plus, Pencil, RefreshCw } from 'lucide-react';
 import Pagination from '@/components/ui/Pagination';
 import StatusBadge from '@/components/ui/StatusBadge';
 import Modal from '@/components/ui/Modal';
@@ -28,6 +28,8 @@ export default function ServicesPage() {
   const [filterType, setFilterType] = useState<string[]>([]);
   const [filterSUP, setFilterSUP] = useState<string[]>([]);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const didMountSearch = useRef(false);
+  const didMountFilters = useRef(false);
 
   // Accordion
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
@@ -46,10 +48,6 @@ export default function ServicesPage() {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetchData(1, searchQuery);
-  }, []);
-
-  useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setOpenDropdown(null);
@@ -59,10 +57,16 @@ export default function ServicesPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const getCurrentFilters = () => ({
+    statuses: filterStatus,
+    types: filterType,
+    support: filterSUP,
+  });
+
   async function fetchData(page = 1, query = '') {
     setLoading(true);
     const [res, configsRes, custRes, brandsRes, cpsRes] = await Promise.all([
-      getServices(page, 20, query),
+      getServices(page, 20, query, getCurrentFilters()),
       getDropdownConfigs(),
       getCustomers(),
       getBrands(),
@@ -83,7 +87,7 @@ export default function ServicesPage() {
       const params = new URLSearchParams(window.location.search);
       const editId = params.get('edit');
       if (editId) {
-        const serviceToEdit = res.data.find((s: any) => s.service_id === editId);
+        const serviceToEdit = res.data.flatMap((group: any) => group.services || []).find((s: any) => s.service_id === editId);
         if (serviceToEdit) {
           setSelectedService(serviceToEdit);
           setFormData({
@@ -96,6 +100,30 @@ export default function ServicesPage() {
     }
     setLoading(false);
   }
+
+  useEffect(() => {
+    fetchData(1, searchQuery);
+  }, []);
+
+  useEffect(() => {
+    if (!didMountSearch.current) {
+      didMountSearch.current = true;
+      return;
+    }
+
+    const delayDebounceFn = setTimeout(() => {
+      fetchData(1, searchQuery);
+    }, 400);
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    if (!didMountFilters.current) {
+      didMountFilters.current = true;
+      return;
+    }
+    fetchData(1, searchQuery);
+  }, [filterStatus, filterType, filterSUP]);
 
   useEffect(() => {
     if (formData.customerId) {
@@ -123,21 +151,22 @@ export default function ServicesPage() {
   const uniqueTypes = lookups.loaiDichVu || [];
   const uniqueSUP = lookups.customerSupport || [];
 
-  const filteredServices = services.filter(s => {
-    const term = searchQuery.toLowerCase();
-    const matchSearch = 
-      (s.service_id || '').toLowerCase().includes(term) ||
-      (s.customer_id || '').toLowerCase().includes(term) ||
-      (s.contract_id || '').toLowerCase().includes(term) ||
-      (s.brand_name_oa || '').toLowerCase().includes(term) ||
-      (s.cp_name_code || '').toLowerCase().includes(term);
-      
-    const matchStatus = filterStatus.length === 0 || filterStatus.includes(s.trang_thai);
-    const matchType = filterType.length === 0 || filterType.includes(s.loai_dich_vu);
-    const matchSUP = filterSUP.length === 0 || filterSUP.includes(s.customer_support);
-    
-    return matchSearch && matchStatus && matchType && matchSUP;
-  });
+  const serviceGroups = services;
+
+  const getServiceSupportPairs = (services: any[] = []) => {
+    const seen = new Set<string>();
+    const pairs: { serviceType: string; support: string }[] = [];
+    services.forEach((s: any) => {
+      const serviceType = s.loai_dich_vu || 'Không rõ dịch vụ';
+      const support = s.customer_support || 'Chưa gán SUP';
+      const key = `${serviceType}|${support}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        pairs.push({ serviceType, support });
+      }
+    });
+    return pairs;
+  };
 
   const openAddModal = () => {
     setFormData({
@@ -165,9 +194,9 @@ export default function ServicesPage() {
     setActiveModal('renew');
   };
 
-  const toggleExpand = (serviceId: string) => {
-    if (expandedRow === serviceId) setExpandedRow(null);
-    else setExpandedRow(serviceId);
+  const toggleExpand = (customerId: string) => {
+    if (expandedRow === customerId) setExpandedRow(null);
+    else setExpandedRow(customerId);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -189,7 +218,7 @@ export default function ServicesPage() {
         const res = await renewContract(payload);
         if (!res.success) throw new Error(res.error);
       }
-      await fetchData();
+      await fetchData(currentPage, searchQuery);
       setActiveModal(null);
     } catch (err: any) {
       alert("Lỗi: " + err.message);
@@ -203,7 +232,7 @@ export default function ServicesPage() {
       <div className="page-header">
         <div>
           <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 800, color: 'var(--neutral-900)', margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: '12px' }}>
-            Quản lý Dịch vụ <span className="badge-custom" style={{ background: 'var(--primary-100)', color: 'var(--primary-800)', fontSize: '14px', verticalAlign: 'middle' }}>{totalRecords} Dịch vụ</span>
+            Quản lý Dịch vụ <span className="badge-custom" style={{ background: 'var(--primary-100)', color: 'var(--primary-800)', fontSize: '14px', verticalAlign: 'middle' }}>{totalRecords} KH</span>
           </h1>
         </div>
         <button className="btn btn-primary" onClick={openAddModal} style={{ padding: '10px 20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -295,66 +324,88 @@ export default function ServicesPage() {
           <div style={{ padding: 'var(--space-8)' }}>
             <SkeletonLoader rows={8} />
           </div>
-        ) : filteredServices.length === 0 ? (
+        ) : serviceGroups.length === 0 ? (
           <div style={{ padding: '60px 40px', textAlign: 'center', color: 'var(--neutral-500)' }}>Không có dữ liệu dịch vụ nào khớp với bộ lọc.</div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
+          <>
+          <div className="services-table-view" style={{ overflowX: 'auto' }}>
             <table className="custom-table" style={{ margin: 0, minWidth: '900px' }}>
               <thead>
                 <tr>
                   <th>Công ty</th>
-                  <th>Org ID</th>
-                  <th>Loại DV</th>
-                  <th>Brand/OA</th>
-                  <th>Ngày hết hạn</th>
-                  <th>Trạng thái</th>
-                  <th style={{ textAlign: 'center' }}>Thao tác</th>
+                  <th>CS</th>
+                  <th>Số dịch vụ</th>
+                  <th>Loại dịch vụ / SUP</th>
+                  <th>Trạng thái tổng quan</th>
+                  <th>Sale</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredServices.map(s => {
-                  const isExpanded = expandedRow === s.service_id;
+                {serviceGroups.map(group => {
+                  const isExpanded = expandedRow === group.customer_id;
+                  const servicePairs = getServiceSupportPairs(group.services);
                   return (
-                  <React.Fragment key={s.service_id}>
-                    <tr className="row-hover" style={{ cursor: 'pointer', background: isExpanded ? 'var(--primary-50)' : 'transparent' }} onClick={() => toggleExpand(s.service_id)}>
-                      <td style={{ color: 'var(--neutral-900)', fontWeight: 600 }}>{s.cx_customers?.ten_cong_ty || '--'}</td>
-                      <td style={{ color: 'var(--neutral-600)' }}>{s.cx_customers?.org_id || '--'}</td>
-                      <td style={{ color: 'var(--neutral-900)', fontWeight: 500 }}>{s.loai_dich_vu || '--'}</td>
-                      <td>{s.brand_name_oa || '--'}</td>
-                      <td>{formatDate(s.ngay_het_han)}</td>
-                      <td><StatusBadge status={s.trang_thai} /></td>
-                      <td style={{ textAlign: 'center' }}>
-                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                          <button className="btn btn-secondary hover-bg-gray" style={{ padding: '4px 8px', fontSize: '12px' }} onClick={(e) => { e.stopPropagation(); openEditModal(s); }} title="Chỉnh sửa">
-                            <Pencil size={14} />
-                          </button>
-                          <button className="btn btn-secondary hover-bg-gray" style={{ padding: '4px 8px', fontSize: '12px' }} onClick={(e) => { e.stopPropagation(); openRenewModal(s); }} title="Gia hạn dịch vụ">
-                            <RefreshCw size={14} />
-                          </button>
-                        </div>
+                  <React.Fragment key={group.customer_id}>
+                    <tr className="row-hover" style={{ cursor: 'pointer', background: isExpanded ? 'var(--primary-50)' : 'transparent' }} onClick={() => toggleExpand(group.customer_id)}>
+                      <td>
+                        <div style={{ color: 'var(--neutral-900)', fontWeight: 700 }}>{group.ten_cong_ty || '--'}</div>
+                        <div style={{ color: 'var(--neutral-500)', fontSize: '12px', marginTop: 4 }}>{group.customer_id}</div>
                       </td>
+                      <td><span className="person-name-highlight">{group.customer_success || '--'}</span></td>
+                      <td>
+                        <div className="group-count-value">{group.total_services}</div>
+                        <div className="group-count-note">{group.active_services} active / {group.pending_services} pending</div>
+                      </td>
+                      <td>
+                        {servicePairs.length ? (
+                          <div className="service-pair-grid compact">
+                            {servicePairs.slice(0, 6).map((p, idx) => (
+                              <div className="service-pair-card" key={`${p.serviceType}-${p.support}-${idx}`}>
+                                <span className="service-name-highlight">{p.serviceType}</span>
+                                <strong className="person-name-highlight">{p.support}</strong>
+                              </div>
+                            ))}
+                          </div>
+                        ) : '--'}
+                      </td>
+                      <td>
+                        <StatusBadge status={group.active_services > 0 ? 'Active' : group.pending_services > 0 ? 'Pending' : 'Inactive'} />
+                      </td>
+                      <td>{group.sale_phu_trach || '--'}</td>
                     </tr>
                     {isExpanded && (
                       <tr>
-                        <td colSpan={7} style={{ background: 'var(--neutral-25)', padding: '0', borderBottom: '1px solid var(--neutral-200)' }}>
+                        <td colSpan={6} style={{ background: 'var(--neutral-25)', padding: '0', borderBottom: '1px solid var(--neutral-200)' }}>
                           <div className="animate-fade-in-down" style={{ padding: '24px 32px', borderTop: '1px dashed var(--primary-200)' }}>
-                            <h4 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--primary-700)', margin: '0 0 16px 0' }}>Chi tiết Dịch vụ</h4>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
-                              <div><div style={{ color: 'var(--neutral-500)', fontSize: '13px', marginBottom: '4px' }}>CP Name/Kết nối:</div><div style={{ fontWeight: 500, color: 'var(--neutral-900)' }}>{s.cp_name_code || '--'}</div></div>
-                              <div><div style={{ color: 'var(--neutral-500)', fontSize: '13px', marginBottom: '4px' }}>Đầu số:</div><div style={{ fontWeight: 500, color: 'var(--neutral-900)' }}>{s.dau_so || '--'}</div></div>
-                              <div><div style={{ color: 'var(--neutral-500)', fontSize: '13px', marginBottom: '4px' }}>Cú pháp:</div><div style={{ fontWeight: 500, color: 'var(--neutral-900)' }}>{s.cu_phap || '--'}</div></div>
-                              <div><div style={{ color: 'var(--neutral-500)', fontSize: '13px', marginBottom: '4px' }}>SUP Phụ trách:</div><div style={{ fontWeight: 500, color: 'var(--neutral-900)' }}>{s.customer_support || '--'}</div></div>
-                              
-                              <div><div style={{ color: 'var(--neutral-500)', fontSize: '13px', marginBottom: '4px' }}>Ngày bắt đầu:</div><div style={{ fontWeight: 500, color: 'var(--neutral-900)' }}>{formatDate(s.ngay_bat_dau)}</div></div>
-                              <div><div style={{ color: 'var(--neutral-500)', fontSize: '13px', marginBottom: '4px' }}>Ngày hết hạn:</div><div style={{ fontWeight: 500, color: 'var(--neutral-900)' }}>{formatDate(s.ngay_het_han)}</div></div>
-                              <div style={{ gridColumn: 'span 2' }}><div style={{ color: 'var(--neutral-500)', fontSize: '13px', marginBottom: '4px' }}>Ghi chú:</div><div style={{ fontWeight: 500, color: 'var(--neutral-900)' }}>{s.ghi_chu || '--'}</div></div>
-                            </div>
-                            
-                            <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid var(--neutral-200)', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
-                              <div><div style={{ color: 'var(--neutral-500)', fontSize: '13px', marginBottom: '4px' }}>API Gateway:</div><div style={{ fontWeight: 500, color: 'var(--neutral-900)' }}>{s.ket_noi_api_gateway || '--'}</div></div>
-                              <div><div style={{ color: 'var(--neutral-500)', fontSize: '13px', marginBottom: '4px' }}>SMPP:</div><div style={{ fontWeight: 500, color: 'var(--neutral-900)' }}>{s.ket_noi_smpp || '--'}</div></div>
-                              <div><div style={{ color: 'var(--neutral-500)', fontSize: '13px', marginBottom: '4px' }}>API GapOne:</div><div style={{ fontWeight: 500, color: 'var(--neutral-900)' }}>{s.ket_noi_api_gap_one || '--'}</div></div>
-                              <div><div style={{ color: 'var(--neutral-500)', fontSize: '13px', marginBottom: '4px' }}>ViZCA:</div><div style={{ fontWeight: 500, color: 'var(--neutral-900)' }}>{s.ket_noi_vi_zca || '--'}</div></div>
+                            <h4 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--primary-700)', margin: '0 0 16px 0' }}>Dịch vụ của khách hàng</h4>
+                            <div className="group-detail-grid">
+                              {group.services.map((s: any) => (
+                                <div key={s.service_id} className="group-detail-card">
+                                  <div className="group-detail-card-header">
+                                    <div>
+                                      <div className="service-name-highlight">{s.loai_dich_vu || '--'}</div>
+                                      <div className="group-count-note">{s.service_id}</div>
+                                    </div>
+                                    <StatusBadge status={s.trang_thai} />
+                                  </div>
+                                  <div className="group-summary-grid">
+                                    <div><span>CS</span><strong>{group.customer_success || '--'}</strong></div>
+                                    <div><span>SUP</span><strong className="person-name-highlight">{s.customer_support || '--'}</strong></div>
+                                    <div><span>Brand/OA</span><strong>{s.brand_name_oa || '--'}</strong></div>
+                                    <div><span>CP Name</span><strong>{s.cp_name_code || '--'}</strong></div>
+                                    <div><span>Bắt đầu</span><strong>{formatDate(s.ngay_bat_dau)}</strong></div>
+                                    <div><span>Hết hạn</span><strong>{formatDate(s.ngay_het_han)}</strong></div>
+                                  </div>
+                                  <div className="group-card-actions">
+                                    <button className="btn btn-secondary hover-bg-gray" style={{ padding: '6px 10px', fontSize: '12px' }} onClick={(e) => { e.stopPropagation(); openEditModal(s); }} title="Chỉnh sửa">
+                                      <Pencil size={14} /> Sửa
+                                    </button>
+                                    <button className="btn btn-secondary hover-bg-gray" style={{ padding: '6px 10px', fontSize: '12px' }} onClick={(e) => { e.stopPropagation(); openRenewModal(s); }} title="Gia hạn dịch vụ">
+                                      <RefreshCw size={14} /> Gia hạn
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
                             </div>
                           </div>
                         </td>
@@ -366,6 +417,64 @@ export default function ServicesPage() {
               </tbody>
             </table>
           </div>
+          <div className="services-mobile-list">
+            {serviceGroups.map(group => {
+              const isExpanded = expandedRow === group.customer_id;
+              return (
+                <article key={group.customer_id} className="customer-mobile-item">
+                  <button type="button" className="customer-mobile-summary" onClick={() => toggleExpand(group.customer_id)}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, color: 'var(--neutral-900)', lineHeight: 1.35 }}>{group.ten_cong_ty || '--'}</div>
+                      <div style={{ fontSize: 12, color: 'var(--neutral-500)', marginTop: 4 }}>{group.customer_id} {group.org_id ? `- Org ${group.org_id}` : ''}</div>
+                    </div>
+                    <ChevronDown size={18} style={{ flexShrink: 0, color: 'var(--neutral-500)', transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                  </button>
+                  <div className="customer-mobile-meta">
+                    <div><span>CS</span><strong>{group.customer_success || '--'}</strong></div>
+                    <div><span>Dịch vụ</span><strong>{group.total_services}</strong></div>
+                    <div><span>Active</span><strong>{group.active_services}</strong></div>
+                  </div>
+                  <div className="customer-mobile-services" style={{ borderTop: '1px dashed var(--neutral-200)' }}>
+                    <div className="service-pair-grid">
+                      {getServiceSupportPairs(group.services).map((p, idx) => (
+                        <div className="service-pair-card" key={`${p.serviceType}-${p.support}-${idx}`}>
+                          <span className="service-name-highlight">{p.serviceType}</span>
+                          <strong className="person-name-highlight">{p.support}</strong>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  {isExpanded && (
+                    <div className="customer-mobile-services">
+                      {group.services.map((s: any) => (
+                        <div key={s.service_id} className="customer-mobile-service-row">
+                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'flex-start' }}>
+                            <div style={{ minWidth: 0 }}>
+                              <div className="service-name-highlight">{s.loai_dich_vu || 'Dịch vụ'}</div>
+                              <div style={{ fontSize: 12, color: 'var(--neutral-500)', marginTop: 3, overflowWrap: 'anywhere' }}>{s.brand_name_oa || s.cp_name_code || s.service_id || '--'}</div>
+                            </div>
+                            <StatusBadge status={s.trang_thai} />
+                          </div>
+                          <div style={{ marginTop: 8, fontSize: 12, color: 'var(--neutral-600)' }}>
+                            SUP: <strong className="person-name-highlight">{s.customer_support || '--'}</strong> · CS: <strong className="person-name-highlight">{group.customer_success || '--'}</strong> · Hết hạn: <strong style={{ color: 'var(--neutral-900)' }}>{formatDate(s.ngay_het_han)}</strong>
+                          </div>
+                          <div style={{ marginTop: 10, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                            <button className="btn btn-secondary" style={{ padding: '7px 10px', fontSize: 12, justifyContent: 'center' }} onClick={() => openEditModal(s)}>
+                              <Pencil size={14} /> Sửa
+                            </button>
+                            <button className="btn btn-secondary" style={{ padding: '7px 10px', fontSize: 12, justifyContent: 'center' }} onClick={() => openRenewModal(s)}>
+                              <RefreshCw size={14} /> Gia hạn
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+          </>
         )}
         <Pagination 
           currentPage={currentPage} 

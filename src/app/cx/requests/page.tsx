@@ -191,7 +191,7 @@ export default function CSRateAccountPage() {
       
       {/* Search Bar */}
       <div className="card-container" style={{ padding: 'var(--space-6)', marginBottom: 'var(--space-6)', display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'flex-end', zIndex: 10, position: 'relative', overflow: 'visible' }}>
-        <form onSubmit={handleSearch} style={{ display: 'flex', gap: '16px', width: '100%', maxWidth: '800px' }}>
+        <form onSubmit={handleSearch} className="request-search-form" style={{ display: 'flex', alignItems: 'flex-end', gap: '16px', width: '100%', maxWidth: '800px' }}>
           <div style={{ flex: 1 }}>
             <label className="label-custom" style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px' }}>Mã phiếu yêu cầu</label>
             <div style={{ position: 'relative' }}>
@@ -206,7 +206,7 @@ export default function CSRateAccountPage() {
               />
             </div>
           </div>
-          <button type="submit" disabled={loading} className="btn btn-primary" style={{ padding: '0 24px', height: '42px' }}>
+          <button type="submit" disabled={loading} className="btn btn-primary request-search-button" style={{ padding: '0 24px', height: '42px' }}>
             Tìm kiếm
           </button>
         </form>

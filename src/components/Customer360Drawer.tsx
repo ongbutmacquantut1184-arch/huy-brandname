@@ -17,14 +17,6 @@ export default function Customer360Drawer({ customerId, isOpen, onClose }: Modal
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (isOpen && customerId) {
-      fetchData();
-    } else {
-      setData(null);
-    }
-  }, [isOpen, customerId]);
-
   const fetchData = async () => {
     setLoading(true);
     const res = await getCustomer360(customerId!);
@@ -33,6 +25,14 @@ export default function Customer360Drawer({ customerId, isOpen, onClose }: Modal
     }
     setLoading(false);
   };
+
+  useEffect(() => {
+    if (isOpen && customerId) {
+      fetchData();
+    } else {
+      setData(null);
+    }
+  }, [isOpen, customerId]);
 
   const title = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>

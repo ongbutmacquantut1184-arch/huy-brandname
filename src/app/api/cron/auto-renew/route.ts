@@ -1,32 +1,34 @@
 import { NextResponse } from 'next/server';
 import { processAutoRenewContracts } from '@/lib/cx-actions';
 
-// Endpoint này được gọi bởi dịch vụ Cron (ví dụ Vercel Cron hoặc một scheduler external)
-// Phương thức GET để dễ dàng gọi tự động
 export async function GET(request: Request) {
   try {
-    // Kiểm tra bảo mật
+    const cronSecret = process.env.CRON_SECRET;
     const authHeader = request.headers.get('authorization');
-    if (!process.env.CRON_SECRET) {
-      console.warn('[CRON] Cảnh báo: CRON_SECRET chưa được cấu hình!');
-    } else if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+
+    if (!cronSecret) {
+      console.error('[CRON] CRON_SECRET is not configured. Refusing to run.');
+      return NextResponse.json({ error: 'Cron secret is not configured' }, { status: 500 });
+    }
+
+    if (authHeader !== `Bearer ${cronSecret}`) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    console.log('[CRON] Bắt đầu quét gia hạn tự động...');
+
+    console.log('[CRON] Starting auto-renew scan...');
     const result = await processAutoRenewContracts();
 
     if (!result.success) {
-      console.error('[CRON] Lỗi:', result.error);
+      console.error('[CRON] Error:', result.error);
       return NextResponse.json({ success: false, error: result.error }, { status: 500 });
     }
 
-    console.log(`[CRON] Hoàn tất. ${result.message}`);
+    console.log(`[CRON] Finished. ${result.message}`);
     return NextResponse.json({
       success: true,
       message: result.message,
       processedCount: result.processedCount
     });
-
   } catch (error: any) {
     console.error('[CRON] Exception:', error.message);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

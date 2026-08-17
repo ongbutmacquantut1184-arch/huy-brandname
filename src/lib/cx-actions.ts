@@ -1,6 +1,7 @@
 "use server";
 
 import { supabase } from './supabase';
+import { findOrCreateMasterData } from './master-data';
 
 /**
  * Sinh ID theo format PREFIX-{YYMM}-{NNNN}
@@ -108,83 +109,218 @@ export async function getPendingRequests() {
   return { success: true, data };
 }
 
-export async function getContracts(page: number = 1, limit: number = 50, search: string = '') {
-  let query = supabase.from('cx_contracts').select('*, cx_customers!inner(org_id)', { count: 'exact' });
-  if (search) {
-    query = query.or(`contract_id.ilike.%${search}%,so_hop_dong.ilike.%${search}%`);
-  }
-  const from = (page - 1) * limit;
-  const to = from + limit - 1;
+type ContractOverviewFilters = {
+  statuses?: string[];
+  customerSuccess?: string[];
+  sale?: string[];
+};
 
-  const { data: contracts, count, error } = await query
-    .order('org_id', { referencedTable: 'cx_customers', ascending: true, nullsFirst: false })
-    .range(from, to);
+export async function getContracts(page: number = 1, limit: number = 50, search: string = '', filters: ContractOverviewFilters = {}) {
+  try {
+    const pageSize = 1000;
+    const allContracts: any[] = [];
+    const q = search.trim().toLowerCase();
 
-  if (error) return { success: false, error: error.message };
-  
-  if (contracts && contracts.length > 0) {
-    const customerIds = [...new Set(contracts.map(c => c.customer_id).filter(Boolean))];
-    const contractIds = contracts.map(c => c.contract_id);
+    for (let from = 0; ; from += pageSize) {
+      let query = supabase
+        .from('cx_contracts')
+        .select('*, cx_customers!inner(ten_cong_ty, org_id, sale_phu_trach, customer_success)');
 
-    const [{ data: customers }, { data: services }] = await Promise.all([
-      supabase.from('cx_customers').select('customer_id, ten_cong_ty, org_id, sale_phu_trach, customer_success').in('customer_id', customerIds),
-      supabase.from('cx_services').select('service_id, contract_id').in('contract_id', contractIds)
-    ]);
+      if (filters.statuses?.length) query = query.in('trang_thai', filters.statuses);
+      if (filters.customerSuccess?.length) query = query.in('cx_customers.customer_success', filters.customerSuccess);
+      if (filters.sale?.length) query = query.in('cx_customers.sale_phu_trach', filters.sale);
 
-    const custMap = (customers || []).reduce((acc: any, curr) => {
-      acc[curr.customer_id] = curr;
+      const { data, error } = await query
+        .order('org_id', { referencedTable: 'cx_customers', ascending: true, nullsFirst: false })
+        .range(from, from + pageSize - 1);
+
+      if (error) throw error;
+      if (!data || data.length === 0) break;
+
+      allContracts.push(...data);
+      if (data.length < pageSize) break;
+    }
+
+    const matchedContracts = q
+      ? allContracts.filter((c: any) => {
+          const searchText = [
+            c.contract_id,
+            c.customer_id,
+            c.so_hop_dong,
+            c.so_po,
+            c.trang_thai,
+            c.cx_customers?.ten_cong_ty,
+            c.cx_customers?.org_id,
+            c.cx_customers?.customer_success,
+            c.cx_customers?.sale_phu_trach,
+          ].filter(Boolean).join(' ').toLowerCase();
+          return searchText.includes(q);
+        })
+      : allContracts;
+
+    const contractIds = matchedContracts.map((c: any) => c.contract_id).filter(Boolean);
+    const { data: services, error: servicesError } = contractIds.length
+      ? await supabase.from('cx_services').select('*').in('contract_id', contractIds)
+      : { data: [], error: null };
+
+    if (servicesError) throw servicesError;
+
+    const servicesByContract = (services || []).reduce((acc: any, service: any) => {
+      if (!service.contract_id) return acc;
+      if (!acc[service.contract_id]) acc[service.contract_id] = [];
+      acc[service.contract_id].push(service);
       return acc;
     }, {});
 
-    const srvMap = (services || []).reduce((acc: any, curr) => {
-      if (curr.contract_id) {
-        if (!acc[curr.contract_id]) acc[curr.contract_id] = 0;
-        acc[curr.contract_id]++;
+    const groupMap = new Map<string, any>();
+    matchedContracts.forEach((contract: any) => {
+      const customerId = contract.customer_id || 'UNKNOWN';
+      if (!groupMap.has(customerId)) {
+        groupMap.set(customerId, {
+          customer_id: customerId,
+          ten_cong_ty: contract.cx_customers?.ten_cong_ty || '',
+          org_id: contract.cx_customers?.org_id || '',
+          customer_success: contract.cx_customers?.customer_success || '',
+          sale_phu_trach: contract.cx_customers?.sale_phu_trach || '',
+          contracts: [],
+          services: [],
+        });
       }
-      return acc;
-    }, {});
 
-    const mapped = contracts.map(c => ({
-      ...c,
-      ten_cong_ty: custMap[c.customer_id]?.ten_cong_ty || '',
-      org_id: custMap[c.customer_id]?.org_id || '',
-      sale_in_charge: custMap[c.customer_id]?.sale_phu_trach || '',
-      cs_in_charge: custMap[c.customer_id]?.customer_success || '',
-      total_services: srvMap[c.contract_id] || 0
+      const enrichedContract = {
+        ...contract,
+        ten_cong_ty: contract.cx_customers?.ten_cong_ty || '',
+        org_id: contract.cx_customers?.org_id || '',
+        sale_in_charge: contract.cx_customers?.sale_phu_trach || '',
+        cs_in_charge: contract.cx_customers?.customer_success || '',
+        total_services: servicesByContract[contract.contract_id]?.length || 0,
+      };
+
+      const group = groupMap.get(customerId);
+      group.contracts.push(enrichedContract);
+      group.services.push(...(servicesByContract[contract.contract_id] || []));
+    });
+
+    const grouped = Array.from(groupMap.values()).map((group: any) => ({
+      ...group,
+      total_contracts: group.contracts.length,
+      active_contracts: group.contracts.filter((c: any) => c.trang_thai === 'Active').length,
+      expiring_contracts: group.contracts.filter((c: any) => c.trang_thai === 'Expiring').length,
+      total_services: group.services.length,
+      service_types: Array.from(new Set(group.services.map((s: any) => s.loai_dich_vu).filter(Boolean))),
+      support_list: Array.from(new Set(group.services.map((s: any) => s.customer_support).filter(Boolean))),
     }));
+
+    const totalRecords = grouped.length;
+    const totalPages = totalRecords ? Math.ceil(totalRecords / limit) : 0;
+    const safePage = Math.min(Math.max(page, 1), Math.max(totalPages, 1));
+    const from = (safePage - 1) * limit;
+
+    return {
+      success: true,
+      data: grouped.slice(from, from + limit),
+      totalRecords,
+      totalPages,
+      currentPage: safePage
+    };
+  } catch (error: any) {
+    console.error('getContracts error:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+type ServicesOverviewFilters = {
+  statuses?: string[];
+  types?: string[];
+  support?: string[];
+};
+
+export async function getServices(page: number = 1, limit: number = 50, search: string = '', filters: ServicesOverviewFilters = {}) {
+  try {
+    const pageSize = 1000;
+    const allServices: any[] = [];
+    const q = search.trim().toLowerCase();
+
+    for (let from = 0; ; from += pageSize) {
+      let query = supabase
+        .from('cx_services')
+        .select('*, cx_customers!inner(ten_cong_ty, org_id, customer_success, sale_phu_trach)');
+
+      if (filters.statuses?.length) query = query.in('trang_thai', filters.statuses);
+      if (filters.types?.length) query = query.in('loai_dich_vu', filters.types);
+      if (filters.support?.length) query = query.in('customer_support', filters.support);
+
+      const { data, error } = await query
+        .order('org_id', { referencedTable: 'cx_customers', ascending: true, nullsFirst: false })
+        .range(from, from + pageSize - 1);
+
+      if (error) throw error;
+      if (!data || data.length === 0) break;
+
+      allServices.push(...data);
+      if (data.length < pageSize) break;
+    }
+
+    const matchedServices = q
+      ? allServices.filter((s: any) => {
+          const searchText = [
+            s.service_id,
+            s.customer_id,
+            s.contract_id,
+            s.brand_name_oa,
+            s.cp_name_code,
+            s.loai_dich_vu,
+            s.channel,
+            s.customer_support,
+            s.cx_customers?.ten_cong_ty,
+            s.cx_customers?.org_id
+          ].filter(Boolean).join(' ').toLowerCase();
+          return searchText.includes(q);
+        })
+      : allServices;
+
+    const groupMap = new Map<string, any>();
+    matchedServices.forEach((service: any) => {
+      const customerId = service.customer_id || 'UNKNOWN';
+      if (!groupMap.has(customerId)) {
+        groupMap.set(customerId, {
+          customer_id: customerId,
+          ten_cong_ty: service.cx_customers?.ten_cong_ty || '',
+          org_id: service.cx_customers?.org_id || '',
+          customer_success: service.cx_customers?.customer_success || '',
+          sale_phu_trach: service.cx_customers?.sale_phu_trach || '',
+          services: [],
+        });
+      }
+      groupMap.get(customerId).services.push(service);
+    });
+
+    const grouped = Array.from(groupMap.values()).map((group: any) => ({
+      ...group,
+      total_services: group.services.length,
+      active_services: group.services.filter((s: any) => s.trang_thai === 'Active').length,
+      pending_services: group.services.filter((s: any) => s.trang_thai === 'Pending').length,
+      service_types: Array.from(new Set(group.services.map((s: any) => s.loai_dich_vu).filter(Boolean))),
+      support_list: Array.from(new Set(group.services.map((s: any) => s.customer_support).filter(Boolean))),
+      expiries: group.services.map((s: any) => s.ngay_het_han).filter(Boolean),
+    }));
+
+    const totalRecords = grouped.length;
+    const totalPages = totalRecords ? Math.ceil(totalRecords / limit) : 0;
+    const safePage = Math.min(Math.max(page, 1), Math.max(totalPages, 1));
+    const from = (safePage - 1) * limit;
 
     return { 
       success: true, 
-      data: mapped, 
-      totalRecords: count || 0,
-      totalPages: count ? Math.ceil(count / limit) : 0,
-      currentPage: page
+      data: grouped.slice(from, from + limit),
+      totalRecords,
+      totalPages,
+      currentPage: safePage
     };
+  } catch (error: any) {
+    console.error('getServices error:', error);
+    return { success: false, error: error.message };
   }
-
-  return { success: true, data: [], totalRecords: 0, totalPages: 0, currentPage: page };
-}
-
-export async function getServices(page: number = 1, limit: number = 50, search: string = '') {
-  let query = supabase.from('cx_services').select('*, cx_customers!inner(ten_cong_ty, org_id)', { count: 'exact' });
-  if (search) {
-    query = query.or(`service_id.ilike.%${search}%,channel.ilike.%${search}%,brand_name_oa.ilike.%${search}%`);
-  }
-  const from = (page - 1) * limit;
-  const to = from + limit - 1;
-
-  const { data, count, error } = await query
-    .order('org_id', { referencedTable: 'cx_customers', ascending: true, nullsFirst: false })
-    .range(from, to);
-
-  if (error) return { success: false, error: error.message };
-  return { 
-    success: true, 
-    data,
-    totalRecords: count || 0,
-    totalPages: count ? Math.ceil(count / limit) : 0,
-    currentPage: page
-  };
 }
 
 export async function getBrands() {
@@ -505,21 +641,13 @@ export async function createService(data: any) {
     let cpId = data.cpId || null;
 
     if (data.cpNameCode && !cpId) {
-      const { data: cpData } = await supabase.from('cps').select('id').eq('name', data.cpNameCode).single();
+      const cpData = await findOrCreateMasterData('cps', data.cpNameCode);
       if (cpData) cpId = cpData.id;
-      else {
-        cpId = `CP-${Date.now()}`;
-        await supabase.from('cps').insert([{ id: cpId, name: data.cpNameCode }]);
-      }
     }
 
     if (data.brandNameOA && !brandId) {
-      const { data: brandData } = await supabase.from('brands').select('id').eq('name', data.brandNameOA).single();
+      const brandData = await findOrCreateMasterData('brands', data.brandNameOA, { cp_id: cpId });
       if (brandData) brandId = brandData.id;
-      else {
-        brandId = `BR-${Date.now()}`;
-        await supabase.from('brands').insert([{ id: brandId, name: data.brandNameOA, cp_id: cpId }]);
-      }
     }
 
     const svcData = {
@@ -634,21 +762,13 @@ export async function updateServiceInfo(data: any) {
     let cpId = data.cpId || null;
 
     if (data.cpNameCode && !cpId) {
-      const { data: cpData } = await supabase.from('cps').select('id').eq('name', data.cpNameCode).single();
+      const cpData = await findOrCreateMasterData('cps', data.cpNameCode);
       if (cpData) cpId = cpData.id;
-      else {
-        cpId = `CP-${Date.now()}`;
-        await supabase.from('cps').insert([{ id: cpId, name: data.cpNameCode }]);
-      }
     }
 
     if (data.brandNameOA && !brandId) {
-      const { data: brandData } = await supabase.from('brands').select('id').eq('name', data.brandNameOA).single();
+      const brandData = await findOrCreateMasterData('brands', data.brandNameOA, { cp_id: cpId });
       if (brandData) brandId = brandData.id;
-      else {
-        brandId = `BR-${Date.now()}`;
-        await supabase.from('brands').insert([{ id: brandId, name: data.brandNameOA, cp_id: cpId }]);
-      }
     }
 
     const svcData = {
@@ -978,27 +1098,136 @@ export async function getCustomer360(customerId: string) {
   }
 }
 
-export async function getCustomersOverview(page: number = 1, limit: number = 50, search: string = '') {
-  try {
-    let query = supabase.from('cx_customers').select('*', { count: 'exact' });
-    if (search) {
-      query = query.or(`ten_cong_ty.ilike.%${search}%,org_id.ilike.%${search}%,customer_id.ilike.%${search}%`);
-    }
-    
-    const from = (page - 1) * limit;
-    const to = from + limit - 1;
+type CustomerOverviewFilters = {
+  customerId?: string | null;
+  statuses?: string[];
+  createdFrom?: string;
+  createdTo?: string;
+  expiry?: string[];
+  customerSuccess?: string[];
+  sale?: string[];
+  customerSupport?: string[];
+  phanKhuc?: string[];
+  khuVuc?: string[];
+  kenhGuiTin?: string[];
+  duLieuInput?: string[];
+};
 
-    const { data: customers, count, error } = await query
+async function fetchAllCustomerRows(filters: CustomerOverviewFilters = {}) {
+  const pageSize = 1000;
+  let allRows: any[] = [];
+  let totalCount = 0;
+
+  for (let from = 0; ; from += pageSize) {
+    let query = supabase
+      .from('cx_customers')
+      .select('*', { count: from === 0 ? 'exact' : undefined });
+
+    if (filters.customerId) query = query.eq('customer_id', filters.customerId);
+    if (filters.customerSuccess?.length) query = query.in('customer_success', filters.customerSuccess);
+    if (filters.sale?.length) query = query.in('sale_phu_trach', filters.sale);
+    if (filters.phanKhuc?.length) query = query.in('phan_khuc', filters.phanKhuc);
+    if (filters.khuVuc?.length) query = query.in('khu_vuc', filters.khuVuc);
+    if (filters.kenhGuiTin?.length) query = query.in('kenh_gui_tin', filters.kenhGuiTin);
+    if (filters.duLieuInput?.length) query = query.in('du_lieu_input', filters.duLieuInput);
+    if (filters.createdFrom) query = query.gte('created_at', filters.createdFrom);
+    if (filters.createdTo) {
+      const end = new Date(filters.createdTo);
+      end.setHours(23, 59, 59, 999);
+      query = query.lte('created_at', end.toISOString());
+    }
+
+    const { data, count, error } = await query
       .order('org_id', { ascending: true, nullsFirst: false })
-      .range(from, to);
+      .range(from, from + pageSize - 1);
 
     if (error) throw error;
+    if (from === 0) totalCount = count || 0;
+    if (!data || data.length === 0) break;
+
+    allRows = allRows.concat(data);
+    if (data.length < pageSize || allRows.length >= totalCount) break;
+  }
+
+  return allRows;
+}
+
+async function fetchRowsByCustomerIds(tableName: string, columns: string, customerIds: string[]) {
+  if (customerIds.length === 0) return [];
+
+  const chunkSize = 500;
+  const results: any[] = [];
+  for (let i = 0; i < customerIds.length; i += chunkSize) {
+    const chunk = customerIds.slice(i, i + chunkSize);
+    const { data, error } = await supabase
+      .from(tableName)
+      .select(columns)
+      .in('customer_id', chunk);
+
+    if (error) throw error;
+    if (data) results.push(...data);
+  }
+  return results;
+}
+
+function customerMatchesOverviewFilters(customer: any, search: string, filters: CustomerOverviewFilters = {}) {
+  const q = search.trim().toLowerCase();
+  if (q) {
+    const searchText = [
+      customer.customer_id,
+      customer.ten_cong_ty,
+      customer.ma_so_thue,
+      customer.org_id,
+      customer.cpid,
+      customer.cp_name,
+      ...(customer.services || []).map((s: any) => s.brand_name_oa),
+      ...(customer.services || []).map((s: any) => s.cp_name_code),
+      ...(customer.services || []).map((s: any) => s.service_id),
+      ...(customer.services || []).map((s: any) => s.loai_dich_vu)
+    ].filter(Boolean).join(' ').toLowerCase();
+
+    if (!searchText.includes(q)) return false;
+  }
+
+  if (filters.statuses?.length && !filters.statuses.includes(customer.trang_thai)) return false;
+
+  if (filters.customerSupport?.length) {
+    const hasMatchedSup = filters.customerSupport.some(sup => customer.sup_phu_trach_list?.includes(sup));
+    if (!hasMatchedSup) return false;
+  }
+
+  if (filters.expiry?.length) {
+    const today = new Date();
+    let matched = false;
+    const expiries = customer.service_expiries || [];
+    for (const filter of filters.expiry) {
+      if (filter === 'Đã hết hạn' && expiries.some((ds: string) => new Date(ds) < today)) matched = true;
+      if (filter === 'Còn < 15 ngày' && expiries.some((ds: string) => {
+        const d = new Date(ds);
+        const diff = (d.getTime() - today.getTime()) / 86400000;
+        return diff >= 0 && diff <= 15;
+      })) matched = true;
+      if (filter === 'Còn < 45 ngày' && expiries.some((ds: string) => {
+        const d = new Date(ds);
+        const diff = (d.getTime() - today.getTime()) / 86400000;
+        return diff > 15 && diff <= 45;
+      })) matched = true;
+    }
+    if (!matched) return false;
+  }
+
+  return true;
+}
+
+export async function getCustomersOverview(page: number = 1, limit: number = 50, search: string = '', filters: CustomerOverviewFilters = {}) {
+  try {
+    const customers = await fetchAllCustomerRows(filters);
     
     const customerIds = (customers || []).map(c => c.customer_id);
     
-    const [ {data: contracts}, {data: services} ] = await Promise.all([
-      supabase.from('cx_contracts').select('*').in('customer_id', customerIds),
-      supabase.from('vw_cx_services_details').select('*').in('customer_id', customerIds)
+    const [contracts, services] = await Promise.all([
+      fetchRowsByCustomerIds('cx_contracts', '*', customerIds),
+      fetchRowsByCustomerIds('vw_cx_services_details', '*', customerIds)
     ]);
     
     const contractsMap = new Map<string, any[]>();
@@ -1042,14 +1271,20 @@ export async function getCustomersOverview(page: number = 1, limit: number = 50,
         trang_thai: cServices.some(s => s.trang_thai === 'Active') ? 'Active' : 'Inactive',
         searchText
       };
-    });
+    }).filter(c => customerMatchesOverviewFilters(c, search, filters));
+
+    const totalRecords = mapped.length;
+    const totalPages = totalRecords ? Math.ceil(totalRecords / limit) : 0;
+    const safePage = Math.min(Math.max(page, 1), Math.max(totalPages, 1));
+    const from = (safePage - 1) * limit;
+    const paged = mapped.slice(from, from + limit);
     
     return { 
       success: true, 
-      data: mapped, 
-      totalRecords: count || 0,
-      totalPages: count ? Math.ceil(count / limit) : 0,
-      currentPage: page
+      data: paged, 
+      totalRecords,
+      totalPages,
+      currentPage: safePage
     };
   } catch (error: any) {
     console.error('getCustomersOverview error:', error);

@@ -69,6 +69,7 @@ export default function TopBar({
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
         <button 
           onClick={onSearchClick}
+          className="topbar-search-btn"
           style={{
             display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
             background: 'var(--neutral-50)', border: '1px solid var(--neutral-200)',

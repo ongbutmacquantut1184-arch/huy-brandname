@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from 'react';
-import { getContracts, getServicesByContractId, getContractsByCustomerId, createContract, updateContractInfo, getDropdownConfigs, getCustomers, createService, updateServiceInfo, getBrands, getCps } from '@/lib/cx-actions';
-import { Search as SearchIcon, Filter, CheckSquare, Square, ChevronDown, Plus, Pencil, RefreshCw, X } from 'lucide-react';
+import { getContracts, createContract, updateContractInfo, getDropdownConfigs, getCustomers, createService, updateServiceInfo, getBrands, getCps } from '@/lib/cx-actions';
+import { Search as SearchIcon, Filter, CheckSquare, Square, ChevronDown, Plus, Pencil, RefreshCw } from 'lucide-react';
 import Pagination from '@/components/ui/Pagination';
 import StatusBadge from '@/components/ui/StatusBadge';
 import Modal from '@/components/ui/Modal';
@@ -21,8 +21,6 @@ export default function ContractsPage() {
   const [loading, setLoading] = useState(true);
 
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
-  const [expandedData, setExpandedData] = useState<{ services: any[], relatedContracts: any[] }>({ services: [], relatedContracts: [] });
-  const [loadingExpanded, setLoadingExpanded] = useState(false);
   const { userEmail } = useAuth();
 
   // Filters
@@ -31,6 +29,8 @@ export default function ContractsPage() {
   const [filterCS, setFilterCS] = useState<string[]>([]);
   const [filterSale, setFilterSale] = useState<string[]>([]);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const didMountSearch = useRef(false);
+  const didMountFilters = useRef(false);
 
   // Modals
   const [activeModal, setActiveModal] = useState<'add' | 'edit' | 'renew' | null>(null);
@@ -65,10 +65,16 @@ export default function ContractsPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const getCurrentFilters = () => ({
+    statuses: filterStatus,
+    customerSuccess: filterCS,
+    sale: filterSale,
+  });
+
   async function fetchData(page = 1, query = '') {
     setLoading(true);
     const [res, configsRes, custRes, brandsRes, cpsRes] = await Promise.all([
-      getContracts(page, 20, query),
+      getContracts(page, 20, query, getCurrentFilters()),
       getDropdownConfigs(),
       getCustomers(),
       getBrands(),
@@ -89,7 +95,7 @@ export default function ContractsPage() {
       const params = new URLSearchParams(window.location.search);
       const editId = params.get('edit');
       if (editId) {
-        const contractToEdit = res.data.find((c: any) => c.contract_id === editId);
+        const contractToEdit = res.data.flatMap((group: any) => group.contracts || []).find((c: any) => c.contract_id === editId);
         if (contractToEdit) {
           setSelectedContract(contractToEdit);
           setFormData({
@@ -102,6 +108,26 @@ export default function ContractsPage() {
     }
     setLoading(false);
   }
+
+  useEffect(() => {
+    if (!didMountSearch.current) {
+      didMountSearch.current = true;
+      return;
+    }
+
+    const delayDebounceFn = setTimeout(() => {
+      fetchData(1, searchQuery);
+    }, 400);
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    if (!didMountFilters.current) {
+      didMountFilters.current = true;
+      return;
+    }
+    fetchData(1, searchQuery);
+  }, [filterStatus, filterCS, filterSale]);
 
   const toggleFilter = (list: string[], setList: (v: string[]) => void, item: string) => {
     if (list.includes(item)) setList(list.filter(i => i !== item));
@@ -119,20 +145,22 @@ export default function ContractsPage() {
   const availableCS = lookups.customerSuccess || [];
   const availableSale = lookups.tenSale || [];
 
-  const filteredContracts = contracts.filter(c => {
-    const term = searchQuery.toLowerCase();
-    const matchSearch = 
-      (c.contract_id || '').toLowerCase().includes(term) ||
-      (c.customer_id || '').toLowerCase().includes(term) ||
-      (c.so_hop_dong || '').toLowerCase().includes(term) ||
-      (c.so_po || '').toLowerCase().includes(term);
-      
-    const matchStatus = filterStatus.length === 0 || filterStatus.includes(c.trang_thai);
-    const matchCS = filterCS.length === 0 || filterCS.includes(c.cs_in_charge);
-    const matchSale = filterSale.length === 0 || filterSale.includes(c.sale_in_charge);
+  const contractGroups = contracts;
 
-    return matchSearch && matchStatus && matchCS && matchSale;
-  });
+  const getServiceSupportPairs = (services: any[] = []) => {
+    const seen = new Set<string>();
+    const pairs: { serviceType: string; support: string }[] = [];
+    services.forEach((s: any) => {
+      const serviceType = s.loai_dich_vu || 'Không rõ dịch vụ';
+      const support = s.customer_support || 'Chưa gán SUP';
+      const key = `${serviceType}|${support}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        pairs.push({ serviceType, support });
+      }
+    });
+    return pairs;
+  };
 
   const openAddModal = () => {
     setFormData({
@@ -180,24 +208,12 @@ export default function ContractsPage() {
     setActiveServiceModal('renew');
   };
 
-  const handleExpand = async (c: any) => {
-    if (expandedRow === c.contract_id) {
+  const handleExpand = (group: any) => {
+    if (expandedRow === group.customer_id) {
       setExpandedRow(null);
       return;
     }
-    setExpandedRow(c.contract_id);
-    setLoadingExpanded(true);
-    
-    const [servRes, contRes] = await Promise.all([
-      getServicesByContractId(c.contract_id),
-      getContractsByCustomerId(c.customer_id)
-    ]);
-    
-    setExpandedData({
-      services: servRes.success && servRes.data ? servRes.data : [],
-      relatedContracts: contRes.success && contRes.data ? contRes.data.filter((x: any) => x.contract_id !== c.contract_id) : []
-    });
-    setLoadingExpanded(false);
+    setExpandedRow(group.customer_id);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -254,21 +270,10 @@ export default function ContractsPage() {
         if (!res.success) throw new Error(res.error);
       }
       
-      if (expandedRow) {
-        setLoadingExpanded(true);
-        const [servRes, contRes] = await Promise.all([
-          getServicesByContractId(expandedRow), getContractsByCustomerId(serviceFormData.customerId)
-        ]);
-        setExpandedData({
-          services: servRes.success && servRes.data ? servRes.data : [],
-          relatedContracts: contRes.success && contRes.data ? contRes.data.filter((x: any) => x.contract_id !== expandedRow) : []
-        });
-        setLoadingExpanded(false);
-      }
+      await fetchData(currentPage, searchQuery);
       if (isWizardStep2) {
         setIsWizardStep2(false);
         alert('Tạo Hợp đồng và Dịch vụ thành công!');
-        await fetchData();
       }
       
       setActiveServiceModal(null);
@@ -284,7 +289,7 @@ export default function ContractsPage() {
       <div className="page-header">
         <div>
           <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 800, color: 'var(--neutral-900)', margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: '12px' }}>
-            Quản lý Hợp đồng <span className="badge-custom" style={{ background: 'var(--primary-100)', color: 'var(--primary-800)', fontSize: '14px', verticalAlign: 'middle' }}>{totalRecords} Hợp đồng</span>
+            Quản lý Hợp đồng <span className="badge-custom" style={{ background: 'var(--primary-100)', color: 'var(--primary-800)', fontSize: '14px', verticalAlign: 'middle' }}>{totalRecords} KH</span>
           </h1>
         </div>
         <button className="btn btn-primary" onClick={openAddModal} style={{ padding: '10px 20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -376,115 +381,110 @@ export default function ContractsPage() {
           <div style={{ padding: 'var(--space-8)' }}>
             <SkeletonLoader rows={8} />
           </div>
-        ) : filteredContracts.length === 0 ? (
+        ) : contractGroups.length === 0 ? (
           <div style={{ padding: '60px 40px', textAlign: 'center', color: 'var(--neutral-500)' }}>Không có dữ liệu hợp đồng nào khớp với bộ lọc.</div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table className="custom-table" style={{ margin: 0, minWidth: '1000px' }}>
+          <>
+          <div className="contracts-table-view" style={{ overflowX: 'auto' }}>
+            <table className="custom-table" style={{ margin: 0, minWidth: '1100px' }}>
               <thead>
                 <tr>
                   <th>Công ty</th>
-                  <th>Org ID</th>
-                  <th>Số HĐ</th>
-                  <th>Bắt đầu</th>
-                  <th>Kết thúc</th>
-                  <th>Trạng thái</th>
                   <th>CS</th>
+                  <th>Số hợp đồng</th>
+                  <th>Số dịch vụ</th>
+                  <th>Loại dịch vụ / SUP</th>
+                  <th>Trạng thái tổng quan</th>
                   <th>Sale</th>
-                  <th style={{ textAlign: 'center' }}>Dịch vụ</th>
-                  <th style={{ textAlign: 'center' }}>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredContracts.map(c => {
-                  const isExpanded = expandedRow === c.contract_id;
+                {contractGroups.map(group => {
+                  const isExpanded = expandedRow === group.customer_id;
+                  const servicePairs = getServiceSupportPairs(group.services);
                   return (
-                    <React.Fragment key={c.contract_id}>
-                      <tr onClick={() => handleExpand(c)} className="row-hover" style={{ cursor: 'pointer', background: isExpanded ? 'var(--primary-50)' : 'transparent' }}>
-                        <td style={{ color: 'var(--neutral-900)', fontWeight: 600 }}>{c.ten_cong_ty || '--'}</td>
-                        <td style={{ color: 'var(--neutral-600)' }}>{c.org_id || '--'}</td>
-                        <td style={{ color: 'var(--neutral-900)', fontWeight: 500 }}>{c.so_hop_dong || '--'}</td>
-                        <td>{formatDate(c.ngay_bat_dau_hd)}</td>
-                        <td>{formatDate(c.ngay_ket_thuc_hd)}</td>
-                        <td><StatusBadge status={c.trang_thai} /></td>
-                        <td>{c.cs_in_charge || '--'}</td>
-                        <td>{c.sale_in_charge || '--'}</td>
-                        <td style={{ textAlign: 'center' }}>
-                          <span style={{ fontWeight: 600, color: 'var(--primary-600)', background: 'var(--primary-100)', padding: '4px 8px', borderRadius: '4px' }}>
-                            {c.total_services || 0}
-                          </span>
+                    <React.Fragment key={group.customer_id}>
+                      <tr onClick={() => handleExpand(group)} className="row-hover" style={{ cursor: 'pointer', background: isExpanded ? 'var(--primary-50)' : 'transparent' }}>
+                        <td>
+                          <div style={{ color: 'var(--neutral-900)', fontWeight: 700 }}>{group.ten_cong_ty || '--'}</div>
+                          <div style={{ color: 'var(--neutral-500)', fontSize: '12px', marginTop: 4 }}>{group.customer_id} {group.org_id ? `- Org ${group.org_id}` : ''}</div>
                         </td>
-                        <td style={{ textAlign: 'center' }}>
-                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                            <button className="btn btn-secondary hover-bg-gray" style={{ padding: '4px 8px', fontSize: '12px' }} onClick={(e) => { e.stopPropagation(); openEditModal(c); }} title="Chỉnh sửa">
-                              <Pencil size={14} />
-                            </button>
-                            <button className="btn btn-secondary hover-bg-gray" style={{ padding: '4px 8px', fontSize: '12px' }} onClick={(e) => { e.stopPropagation(); openRenewModal(c); }} title="Gia hạn hợp đồng">
-                              <RefreshCw size={14} />
-                            </button>
-                          </div>
+                        <td><span className="person-name-highlight">{group.customer_success || '--'}</span></td>
+                        <td>
+                          <div className="group-count-value">{group.total_contracts || 0}</div>
+                          <div className="group-count-note">{group.active_contracts || 0} active / {group.expiring_contracts || 0} sắp hết hạn</div>
                         </td>
+                        <td>
+                          <div className="group-count-value">{group.total_services || 0}</div>
+                          <div className="group-count-note">{group.service_types?.length || 0} loại dịch vụ</div>
+                        </td>
+                        <td>
+                          {servicePairs.length ? (
+                            <div className="service-pair-grid compact">
+                              {servicePairs.slice(0, 4).map((p, idx) => (
+                                <div className="service-pair-card" key={`${p.serviceType}-${p.support}-${idx}`}>
+                                  <span className="service-name-highlight">{p.serviceType}</span>
+                                  <strong className="person-name-highlight">{p.support}</strong>
+                                </div>
+                              ))}
+                            </div>
+                          ) : '--'}
+                        </td>
+                        <td>
+                          <StatusBadge status={(group.active_contracts || 0) > 0 ? 'Active' : (group.expiring_contracts || 0) > 0 ? 'Expiring' : 'Inactive'} />
+                        </td>
+                        <td>{group.sale_phu_trach || '--'}</td>
                       </tr>
                       {isExpanded && (
                         <tr>
-                          <td colSpan={10} style={{ background: 'var(--neutral-25)', padding: '0', borderBottom: '1px solid var(--neutral-200)' }}>
+                          <td colSpan={7} style={{ background: 'var(--neutral-25)', padding: '0', borderBottom: '1px solid var(--neutral-200)' }}>
                             <div className="animate-fade-in-down" style={{ padding: '24px 32px', borderTop: '1px dashed var(--primary-200)' }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                                <h4 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--primary-700)', margin: 0 }}>Dịch vụ thuộc Hợp đồng</h4>
-                                <button className="btn btn-secondary hover-bg-gray" style={{ padding: '6px 12px', fontSize: '13px' }} onClick={() => openAddServiceModal(c)}>
-                                  <Plus size={14} style={{ marginRight: '4px' }}/> Thêm dịch vụ
-                                </button>
-                              </div>
-                              
-                              {loadingExpanded ? (
-                                <div style={{ fontSize: '13px', color: 'var(--neutral-500)' }}>Đang tải...</div>
-                              ) : expandedData.services.length === 0 ? (
-                                <div style={{ fontSize: '13px', color: 'var(--neutral-500)', fontStyle: 'italic', padding: '16px', background: '#fff', borderRadius: '8px', border: '1px dashed var(--neutral-300)', textAlign: 'center' }}>
-                                  Chưa có dịch vụ nào liên kết.
-                                </div>
-                              ) : (
-                                <div style={{ overflowX: 'auto', background: '#fff', borderRadius: '8px', border: '1px solid var(--neutral-200)' }}>
-                                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                                    <thead>
-                                      <tr style={{ background: 'var(--neutral-50)', borderBottom: '1px solid var(--neutral-200)' }}>
-                                        <th style={{ padding: '10px 16px', fontWeight: 600, color: 'var(--neutral-600)', textAlign: 'left' }}>Mã DV</th>
-                                        <th style={{ padding: '10px 16px', fontWeight: 600, color: 'var(--neutral-600)', textAlign: 'left' }}>Loại DV</th>
-                                        <th style={{ padding: '10px 16px', fontWeight: 600, color: 'var(--neutral-600)', textAlign: 'left' }}>Brand/OA</th>
-                                        <th style={{ padding: '10px 16px', fontWeight: 600, color: 'var(--neutral-600)', textAlign: 'left' }}>CPID</th>
-                                        <th style={{ padding: '10px 16px', fontWeight: 600, color: 'var(--neutral-600)', textAlign: 'left' }}>Bắt đầu</th>
-                                        <th style={{ padding: '10px 16px', fontWeight: 600, color: 'var(--neutral-600)', textAlign: 'left' }}>Hết hạn</th>
-                                        <th style={{ padding: '10px 16px', fontWeight: 600, color: 'var(--neutral-600)', textAlign: 'left' }}>SUP</th>
-                                        <th style={{ padding: '10px 16px', fontWeight: 600, color: 'var(--neutral-600)', textAlign: 'left' }}>Trạng thái</th>
-                                        <th style={{ padding: '10px 16px', fontWeight: 600, color: 'var(--neutral-600)', textAlign: 'center' }}>Thao tác</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      {expandedData.services.map((s, idx) => (
-                                        <tr key={idx} style={{ borderBottom: '1px solid var(--neutral-100)' }}>
-                                          <td style={{ padding: '10px 16px', fontWeight: 600, color: 'var(--primary-700)' }}>{s.service_id}</td>
-                                          <td style={{ padding: '10px 16px' }}>{s.loai_dich_vu || '--'}</td>
-                                          <td style={{ padding: '10px 16px' }}>{s.brand_name_oa || '--'}</td>
-                                          <td style={{ padding: '10px 16px' }}>{s.cp_name_code || '--'}</td>
-                                          <td style={{ padding: '10px 16px' }}>{formatDate(s.ngay_bat_dau)}</td>
-                                          <td style={{ padding: '10px 16px' }}>{formatDate(s.ngay_het_han)}</td>
-                                          <td style={{ padding: '10px 16px' }}>{s.customer_support || '--'}</td>
-                                          <td style={{ padding: '10px 16px' }}><StatusBadge status={s.trang_thai} /></td>
-                                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>
-                                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                                              <button className="btn btn-secondary hover-bg-gray" style={{ padding: '4px 8px', fontSize: '12px' }} onClick={() => openEditServiceModal(s)} title="Chỉnh sửa">
-                                                <Pencil size={14} />
-                                              </button>
-                                              <button className="btn btn-secondary hover-bg-gray" style={{ padding: '4px 8px', fontSize: '12px' }} onClick={() => openRenewServiceModal(s)} title="Gia hạn dịch vụ">
-                                                <RefreshCw size={14} />
-                                              </button>
+                              <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--primary-700)', margin: '0 0 16px 0' }}>Hợp đồng và dịch vụ của khách hàng</h4>
+                              <div className="group-detail-grid">
+                                {group.contracts.map((contract: any) => {
+                                  const contractServices = group.services.filter((s: any) => s.contract_id === contract.contract_id);
+                                  return (
+                                    <section className="group-detail-card" key={contract.contract_id}>
+                                      <div className="group-detail-card-header">
+                                        <div>
+                                          <div className="service-name-highlight">{contract.so_hop_dong || contract.contract_id}</div>
+                                          <div className="group-count-note">{contract.contract_id} {contract.so_po ? `- PO ${contract.so_po}` : ''}</div>
+                                        </div>
+                                        <StatusBadge status={contract.trang_thai} />
+                                      </div>
+                                      <div className="group-summary-grid">
+                                        <div><span>Bắt đầu</span><strong>{formatDate(contract.ngay_bat_dau_hd)}</strong></div>
+                                        <div><span>Kết thúc</span><strong>{formatDate(contract.ngay_ket_thuc_hd)}</strong></div>
+                                        <div><span>Dịch vụ</span><strong>{contractServices.length}</strong></div>
+                                      </div>
+                                      {contractServices.length > 0 ? (
+                                        <div className="service-pair-grid">
+                                          {contractServices.map((s: any) => (
+                                            <div className="service-pair-card detail" key={s.service_id}>
+                                              <span className="service-name-highlight">{s.loai_dich_vu || 'Dịch vụ'}</span>
+                                              <strong className="person-name-highlight">SUP: {s.customer_support || '--'}</strong>
+                                              <small>{s.brand_name_oa || s.cp_name_code || s.service_id || '--'} - Hết hạn {formatDate(s.ngay_het_han)}</small>
                                             </div>
-                                          </td>
-                                        </tr>
-                                      ))}
-                                    </tbody>
-                                  </table>
-                                </div>
-                              )}
+                                          ))}
+                                        </div>
+                                      ) : (
+                                        <div className="empty-inline-state">Chưa có dịch vụ nào liên kết.</div>
+                                      )}
+                                      <div className="group-card-actions">
+                                        <button className="btn btn-secondary hover-bg-gray" style={{ padding: '6px 10px', fontSize: '12px' }} onClick={(e) => { e.stopPropagation(); openEditModal(contract); }} title="Chỉnh sửa">
+                                          <Pencil size={14} /> Sửa HĐ
+                                        </button>
+                                        <button className="btn btn-secondary hover-bg-gray" style={{ padding: '6px 10px', fontSize: '12px' }} onClick={(e) => { e.stopPropagation(); openRenewModal(contract); }} title="Gia hạn hợp đồng">
+                                          <RefreshCw size={14} /> Gia hạn
+                                        </button>
+                                        <button className="btn btn-secondary hover-bg-gray" style={{ padding: '6px 10px', fontSize: '12px' }} onClick={(e) => { e.stopPropagation(); openAddServiceModal(contract); }}>
+                                          <Plus size={14} /> Thêm DV
+                                        </button>
+                                      </div>
+                                    </section>
+                                  );
+                                })}
+                              </div>
                             </div>
                           </td>
                         </tr>
@@ -495,6 +495,73 @@ export default function ContractsPage() {
               </tbody>
             </table>
           </div>
+          <div className="contracts-mobile-list">
+            {contractGroups.map(group => {
+              const isExpanded = expandedRow === group.customer_id;
+              const servicePairs = getServiceSupportPairs(group.services);
+              return (
+                <article key={group.customer_id} className="customer-mobile-item">
+                  <button type="button" className="customer-mobile-summary" onClick={() => handleExpand(group)}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, color: 'var(--neutral-900)', lineHeight: 1.35 }}>{group.ten_cong_ty || '--'}</div>
+                      <div style={{ fontSize: 12, color: 'var(--neutral-500)', marginTop: 4 }}>{group.customer_id} {group.org_id ? `- Org ${group.org_id}` : ''}</div>
+                    </div>
+                    <ChevronDown size={18} style={{ flexShrink: 0, color: 'var(--neutral-500)', transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                  </button>
+                  <div className="customer-mobile-meta">
+                    <div><span>CS</span><strong>{group.customer_success || '--'}</strong></div>
+                    <div><span>Hợp đồng</span><strong>{group.total_contracts || 0}</strong></div>
+                    <div><span>Dịch vụ</span><strong>{group.total_services || 0}</strong></div>
+                  </div>
+                  <div className="customer-mobile-services" style={{ borderTop: servicePairs.length ? '1px dashed var(--neutral-200)' : 'none' }}>
+                    <div className="service-pair-grid">
+                      {servicePairs.map((p, idx) => (
+                        <div className="service-pair-card" key={`${p.serviceType}-${p.support}-${idx}`}>
+                          <span className="service-name-highlight">{p.serviceType}</span>
+                          <strong className="person-name-highlight">{p.support}</strong>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  {isExpanded && (
+                    <div className="customer-mobile-services">
+                      {group.contracts.map((contract: any) => {
+                        const contractServices = group.services.filter((s: any) => s.contract_id === contract.contract_id);
+                        return (
+                          <div key={contract.contract_id} className="customer-mobile-service-row">
+                            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'flex-start' }}>
+                              <div style={{ minWidth: 0 }}>
+                                <div className="service-name-highlight">{contract.so_hop_dong || contract.contract_id}</div>
+                                <div style={{ fontSize: 12, color: 'var(--neutral-500)', marginTop: 3 }}>{formatDate(contract.ngay_bat_dau_hd)} - {formatDate(contract.ngay_ket_thuc_hd)}</div>
+                              </div>
+                              <StatusBadge status={contract.trang_thai} />
+                            </div>
+                            <div style={{ marginTop: 10 }} className="service-pair-grid">
+                              {contractServices.map((s: any) => (
+                                <div className="service-pair-card detail" key={s.service_id}>
+                                  <span className="service-name-highlight">{s.loai_dich_vu || 'Dịch vụ'}</span>
+                                  <strong className="person-name-highlight">SUP: {s.customer_support || '--'}</strong>
+                                </div>
+                              ))}
+                            </div>
+                            <div style={{ marginTop: 10, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                              <button className="btn btn-secondary" style={{ padding: '7px 10px', fontSize: 12, justifyContent: 'center' }} onClick={() => openEditModal(contract)}>
+                                <Pencil size={14} /> Sửa
+                              </button>
+                              <button className="btn btn-secondary" style={{ padding: '7px 10px', fontSize: 12, justifyContent: 'center' }} onClick={() => openRenewModal(contract)}>
+                                <RefreshCw size={14} /> Gia hạn
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+          </>
         )}
         
         <Pagination 

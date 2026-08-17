@@ -25,10 +25,6 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState(CONFIG_KEYS[0].key);
 
-  useEffect(() => {
-    fetchConfigs();
-  }, []);
-
   const fetchConfigs = async () => {
     setLoading(true);
     const res = await getDropdownConfigs();
@@ -45,6 +41,10 @@ export default function SettingsPage() {
     }
     setLoading(false);
   };
+
+  useEffect(() => {
+    fetchConfigs();
+  }, []);
 
   const handleValuesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const valStr = e.target.value;
